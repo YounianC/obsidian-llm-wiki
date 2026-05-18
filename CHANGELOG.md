@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2026-05-18
+
+### Added
+- **Rate limit detection and user notification**: When parallel page generation or batch fixes encounter HTTP 429 errors, the plugin now detects rate-limit patterns across failed items and shows actionable suggestions (lower concurrency, increase batch delay, switch provider). Applies to ingestion, alias completion, and duplicate detection phases
+- **Smart Fix All completion modal**: One-click fix now shows a detailed modal report with per-phase results (aliases completed, duplicates merged, dead links fixed, orphans linked, empty pages expanded) instead of a brief auto-dismiss notice. Individual fix operations continue to show persistent summary notices with fix counts
+
+### Changed
+- **Settings panel reorganization**: Merged four fine-grained sections (Wiki Folder, Extraction, Ingestion Acceleration, Query) into a single "Wiki Configuration" heading, reducing visual clutter. Auto Maintenance remains separate due to its size
+- **Page generation concurrency default**: Changed from 1 (serial) to 3 (parallel) for faster ingestion out of the box. Most providers handle 3 concurrent requests without rate limiting
+- **Settings UX improvements**: Concurrency slider now shows "Current concurrency: X (parallel/serial)" dynamically; batch delay description displays current value in milliseconds; debounce delay unit changed from milliseconds to seconds (1-60s) for clearer understanding
+- **Persistent fix completion notices**: All individual Lint fix operations now show persistent notices (manual dismiss) with combined fix-count + index-updated message, replacing the previous pair of brief auto-dismiss notices
+
+### Fixed
+- **Single-value aliases crash**: YAML frontmatter with `aliases: single-value` (no brackets) was parsed as a string, causing `.some()` calls to fail with `_a2.some is not a function`. Added normalization in `parseFrontmatter()` to wrap string-valued array fields (aliases, sources, tags) in arrays, plus defensive `Array.isArray` guard in alias consumers
+- **README command accuracy**: Usage table in all 8 language READMEs corrected — "Ingest single source" now accurately described as single-file picker (not "processes entire sources/ folder"), command names match actual Obsidian command palette entries, and Commands sections localized per language
+
 ## [1.8.0] - 2026-05-17
 
 ### Added

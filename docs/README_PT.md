@@ -4,9 +4,7 @@
 
 > Base de conhecimento estruturada com IA que consome suas notas e gera uma Wiki conectada — baseada no [LLM Wiki concept de Andrej Karpathy](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).
 
-**Autor:** Greener-Dalii | **Versão:** 1.8.0
-
-![Version](https://img.shields.io/badge/version-1.8.0-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-8%2B-cyan?style=flat-square)
+![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-8%2B-cyan?style=flat-square)
 
 [English](../README.md) | [中文文档](README_CN.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Deutsch](README_DE.md) | [Français](README_FR.md) | [Español](README_ES.md) | [Português](README_PT.md)
 
@@ -78,10 +76,12 @@ O LLM-Wiki inverte isso. Em vez de construir o graph manualmente, a IA o faz cre
 
 | Método | Como |
 |--------|-----|
-| **📥 Ingest de `sources/`** | `Cmd+P` → "Ingest Sources" — processa a pasta `sources/` inteira |
-| **📂 Ingest de qualquer pasta** | `Cmd+P` → "Ingest from Folder" — escolha uma pasta, gere Wiki de notas existentes |
-| **🔍 Query Wiki** | `Cmd+P` → "Query Wiki" — faça perguntas, obtenha respostas em streaming com `[[wiki-links]]` |
-| **🛠️ Lint Wiki** | `Cmd+P` → "Lint Wiki" — verificação de saúde com detecção de duplicados, dead links, órfãos |
+| **📥 Ingerir fonte individual** | `Cmd+P` → "Ingerir fonte individual" — selecione uma nota específica para extrair entidades e conceitos em páginas Wiki |
+| **📂 Ingerir de pasta** | `Cmd+P` → "Ingerir de pasta" — escolha uma pasta, processe todas as notas em lote |
+| **🔍 Consultar Wiki** | `Cmd+P` → "Consultar Wiki" — faça perguntas, obtenha respostas em streaming com `[[wiki-links]]` |
+| **🛠️ Verificar Wiki** | `Cmd+P` → "Verificar Wiki" — verificação de saúde: duplicados, links quebrados, páginas órfãs, páginas vazias, aliases ausentes |
+| **📋 Regenerar índice** | `Cmd+P` → "Regenerar índice" — reconstruir `wiki/index.md` com páginas atuais e aliases |
+| **💡 Sugerir atualizações de Schema** | `Cmd+P` → "Sugerir atualizações de Schema" — o LLM analisa a Wiki e propõe melhorias no Schema |
 
 Re-ingerir a mesma source faz atualizações incrementais em Entity/Concept pages (nova informação mesclada). Summary pages são regeneradas.
 
@@ -92,10 +92,10 @@ Re-ingerir a mesma source faz atualizações incrementais em Entity/Concept page
 Se você está atualizando de uma versão **anterior à v1.7.11** (ou muito mais antiga), suas páginas Wiki existentes foram geradas sem várias capacidades adicionadas ao longo de vários lançamentos. Siga estas etapas após atualizar para atualizar sua Wiki:
 
 **1️⃣ Reconstrua seu índice**
-`Cmd+P` → **"Regenerate index"** — Isso reconstrói `wiki/index.md` com entradas de alias para cada página, habilitando busca alias-aware (ex.: pesquisar "DSA" encontra "DeepSeek-Sparse-Attention"). O formato antigo do índice listava apenas títulos de páginas.
+`Cmd+P` → **"Regenerar índice"** — Isso reconstrói `wiki/index.md` com entradas de alias para cada página, habilitando busca alias-aware (ex.: pesquisar "DSA" encontra "DeepSeek-Sparse-Attention"). O formato antigo do índice listava apenas títulos de páginas.
 
-**2️⃣ Execute Lint Wiki**
-`Cmd+P` → **"Lint Wiki"** — Isso examina toda a sua Wiki e mostra:
+**2️⃣ Execute Verificar Wiki**
+`Cmd+P` → **"Verificar Wiki"** — Isso examina toda a sua Wiki e mostra:
 - **🏷️ Aliases ausentes**: Páginas sem aliases (todas as pré-v1.7.11). Clique em **"Complete Aliases"** — o LLM gera traduções, siglas e nomes alternativos em lote. Isso é crítico para a detecção de duplicados.
 - **🔄 Páginas duplicadas**: Páginas com conteúdo sobreposto (ex.: "CoT" vs "Cadeia-de-Pensamento" criadas por versões antigas sem dedup alias-aware). Clique em **"Merge Duplicates"** para fundi-las e preservar todos os aliases.
 - **💀 Dead links / Páginas vazias / Órfãos**: Problemas padrão de manutenção de Wiki.
@@ -164,12 +164,12 @@ Settings → **Ingestion Acceleration**:
 
 | Comando | Descrição |
 |---------|-----------|
-| **📥 Ingest single source** | Selecione uma nota → gere páginas Wiki com Entity, Concept e summary |
-| **📂 Ingest from folder** | Selecione uma pasta → gere Wiki em lote de notas existentes |
-| **🔍 Query wiki** | Q&A conversacional sobre sua Wiki, respostas em streaming com `[[wiki-links]]` |
-| **🛠️ Lint wiki** | Verificação completa de saúde: duplicados, dead links, páginas vazias, órfãos, aliases ausentes, contradições |
-| **📋 Regenerate index** | Reconstrua manualmente `wiki/index.md` |
-| **💡 Suggest schema updates** | LLM analisa a Wiki e propõe melhorias no Schema |
+| **📥 Ingerir fonte individual** | Selecione uma nota → gere páginas Wiki com Entity, Concept e summary |
+| **📂 Ingerir de pasta** | Selecione uma pasta → gere Wiki em lote de notas existentes |
+| **🔍 Consultar Wiki** | Q&A conversacional sobre sua Wiki, respostas em streaming com `[[wiki-links]]` |
+| **🛠️ Verificar Wiki** | Verificação completa de saúde: duplicados, dead links, páginas vazias, órfãos, aliases ausentes, contradições |
+| **📋 Regenerar índice** | Reconstrua manualmente `wiki/index.md` |
+| **💡 Sugerir atualizações de Schema** | LLM analisa a Wiki e propõe melhorias no Schema |
 
 ---
 

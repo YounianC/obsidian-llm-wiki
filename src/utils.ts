@@ -404,6 +404,18 @@ export function parseFrontmatter(content: string): FrontmatterData | null {
     result[currentKey] = arrayValues;
   }
 
+  // Normalize array-typed fields: YAML single values (without brackets or list
+  // notation) parse as strings, but callers expect arrays. Wrap strings in arrays.
+  const ARRAY_FIELDS = ['aliases', 'sources', 'tags'];
+  for (const field of ARRAY_FIELDS) {
+    const val = result[field];
+    if (typeof val === 'string') {
+      result[field] = [val];
+    } else if (!Array.isArray(val)) {
+      delete result[field];
+    }
+  }
+
   return result;
 }
 
@@ -723,4 +735,54 @@ export function enforceFrontmatterConstraints(content: string, pageType: 'entity
   // CRITICAL: frontmatter closing delimiter MUST have blank line before body
   // Format: ---\n...\n---\n\n<body> (double newline after closing ---)
   return result.join('\n') + '\n\n' + body;
+}
+
+// Rate-limit failure detection and user notification.
+// Shared across all parallel execution sites (ingestion, lint fixes, etc.).
+
+export interface RateLimitInfo {
+  count: number;
+  rateLimitNames: string[];
+  suggestedConcurrency: number;
+  suggestedDelay: number;
+}
+
+export function detectRateLimitFailures(
+  failedItems: Array<{ reason?: string; name?: string; type?: string }>,
+  currentConcurrency: number,
+  currentBatchDelay: number,
+): RateLimitInfo | null {
+  const rateLimitFailures = failedItems.filter(f =>
+    /429|rate.?limit|too many requests|throttl/i.test(f.reason || '')
+  );
+
+  if (rateLimitFailures.length === 0) return null;
+
+  return {
+    count: rateLimitFailures.length,
+    rateLimitNames: rateLimitFailures.map(f => f.name || f.reason || 'unknown'),
+    suggestedConcurrency: Math.max(1, currentConcurrency - 1),
+    suggestedDelay: currentBatchDelay < 100
+      ? 500
+      : Math.min(2000, Math.round(currentBatchDelay * 2))
+  };
+}
+
+export function formatRateLimitNotice(
+  info: RateLimitInfo,
+  texts: Record<string, string>,
+): string {
+  const t = texts;
+  // Use full notice if t.rateLimitDetected exists, else build from parts
+  if (t.rateLimitDetected) {
+    return t.rateLimitDetected
+      .replace('{count}', String(info.count))
+      .replace('{suggestedConcurrency}', String(info.suggestedConcurrency))
+      .replace('{suggestedDelay}', String(info.suggestedDelay));
+  }
+  // Fallback: build English notice from scratch
+  const namesHint = info.rateLimitNames.slice(0, 3).join(', ');
+  const moreHint = info.rateLimitNames.length > 3 ? ` (and ${info.rateLimitNames.length - 3} more)` : '';
+  return `Rate limit hit — ${info.count} operation(s) failed${namesHint ? ': ' + namesHint + moreHint : ''}. ` +
+    `Lower concurrency to ${info.suggestedConcurrency} or increase batch delay to ${info.suggestedDelay}ms in Settings → Wiki Configuration.`;
 }

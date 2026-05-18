@@ -151,7 +151,6 @@ export class SchemaManager {
   }
 
   async getSchemaContext(task: SchemaTask = 'full'): Promise<string> {
-    if (!this.settings.enableSchema) return '';
 
     const schema = await this.loadSchema();
     if (!schema || !schema.body.trim()) return '';
@@ -228,7 +227,6 @@ ${selectedBody}
   }
 
   async ensureSchemaExists(): Promise<void> {
-    if (!this.settings.enableSchema) return;
 
     const path = this.getSchemaPath();
     const existing = this.app.vault.getAbstractFileByPath(path);

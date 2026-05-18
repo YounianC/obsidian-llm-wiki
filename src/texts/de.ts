@@ -223,10 +223,10 @@ export const DE_TEXTS = {
     accelerationSectionTitle: 'Aufnahmen-Beschleunigung',
     pageGenerationConcurrencyName: 'Seitenerzeugungs-Parallelität',
     pageGenerationConcurrencyDesc: 'Anzahl parallel generierter Seiten während der Einzelaufnahme. Höhere Werte beschleunigen die Aufnahme, erhöhen aber API-Kosten und können Ratenbegrenzungen auslösen.',
-    concurrencyValueSingular: '{} (seriell — am sichersten)',
-    concurrencyValuePlural: '{} (parallel)',
+    concurrencyValueSingular: 'Aktuelle Parallelität: {} (seriell — am sichersten)',
+    concurrencyValuePlural: 'Aktuelle Parallelität: {} (parallel)',
     batchDelayName: 'Batch-Verzögerung (ms)',
-    batchDelayDesc: 'Verzögerung zwischen parallelen Stapeln zur Vermeidung von API-Ratenbegrenzungen (100–2000 ms). Erhöhen bei 429-Fehlern.',
+    batchDelayDesc: 'Verzögerung zwischen parallelen Stapeln zur Vermeidung von API-Ratenbegrenzungen (100–2000 ms). Aktuell: {}ms. Erhöhen bei 429-Fehlern.',
 
     // Auto Maintenance
     autoMaintainSection: 'Automatische Wartung',
@@ -244,8 +244,8 @@ export const DE_TEXTS = {
     autoWatchModeDesc: '"Nur benachrichtigen" zeigt eine Eingabeaufforderung. "Automatisch aufnehmen" verarbeitet still.',
     watchModeNotify: 'Nur benachrichtigen',
     watchModeAuto: 'Automatisch aufnehmen',
-    autoWatchDebounceName: 'Entprell-Verzögerung (ms)',
-    autoWatchDebounceDesc: 'Wartezeit vor der Aufnahmeauslösung nach einer Dateiänderung (1000–60000)',
+    autoWatchDebounceName: 'Entprell-Verzögerung (Sekunden)',
+    autoWatchDebounceDesc: 'Wartezeit vor der Aufnahmeauslösung nach einer Dateiänderung (1–60 Sekunden)',
     periodicLintName: 'Periodische Prüfung',
     periodicLintDesc: 'LLM-Prüfung zeitgesteuert ausführen, nur wenn sich Quelldateien seit der letzten Prüfung geändert haben',
     periodicLintOff: 'Aus',
@@ -372,4 +372,8 @@ export const DE_TEXTS = {
     ingestReportConceptType: 'Konzept',
     timeMinutes: 'Min',
     timeSeconds: 'Sek',
+
+    // Ratenbegrenzungs-Warnungen
+    rateLimitDetected: '⚠️ Ratenbegrenzung erkannt: {count} Seite(n) mit 429-Fehlern fehlgeschlagen. Empfehlungen: (1) Parallelität auf {suggestedConcurrency} oder 1 (seriell) reduzieren, (2) Batch-Verzögerung auf {suggestedDelay}ms erhöhen, (3) Zu einem Anbieter mit höheren Ratenbegrenzungen wechseln.',
+    rateLimitDetectedShort: '⚠️ Ratenbegrenzung erreicht — Reduzieren Sie die Parallelität oder erhöhen Sie die Batch-Verzögerung in Einstellungen → Aufnahmebeschleunigung.',
 } as const;

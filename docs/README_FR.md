@@ -4,9 +4,7 @@
 
 > Base de connaissances structurée alimentée par IA. Ingestion automatique des notes et génération d'un Wiki interconnecté — inspiré du concept de [LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) d'Andrej Karpathy.
 
-**Auteur:** Greener-Dalii | **Version:** 1.8.0
-
-![Version](https://img.shields.io/badge/version-1.8.0-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-8%2B-cyan?style=flat-square)
+![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-8%2B-cyan?style=flat-square)
 
 [English](../README.md) | [中文文档](README_CN.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Deutsch](README_DE.md) | [Français](README_FR.md) | [Español](README_ES.md) | [Português](README_PT.md)
 
@@ -78,10 +76,12 @@ LLM-Wiki inverse cette logique. Au lieu de construire le graphe à la main, l'IA
 
 | Méthode | Action |
 |---------|--------|
-| **📥 Ingest depuis `sources/`** | `Cmd+P` → « Ingest Sources » — traite l'intégralité du dossier `sources/` |
-| **📂 Ingest depuis un dossier** | `Cmd+P` → « Ingest from Folder » — sélectionnez un dossier, générez le Wiki à partir des notes existantes |
-| **🔍 Query Wiki** | `Cmd+P` → « Query Wiki » — posez des questions, obtenez des réponses en streaming avec `[[Wiki-links]]` |
-| **🛠️ Lint Wiki** | `Cmd+P` → « Lint Wiki » — analyse de santé avec détection des doublons, liens morts et pages orphelines |
+| **📥 Importer une source unique** | `Cmd+P` → « Importer une source unique » — sélectionnez une note spécifique pour extraire entités et concepts dans des pages Wiki |
+| **📂 Importer depuis un dossier** | `Cmd+P` → « Importer depuis un dossier » — choisissez un dossier, traitez toutes les notes par lot |
+| **🔍 Interroger le wiki** | `Cmd+P` → « Interroger le wiki » — posez des questions, obtenez des réponses en streaming avec `[[wiki-links]]` |
+| **🛠️ Vérifier le wiki** | `Cmd+P` → « Vérifier le wiki » — scan de santé : doublons, liens morts, pages orphelines, pages vides, alias manquants |
+| **📋 Régénérer l'index** | `Cmd+P` → « Régénérer l'index » — reconstruire `wiki/index.md` avec les pages actuelles et les alias |
+| **💡 Suggérer des mises à jour du schéma** | `Cmd+P` → « Suggérer des mises à jour du schéma » — le LLM analyse le Wiki et propose des améliorations du schéma |
 
 La ré-ingestion d'une même source effectue des mises à jour incrémentales sur les pages Entity/Concept (fusion des nouvelles informations). Les pages de résumé sont régénérées.
 
@@ -92,10 +92,10 @@ La ré-ingestion d'une même source effectue des mises à jour incrémentales su
 Si vous effectuez une mise à niveau depuis une version **antérieure à la v1.7.11** (ou bien plus ancienne), vos pages Wiki existantes ont été générées sans plusieurs fonctionnalités ajoutées au fil des versions. Suivez ces étapes après la mise à jour pour mettre votre Wiki à jour :
 
 **1️⃣ Reconstruisez votre index**
-`Cmd+P` → **"Regenerate index"** — Cela reconstruit `wiki/index.md` avec les entrées d'alias pour chaque page, activant la recherche par alias dans Query (par ex., rechercher « DSA » trouve « DeepSeek-Sparse-Attention »). L'ancien format d'index ne listait que les titres de pages.
+`Cmd+P` → **"Régénérer l'index"** — Cela reconstruit `wiki/index.md` avec les entrées d'alias pour chaque page, activant la recherche par alias dans Query (par ex., rechercher « DSA » trouve « DeepSeek-Sparse-Attention »). L'ancien format d'index ne listait que les titres de pages.
 
-**2️⃣ Exécutez Lint Wiki**
-`Cmd+P` → **"Lint Wiki"** — Cela scanne l'intégralité de votre Wiki et affiche :
+**2️⃣ Exécutez Vérifier le wiki**
+`Cmd+P` → **"Vérifier le wiki"** — Cela scanne l'intégralité de votre Wiki et affiche :
 - **🏷️ Alias manquants** : Pages sans alias (toutes les pages pré-v1.7.11). Cliquez sur **"Complete Aliases"** — le LLM génère traductions, acronymes et noms alternatifs en masse. C'est essentiel pour la détection des doublons.
 - **🔄 Pages en double** : Pages au contenu qui se chevauche (ex. « CoT » vs « chaîne de pensée » créées par des versions plus anciennes sans déduplication basée sur les alias). Cliquez sur **"Merge Duplicates"** pour les fusionner et préserver tous les alias.
 - **💀 Liens morts / Pages vides / Pages orphelines** : Problèmes classiques de maintenance Wiki.
@@ -164,12 +164,12 @@ Paramètres → **Ingestion Acceleration** :
 
 | Commande | Description |
 |----------|-------------|
-| **📥 Ingest single source** | Sélectionner une note → générer des pages Wiki avec Entity, Concept et résumé |
-| **📂 Ingest from folder** | Sélectionner un dossier → génération batch du Wiki à partir des notes existantes |
-| **🔍 Query wiki** | Q&R conversationnel sur votre Wiki, réponses en streaming avec `[[Wiki-links]]` |
-| **🛠️ Lint wiki** | Analyse complète de santé : doublons, liens morts, pages vides, orphelines, alias manquants, contradictions |
-| **📋 Regenerate index** | Reconstruire manuellement `wiki/index.md` |
-| **💡 Suggest schema updates** | Le LLM analyse le Wiki et propose des améliorations de Schema |
+| **📥 Importer une source unique** | Sélectionner une note → générer des pages Wiki avec Entity, Concept et résumé |
+| **📂 Importer depuis un dossier** | Sélectionner un dossier → génération batch du Wiki à partir des notes existantes |
+| **🔍 Interroger le wiki** | Q&R conversationnel sur votre Wiki, réponses en streaming avec `[[Wiki-links]]` |
+| **🛠️ Vérifier le wiki** | Analyse complète de santé : doublons, liens morts, pages vides, orphelines, alias manquants, contradictions |
+| **📋 Régénérer l'index** | Reconstruire manuellement `wiki/index.md` |
+| **💡 Suggérer des mises à jour du schéma** | Le LLM analyse le Wiki et propose des améliorations de Schema |
 
 ---
 

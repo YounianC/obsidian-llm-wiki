@@ -223,10 +223,10 @@ export const JA_TEXTS = {
     accelerationSectionTitle: '取り込み高速化',
     pageGenerationConcurrencyName: 'ページ生成の並列度',
     pageGenerationConcurrencyDesc: '単一ソース取り込み中に並列生成するページ数。値を高くすると取り込みが高速化されますが、APIコストの増加やレートリミットのトリガーに注意してください。',
-    concurrencyValueSingular: '{}（直列 — 最も安全）',
-    concurrencyValuePlural: '{}（並列）',
+    concurrencyValueSingular: '現在の並列度：{}（直列 — 最も安全）',
+    concurrencyValuePlural: '現在の並列度：{}（並列）',
     batchDelayName: 'バッチ遅延（ms）',
-    batchDelayDesc: '並列バッチ間の遅延によりAPIレートリミットを回避します（100〜2000ms）。429エラーが発生する場合は値を大きくしてください。',
+    batchDelayDesc: '並列バッチ間の遅延によりAPIレートリミットを回避します（100〜2000ms）。現在値：{}ms。429エラーが発生する場合は値を大きくしてください。',
 
     // Auto Maintenance
     autoMaintainSection: '自動メンテナンス',
@@ -244,8 +244,8 @@ export const JA_TEXTS = {
     autoWatchModeDesc: '「通知のみ」はプロンプトを表示します。「自動取り込み」はサイレントに処理します。',
     watchModeNotify: '通知のみ',
     watchModeAuto: '自動取り込み',
-    autoWatchDebounceName: 'チャタリング防止遅延（ms）',
-    autoWatchDebounceDesc: 'ファイル変更後に取り込みをトリガーするまでの待機時間（1000〜60000）',
+    autoWatchDebounceName: 'チャタリング防止遅延（秒）',
+    autoWatchDebounceDesc: 'ファイル変更後に取り込みをトリガーするまでの待機時間（1〜60秒）',
     periodicLintName: '定期 Lint',
     periodicLintDesc: 'スケジュールに従ってLLM Lintを実行。前回チェック以降にソースファイルの変更がある場合のみ実行します',
     periodicLintOff: 'オフ',
@@ -372,4 +372,8 @@ export const JA_TEXTS = {
     ingestReportConceptType: '概念',
     timeMinutes: '分',
     timeSeconds: '秒',
+
+    // レートリミット警告
+    rateLimitDetected: '⚠️ レートリミットを検出：{count}ページが429エラーで失敗しました。対処法：(1) 並列度を{suggestedConcurrency}または1（直列）に下げる、(2) バッチ遅延を{suggestedDelay}msに増やす、(3) より高いレートリミットを持つプロバイダーに切り替える。',
+    rateLimitDetectedShort: '⚠️ レートリミット発生 — 設定→取り込み加速で並列度を下げるかバッチ遅延を増やすことを推奨。',
 } as const;

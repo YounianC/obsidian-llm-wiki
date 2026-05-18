@@ -6,11 +6,19 @@
 
 ---
 
-## Current Phase: Post-v1.8.0 — Full i18n Support Complete
+## Current Phase: Post-v1.8.1 — UX Hardening & Polish
 
-**v1.8.0 released.** Internationalization expansion complete: plugin UI now supports 8 languages (English, Chinese, Japanese, Korean, German, French, Spanish, Portuguese). All 269+ UI fields translated with natural local expressions, proper terminology handling, and sentence case compliance.
+**v1.8.1 in preparation.** UX hardening release: rate limit detection with user notification, Smart Fix All completion modal, settings panel reorganization, dynamic version badge, README command accuracy fixes across all 8 languages.
 
-**Phase complete.** Next steps: monitor multilingual user feedback, gather real-world test cases from non-English/Chinese speakers.
+Recently completed (v1.8.1):
+- **Rate limit detection and user notification**: Parallel operations (page generation, alias completion, duplicate detection) now detect HTTP 429 patterns and show actionable suggestions
+- **Smart Fix All completion modal**: Replaced brief auto-dismiss notice with detailed per-phase modal report (aliases, duplicates, dead links, orphans, empty pages)
+- **Settings panel reorganization**: Merged Wiki Folder, Extraction, Acceleration, Query sections into one "Wiki Configuration" heading
+- **Persistent fix completion notices**: Individual Lint fix operations now show persistent notices with combined fix-count + index-updated messages
+- **Dynamic version badge**: All 8 README version badges now auto-fetch from GitHub Releases API (no more hardcoded version in badge URL)
+- **README command accuracy**: Usage tables and Commands sections across all 8 languages now match actual Obsidian command palette entries
+- **Single-value aliases crash fix**: `parseFrontmatter()` normalizes string-valued array fields (aliases, sources, tags)
+- **Page generation concurrency default**: Changed from 1 to 3
 
 Recently completed (v1.8.0):
 - **Full i18n support for 8 languages**: Extended from 2 (en, zh) to 8 languages (ja, ko, de, fr, es, pt). Created 6 new translation files (269+ fields each) with formal style, technical terminology preservation, and placeholder integrity

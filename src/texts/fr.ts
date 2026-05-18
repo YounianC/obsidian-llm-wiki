@@ -223,10 +223,10 @@ export const FR_TEXTS = {
     accelerationSectionTitle: 'Accélération de l\'import',
     pageGenerationConcurrencyName: 'Parallélisme de génération des pages',
     pageGenerationConcurrencyDesc: 'Nombre de pages à générer en parallèle lors de l\'import d\'une source unique. Des valeurs plus élevées accélèrent l\'import mais augmentent les coûts API et peuvent déclencher des limites de débit.',
-    concurrencyValueSingular: '{} (séquentiel — le plus sûr)',
-    concurrencyValuePlural: '{} (parallèle)',
+    concurrencyValueSingular: 'Concurrence actuelle : {} (séquentiel — le plus sûr)',
+    concurrencyValuePlural: 'Concurrence actuelle : {} (parallèle)',
     batchDelayName: 'Délai entre lots (ms)',
-    batchDelayDesc: 'Délai entre les lots parallèles pour éviter la limitation de débit de l\'API (100-2000ms). Augmentez si vous voyez des erreurs 429.',
+    batchDelayDesc: 'Délai entre lots parallèles pour éviter la limitation de débit de l\'API (100-2000ms). Actuel : {}ms. Augmentez si vous voyez des erreurs 429.',
 
     // Auto Maintenance
     autoMaintainSection: 'Maintenance automatique',
@@ -244,8 +244,8 @@ export const FR_TEXTS = {
     autoWatchModeDesc: '"Notifier seulement" affiche une invite. "Import automatique" traite silencieusement.',
     watchModeNotify: 'Notifier seulement',
     watchModeAuto: 'Import automatique',
-    autoWatchDebounceName: 'Délai d\'anti-rebond (ms)',
-    autoWatchDebounceDesc: "Temps d'attente avant de déclencher l'import après une modification de fichier (1000-60000)",
+    autoWatchDebounceName: "Délai d'anti-rebond (secondes)",
+    autoWatchDebounceDesc: "Temps d'attente avant de déclencher l'import après une modification de fichier (1-60 secondes)",
     periodicLintName: 'Vérification périodique',
     periodicLintDesc: "Exécuter une vérification LLM planifiée, uniquement lorsque les fichiers sources ont changé depuis la dernière vérification",
     periodicLintOff: 'Désactivé',
@@ -372,4 +372,8 @@ export const FR_TEXTS = {
     ingestReportConceptType: 'Concept',
     timeMinutes: 'min',
     timeSeconds: 's',
+
+    // Avertissements de limite de débit
+    rateLimitDetected: "⚠️ Limite de débit détectée : {count} page(s) ont échoué avec des erreurs 429. Suggestions : (1) Réduire la concurrence à {suggestedConcurrency} ou 1 (séquentiel), (2) Augmenter le délai entre lots à {suggestedDelay}ms, (3) Passer à un fournisseur avec des limites de débit plus élevées.",
+    rateLimitDetectedShort: "⚠️ Limite de débit atteinte — envisagez de réduire la concurrence ou d'augmenter le délai entre lots dans Paramètres → Accélération d'import.",
 } as const;

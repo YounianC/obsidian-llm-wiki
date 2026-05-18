@@ -2,7 +2,7 @@
 // Orchestrates sub-modules: SourceAnalyzer, PageFactory, ConversationIngestor,
 // LintFixer, ContradictionManager, and system-prompts.
 
-import { App, TFile, TFolder } from 'obsidian';
+import { App, TFile, TFolder, Notice } from 'obsidian';
 import {
   LLMWikiSettings,
   LLMClient,
@@ -17,6 +17,8 @@ import {
   slugify,
   cleanMarkdownResponse,
   parseFrontmatter,
+  detectRateLimitFailures,
+  formatRateLimitNotice,
 } from '../utils';
 import { SchemaManager, SchemaTask } from '../schema/schema-manager';
 import {
@@ -287,6 +289,17 @@ export class WikiEngine {
       const pageGenTime = Date.now() - pageGenStart;
       console.debug(`[耗时] 页面生成阶段完成: ${pageGenTime}ms (平均 ${Math.round(pageGenTime / pageGenCount)}ms/页)`);
 
+      // Rate-limit detection: check if parallel failures are 429-related
+      const pageGenRateInfo = detectRateLimitFailures(
+        failedItems.filter(f => f.type === 'entity' || f.type === 'concept'),
+        concurrency, batchDelay
+      );
+      if (pageGenRateInfo) {
+        console.warn(`[Rate Limit] Page generation: ${pageGenRateInfo.count} item(s) failed with 429, ` +
+          `suggested concurrency=${pageGenRateInfo.suggestedConcurrency}, delay=${pageGenRateInfo.suggestedDelay}ms`);
+        new Notice(formatRateLimitNotice(pageGenRateInfo, TEXTS[this.settings.language] as unknown as Record<string, string>), 10000);
+      }
+
       // Stage 4: Related Pages Update (并行化改造)
       const relatedStart = Date.now();
       const relatedConcurrency = this.settings.pageGenerationConcurrency ?? 1;
@@ -301,6 +314,7 @@ export class WikiEngine {
 
       let relatedCount = 0;
       const relatedTotal = relatedTasks.length;
+      const relatedFailures: Array<{ name: string; reason: string }> = [];
 
       // 分批并行处理
       for (let i = 0; i < relatedTasks.length; i += relatedConcurrency) {
@@ -337,6 +351,12 @@ export class WikiEngine {
           if (r.status === 'fulfilled' && r.value.success) {
             analysis!.updated_pages.push(batch[idx].name);
             relatedCount++;
+          } else {
+            const reason = r.status === 'fulfilled' ? (r.value as { reason?: string }).reason || 'unknown' :
+              r.reason instanceof Error ? r.reason.message : String(r.reason || 'unknown');
+            const name = batch[idx].name;
+            relatedFailures.push({ name, reason });
+            console.error(`[Related Page] "${name}" failed: ${reason}`);
           }
         });
 
@@ -349,7 +369,18 @@ export class WikiEngine {
       const relatedTime = Date.now() - relatedStart;
       const relatedModeLabel = relatedConcurrency > 1 ? `并行(并发度:${relatedConcurrency})` : '串行';
       console.debug(`[耗时] 相关页更新阶段完成: ${relatedTime}ms (${relatedModeLabel}, ${relatedCount}/${relatedTotal} 页成功)`);
-      step += relatedTotal;  // 更新step变量，确保后续阶段编号正确
+      step += relatedTotal;
+
+      // Rate-limit detection for related page updates
+      const relatedRateInfo = detectRateLimitFailures(
+        relatedFailures,
+        relatedConcurrency, relatedDelay
+      );
+      if (relatedRateInfo) {
+        console.warn(`[Rate Limit] Related pages update: ${relatedRateInfo.count} item(s) failed with 429, ` +
+          `suggested concurrency=${relatedRateInfo.suggestedConcurrency}, delay=${relatedRateInfo.suggestedDelay}ms`);
+        new Notice(formatRateLimitNotice(relatedRateInfo, TEXTS[this.settings.language] as unknown as Record<string, string>), 10000);
+      }  // 更新step变量，确保后续阶段编号正确
 
       // Stage 5: Contradiction Recording
       const contradictionStart = Date.now();

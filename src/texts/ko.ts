@@ -223,10 +223,10 @@ export const KO_TEXTS = {
     accelerationSectionTitle: '수집 가속화',
     pageGenerationConcurrencyName: '페이지 생성 동시성',
     pageGenerationConcurrencyDesc: '단일 소스 수집 중 병렬로 생성할 페이지 수. 값이 높을수록 수집이 빨라지지만 API 비용이 증가하고 속도 제한이 발생할 수 있습니다.',
-    concurrencyValueSingular: '{} (직렬 — 가장 안전)',
-    concurrencyValuePlural: '{} (병렬)',
+    concurrencyValueSingular: '현재 동시성: {} (직렬 — 가장 안전)',
+    concurrencyValuePlural: '현재 동시성: {} (병렬)',
     batchDelayName: '배치 지연 (ms)',
-    batchDelayDesc: 'API 속도 제한 방지를 위한 병렬 배치 간 지연 (100-2000ms). 429 오류가 발생하면 값을 높이세요.',
+    batchDelayDesc: 'API 속도 제한 방지를 위한 병렬 배치 간 지연 (100-2000ms). 현재값: {}ms. 429 오류가 발생하면 값을 높이세요.',
 
     // Auto Maintenance
     autoMaintainSection: '자동 유지보수',
@@ -244,8 +244,8 @@ export const KO_TEXTS = {
     autoWatchModeDesc: '"알림만"은 프롬프트를 표시합니다. "자동 수집"은 자동으로 처리합니다.',
     watchModeNotify: '알림만',
     watchModeAuto: '자동 수집',
-    autoWatchDebounceName: '디바운스 지연 (ms)',
-    autoWatchDebounceDesc: '파일 변경 후 수집 트리거까지 대기 시간 (1000-60000)',
+    autoWatchDebounceName: '디바운스 지연 (초)',
+    autoWatchDebounceDesc: '파일 변경 후 수집 트리거까지 대기 시간 (1-60초)',
     periodicLintName: '정기 린트',
     periodicLintDesc: '일정에 따라 LLM 린트 실행, 마지막 확인 이후 소스 파일이 변경된 경우에만',
     periodicLintOff: '끄기',
@@ -372,4 +372,8 @@ export const KO_TEXTS = {
     ingestReportConceptType: '컨셉',
     timeMinutes: '분',
     timeSeconds: '초',
+
+    // 속도 제한 경고
+    rateLimitDetected: '⚠️ 속도 제한 감지: {count}개 페이지가 429 오류로 실패했습니다. 권장 조치: (1) 동시성을 {suggestedConcurrency} 또는 1(직렬)로 낮추기, (2) 배치 지연을 {suggestedDelay}ms로 늘리기, (3) 더 높은 속도 제한을 가진 제공업체로 전환.',
+    rateLimitDetectedShort: '⚠️ 속도 제한 발생 — 설정 → 수집 가속에서 동시성을 낮추거나 배치 지연을 늘리는 것이 좋습니다.',
 } as const;

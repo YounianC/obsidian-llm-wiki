@@ -223,10 +223,10 @@ export const PT_TEXTS = {
     accelerationSectionTitle: 'Aceleração da ingestão',
     pageGenerationConcurrencyName: 'Paralelismo na geração de páginas',
     pageGenerationConcurrencyDesc: 'Número de páginas a gerar em paralelo durante ingestão de uma única fonte. Valores mais altos aceleram a ingestão, mas aumentam custos de API e podem acionar limites de taxa.',
-    concurrencyValueSingular: '{} (serial — mais seguro)',
-    concurrencyValuePlural: '{} (paralelo)',
+    concurrencyValueSingular: 'Concorrência atual: {} (serial — mais seguro)',
+    concurrencyValuePlural: 'Concorrência atual: {} (paralelo)',
     batchDelayName: 'Atraso entre lotes (ms)',
-    batchDelayDesc: 'Atraso entre lotes paralelos para evitar limitação de taxa da API (100-2000 ms). Aumente se observar erros 429.',
+    batchDelayDesc: 'Atraso entre lotes paralelos para evitar limitação de taxa da API (100-2000 ms). Atual: {}ms. Aumente se observar erros 429.',
 
     // Auto Maintenance
     autoMaintainSection: 'Manutenção automática',
@@ -244,8 +244,8 @@ export const PT_TEXTS = {
     autoWatchModeDesc: '"Somente notificar" exibe um aviso. "Ingerir automaticamente" processa silenciosamente.',
     watchModeNotify: 'Somente notificar',
     watchModeAuto: 'Ingerir automaticamente',
-    autoWatchDebounceName: 'Atraso de debounce (ms)',
-    autoWatchDebounceDesc: 'Tempo de espera antes de acionar a ingestão após alteração de arquivo (1000-60000)',
+    autoWatchDebounceName: 'Atraso de debounce (segundos)',
+    autoWatchDebounceDesc: 'Tempo de espera antes de acionar a ingestão após alteração de arquivo (1-60 segundos)',
     periodicLintName: 'Verificação periódica',
     periodicLintDesc: 'Executar verificação LLM agendada, somente quando arquivos fonte foram alterados desde a última verificação',
     periodicLintOff: 'Desativado',
@@ -372,4 +372,8 @@ export const PT_TEXTS = {
     ingestReportConceptType: 'Conceito',
     timeMinutes: 'min',
     timeSeconds: 's',
+
+    // Avisos de limite de taxa
+    rateLimitDetected: '⚠️ Limite de taxa detectado: {count} página(s) falharam com erros 429. Sugestões: (1) Reduzir concorrência para {suggestedConcurrency} ou 1 (serial), (2) Aumentar atraso entre lotes para {suggestedDelay}ms, (3) Mudar para um provedor com limites de taxa mais altos.',
+    rateLimitDetectedShort: '⚠️ Limite de taxa atingido — considere reduzir a concorrência ou aumentar o atraso entre lotes em Configurações → Aceleração de ingestão.',
 } as const;

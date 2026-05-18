@@ -378,8 +378,8 @@ export const DEFAULT_SETTINGS: LLMWikiSettings = {
   periodicLint: 'off',
   startupCheck: false,
 
-  // Ingestion acceleration (default: serial for safety)
-  pageGenerationConcurrency: 1,
+  // Ingestion acceleration (default: 3 parallel for most providers)
+  pageGenerationConcurrency: 3,
   batchDelayMs: 300,
 
   // Query dedup

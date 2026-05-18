@@ -155,9 +155,7 @@ export async function buildSystemPrompt(
   const parts: string[] = [];
   const langDirective = buildWikiLanguageDirective(settings);
   if (langDirective) parts.push(langDirective);
-  if (settings.enableSchema) {
-    const schemaContext = await getSchemaContext(task);
-    if (schemaContext) parts.push(schemaContext);
-  }
+  const schemaContext = await getSchemaContext(task);
+  if (schemaContext) parts.push(schemaContext);
   return parts.length > 0 ? parts.join('\n\n') : undefined;
 }

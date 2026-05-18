@@ -332,7 +332,7 @@ export class LLMWikiSettingTab extends PluginSettingTab {
     });
 
     // ==========================================
-    // 4. Wiki Folder
+    // 4. Wiki Configuration
     // ==========================================
     new Setting(containerEl).setName(this.getText('wikiSection')).setHeading();
 
@@ -343,11 +343,6 @@ export class LLMWikiSettingTab extends PluginSettingTab {
         .setPlaceholder(this.getText('wikiFolderPlaceholder'))
         .setValue(this.tempSettings.wikiFolder)
         .onChange((value) => { this.tempSettings.wikiFolder = value; }));
-
-    // ==========================================
-    // 5. Extraction
-    // ==========================================
-    new Setting(containerEl).setName(this.getText('extractionSectionTitle')).setHeading();
 
     new Setting(containerEl)
       .setName(this.getText('extractionGranularityName'))
@@ -360,19 +355,15 @@ export class LLMWikiSettingTab extends PluginSettingTab {
         dropdown.onChange((value: string) => { this.tempSettings.extractionGranularity = value as 'fine' | 'standard' | 'coarse'; });
       });
 
-    // ==========================================
-    // 6. Ingestion Acceleration
-    // ==========================================
-    new Setting(containerEl).setName(this.getText('accelerationSectionTitle')).setHeading();
-
-    const concurrencyValue = this.tempSettings.pageGenerationConcurrency ?? 1;
-    const concurrencyLabel = concurrencyValue === 1
+    // Page Generation Concurrency
+    const concurrencyValue = this.tempSettings.pageGenerationConcurrency ?? 3;
+    const concurrencyDesc = concurrencyValue === 1
       ? this.getText('concurrencyValueSingular').replace('{}', String(concurrencyValue))
       : this.getText('concurrencyValuePlural').replace('{}', String(concurrencyValue));
 
     new Setting(containerEl)
       .setName(this.getText('pageGenerationConcurrencyName'))
-      .setDesc(this.getText('pageGenerationConcurrencyDesc') + ' ' + concurrencyLabel)
+      .setDesc(this.getText('pageGenerationConcurrencyDesc') + ' ' + concurrencyDesc)
       .addSlider(slider => slider
         .setLimits(1, 5, 1)
         .setValue(concurrencyValue)
@@ -382,45 +373,37 @@ export class LLMWikiSettingTab extends PluginSettingTab {
           this.display();
         }));
 
+    // Batch Delay
+    const batchDelayValue = this.tempSettings.batchDelayMs ?? 300;
     new Setting(containerEl)
       .setName(this.getText('batchDelayName'))
-      .setDesc(this.getText('batchDelayDesc'))
+      .setDesc(this.getText('batchDelayDesc').replace('{}', String(batchDelayValue)))
       .addSlider(slider => slider
         .setLimits(100, 2000, 50)
-        .setValue(this.tempSettings.batchDelayMs ?? 300)
+        .setValue(batchDelayValue)
         .setDynamicTooltip()
-        .onChange((value) => { this.tempSettings.batchDelayMs = value; }));
+        .onChange((value) => {
+          this.tempSettings.batchDelayMs = value;
+          this.display();
+        }));
 
-    // ==========================================
-    // 7. Query
-    // ==========================================
-    new Setting(containerEl).setName(this.getText('querySectionTitle')).setHeading();
-
+    // Max Conversation History
     new Setting(containerEl)
       .setName(this.getText('maxConversationHistoryName'))
       .setDesc(this.getText('maxConversationHistoryDesc'))
       .addText(text => text
         .setValue(this.tempSettings.maxConversationHistory.toString())
-        .setPlaceholder('10')
+        .setPlaceholder('30')
         .onChange((value) => {
           const parsed = parseInt(value);
           if (parsed >= 1 && parsed <= 50) this.tempSettings.maxConversationHistory = parsed;
           else new Notice(this.getText('numberRangeValidation'), 3000);
         }));
 
-    // ==========================================
-    // 7. Schema
-    // ==========================================
-    new Setting(containerEl).setName(this.getText('schemaSection')).setHeading();
-
+    // Schema Management
     new Setting(containerEl)
-      .setName(this.getText('enableSchemaName'))
+      .setName(this.getText('schemaSection'))
       .setDesc(this.getText('enableSchemaDesc'))
-      .addToggle(toggle => toggle
-        .setValue(this.tempSettings.enableSchema)
-        .onChange((value) => { this.tempSettings.enableSchema = value; }));
-
-    new Setting(containerEl)
       .addButton(button => button
         .setButtonText(this.getText('viewSchemaButton'))
         .onClick(() => {
@@ -437,7 +420,7 @@ export class LLMWikiSettingTab extends PluginSettingTab {
         }));
 
     // ==========================================
-    // 8. Auto Maintenance
+    // 5. Auto Maintenance
     // ==========================================
     new Setting(containerEl).setName(this.getText('autoMaintainSection')).setHeading();
 
@@ -519,10 +502,10 @@ export class LLMWikiSettingTab extends PluginSettingTab {
         .setName(this.getText('autoWatchDebounceName'))
         .setDesc(this.getText('autoWatchDebounceDesc'))
         .addText(text => text
-          .setValue(this.tempSettings.autoWatchDebounceMs.toString())
+          .setValue(String(Math.round(this.tempSettings.autoWatchDebounceMs / 1000)))
           .onChange((value) => {
             const parsed = parseInt(value);
-            if (parsed >= 1000 && parsed <= 60000) this.tempSettings.autoWatchDebounceMs = parsed;
+            if (parsed >= 1 && parsed <= 60) this.tempSettings.autoWatchDebounceMs = parsed * 1000;
           }));
     }
 

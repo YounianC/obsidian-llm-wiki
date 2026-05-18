@@ -223,10 +223,10 @@ export const EN_TEXTS = {
     accelerationSectionTitle: 'Ingestion Acceleration',
     pageGenerationConcurrencyName: 'Page Generation Concurrency',
     pageGenerationConcurrencyDesc: 'Number of pages to generate in parallel during single-source ingestion. Higher values speed up ingestion but increase API costs and may trigger rate limits.',
-    concurrencyValueSingular: '{} (serial — safest)',
-    concurrencyValuePlural: '{} (parallel)',
+    concurrencyValueSingular: 'Current concurrency: {} (serial — safest)',
+    concurrencyValuePlural: 'Current concurrency: {} (parallel)',
     batchDelayName: 'Batch Delay (ms)',
-    batchDelayDesc: 'Delay between parallel batches to prevent API rate limiting (100-2000ms). Increase if you see 429 errors.',
+    batchDelayDesc: 'Delay between parallel batches to prevent API rate limiting (100-2000ms). Current: {}ms. Increase if you see 429 errors.',
 
     // Auto Maintenance
     autoMaintainSection: 'Auto Maintenance',
@@ -244,8 +244,8 @@ export const EN_TEXTS = {
     autoWatchModeDesc: '"Notify Only" shows a prompt. "Auto Ingest" processes silently.',
     watchModeNotify: 'Notify Only',
     watchModeAuto: 'Auto Ingest',
-    autoWatchDebounceName: 'Debounce Delay (ms)',
-    autoWatchDebounceDesc: 'Wait time before triggering ingest after a file change (1000-60000)',
+    autoWatchDebounceName: 'Debounce Delay (seconds)',
+    autoWatchDebounceDesc: 'Wait time before triggering ingest after a file change (1-60 seconds)',
     periodicLintName: 'Periodic Lint',
     periodicLintDesc: 'Run LLM lint on schedule, only when source files have changed since last check',
     periodicLintOff: 'Off',
@@ -372,4 +372,8 @@ export const EN_TEXTS = {
     ingestReportConceptType: 'Concept',
     timeMinutes: 'min',
     timeSeconds: 'sec',
+
+    // Rate Limit Warnings
+    rateLimitDetected: '⚠️ Rate limit detected: {count} page(s) failed with 429 errors. Try: (1) Lower concurrency to {suggestedConcurrency} or 1 (serial), (2) Increase batch delay to {suggestedDelay}ms, (3) Switch to a provider with higher rate limits.',
+    rateLimitDetectedShort: '⚠️ Rate limit hit — consider lowering concurrency or increasing batch delay in Settings → Ingestion Acceleration.',
 } as const;

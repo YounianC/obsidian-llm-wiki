@@ -223,10 +223,10 @@ export const ES_TEXTS = {
     accelerationSectionTitle: 'Aceleración de ingestión',
     pageGenerationConcurrencyName: 'Concurrencia de generación de páginas',
     pageGenerationConcurrencyDesc: 'Número de páginas a generar en paralelo durante la ingestión de una fuente. Valores más altos aceleran la ingestión pero incrementan costes de API y pueden alcanzar límites de tasa.',
-    concurrencyValueSingular: '{} (serial — más seguro)',
-    concurrencyValuePlural: '{} (paralelo)',
+    concurrencyValueSingular: 'Concurrencia actual: {} (serial — más seguro)',
+    concurrencyValuePlural: 'Concurrencia actual: {} (paralelo)',
     batchDelayName: 'Retraso entre lotes (ms)',
-    batchDelayDesc: 'Retraso entre lotes paralelos para evitar límites de tasa de la API (100-2000ms). Aumenta si ves errores 429.',
+    batchDelayDesc: 'Retraso entre lotes paralelos para evitar límites de tasa de la API (100-2000ms). Actual: {}ms. Aumenta si ves errores 429.',
 
     // Auto Maintenance
     autoMaintainSection: 'Mantenimiento automático',
@@ -244,8 +244,8 @@ export const ES_TEXTS = {
     autoWatchModeDesc: '"Solo notificar" muestra un aviso. "Ingestión automática" procesa sin intervención.',
     watchModeNotify: 'Solo notificar',
     watchModeAuto: 'Ingestión automática',
-    autoWatchDebounceName: 'Retraso de debounce (ms)',
-    autoWatchDebounceDesc: 'Tiempo de espera antes de disparar la ingestión tras un cambio en un archivo (1000-60000)',
+    autoWatchDebounceName: 'Retraso de debounce (segundos)',
+    autoWatchDebounceDesc: 'Tiempo de espera antes de disparar la ingestión tras un cambio en un archivo (1-60 segundos)',
     periodicLintName: 'Verificación lint periódica',
     periodicLintDesc: 'Ejecuta lint LLM de forma programada, solo cuando los archivos fuente han cambiado desde la última comprobación',
     periodicLintOff: 'Desactivado',
@@ -372,4 +372,8 @@ export const ES_TEXTS = {
     ingestReportConceptType: 'Concepto',
     timeMinutes: 'min',
     timeSeconds: 'seg',
+
+    // Advertencias de límite de tasa
+    rateLimitDetected: '⚠️ Límite de tasa detectado: {count} página(s) fallaron con errores 429. Sugerencias: (1) Reducir concurrencia a {suggestedConcurrency} o 1 (serial), (2) Aumentar retraso entre lotes a {suggestedDelay}ms, (3) Cambiar a un proveedor con límites de tasa más altos.',
+    rateLimitDetectedShort: '⚠️ Límite de tasa alcanzado — considere reducir la concurrencia o aumentar el retraso entre lotes en Configuración → Aceleración de ingestión.',
 } as const;

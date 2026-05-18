@@ -6,7 +6,7 @@ import { Notice } from 'obsidian';
 import { LintContext } from '../lint-controller';
 import { TEXTS } from '../../texts';
 import { PROMPTS } from '../../prompts';
-import { parseJsonResponse } from '../../utils';
+import { parseJsonResponse, detectRateLimitFailures, formatRateLimitNotice } from '../../utils';
 
 export async function runAliasCompletion(
   ctx: LintContext,
@@ -24,6 +24,7 @@ export async function runAliasCompletion(
   const results: string[] = [];
   const fixNotice = new Notice('', 0);
   const aliasStartTime = Date.now();
+  const aliasFailures: Array<{ name: string; reason: string }> = [];
 
   for (let i = 0; i < aliasDeficientPages.length; i += concurrency) {
     const batch = aliasDeficientPages.slice(i, i + concurrency);
@@ -88,6 +89,10 @@ export async function runAliasCompletion(
         batchSuccess++;
       } else {
         batchFail++;
+        const failureName = r.status === 'fulfilled' ? String(r.value.name || 'unknown') : 'promise-rejected';
+        const failureReason = r.status === 'fulfilled' ? String(r.value.reason || 'unknown') :
+          r.reason instanceof Error ? r.reason.message : String(r.reason || 'unknown');
+        aliasFailures.push({ name: failureName, reason: failureReason });
         if (r.status === 'rejected') {
           console.error(`[Alias batch ${batchNum}] Promise rejected:`, r.reason);
         }
@@ -100,6 +105,14 @@ export async function runAliasCompletion(
     if (i + concurrency < aliasDeficientPages.length && (ctx.settings.batchDelayMs ?? 300) > 0) {
       await new Promise(resolve => window.setTimeout(resolve, ctx.settings.batchDelayMs ?? 300));
     }
+  }
+
+  // Rate-limit detection for alias completion
+  const aliasRateInfo = detectRateLimitFailures(aliasFailures, concurrency, ctx.settings.batchDelayMs ?? 300);
+  if (aliasRateInfo) {
+    console.warn(`[Alias Rate Limit] ${aliasRateInfo.count} alias generation(s) failed with 429, ` +
+      `suggested concurrency=${aliasRateInfo.suggestedConcurrency}, delay=${aliasRateInfo.suggestedDelay}ms`);
+    new Notice(formatRateLimitNotice(aliasRateInfo, t as unknown as Record<string, string>), 10000);
   }
 
   fixNotice.hide();

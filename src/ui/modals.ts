@@ -298,3 +298,53 @@ export class IngestReportModal extends Modal {
     this.contentEl.empty();
   }
 }
+
+export interface FixReportPhase {
+  label: string;
+  detail: string;
+}
+
+export class FixReportModal extends Modal {
+  private phases: FixReportPhase[];
+  private language: string;
+
+  constructor(app: App, phases: FixReportPhase[], language: string) {
+    super(app);
+    this.phases = phases;
+    this.language = language;
+  }
+
+  onOpen() {
+    const texts = TEXTS[this.language as keyof typeof TEXTS] || TEXTS.en;
+    const t = texts as unknown as Record<string, string>;
+    const titleText = t.lintFixAllComplete || 'All fixes complete';
+
+    this.contentEl.createEl('h2', { text: titleText });
+
+    const list = this.contentEl.createEl('ul', {
+      attr: { style: 'margin: 12px 0; line-height: 1.8;' }
+    });
+    for (const phase of this.phases) {
+      const itemText = phase.detail
+        ? `${phase.label}: ${phase.detail}`
+        : phase.label;
+      list.createEl('li', { text: itemText });
+    }
+
+    const indexNote = t.lintFixIndexUpdated || '';
+    if (indexNote) {
+      this.contentEl.createEl('p', {
+        text: indexNote,
+        attr: { style: 'color: var(--text-muted); font-size: 13px; margin-top: 8px;' }
+      });
+    }
+
+    const btnRow = this.contentEl.createDiv({ attr: { style: 'margin-top: 16px; text-align: right;' } });
+    const closeText = t.ingestReportClose || 'Close';
+    btnRow.createEl('button', { text: closeText }).addEventListener('click', () => this.close());
+  }
+
+  onClose() {
+    this.contentEl.empty();
+  }
+}

@@ -4,9 +4,7 @@
 
 > KI-gestützte strukturierte Wissensbasis — wandelt Notizen automatisch in ein Wiki um. Basierend auf [Andrej Karpathys LLM Wiki-Konzept](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).
 
-**Autor:** Greener-Dalii **Version:** 1.8.0
-
-![Version](https://img.shields.io/badge/version-1.8.0-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-8%2B-cyan?style=flat-square)
+![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-8%2B-cyan?style=flat-square)
 
 [English](../README.md) | [中文文档](README_CN.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Deutsch](README_DE.md) | [Français](README_FR.md) | [Español](README_ES.md) | [Português](README_PT.md)
 
@@ -76,10 +74,12 @@ LLM Wiki ändert das. Statt den Graph manuell aufzubauen, wächst die KI mit. Ne
 
 | Methode | Vorgehen |
 |---------|----------|
-| **📥 Ingest from `sources/`** | `Cmd+P` → "Ingest Sources" — gesamten `sources/` Ordner verarbeiten |
-| **📂 Ingest any folder** | `Cmd+P` → "Ingest from Folder" — Ordner wählen, Wiki aus bestehenden Notizen generieren |
-| **🔍 Query Wiki** | `Cmd+P` → "Query Wiki" — Fragen stellen, Streaming-Antworten mit `[[wiki-links]]` erhalten |
-| **🛠️ Lint Wiki** | `Cmd+P` → "Lint Wiki" — Health Scan mit Duplikat-Detection, tote Links, Orphans |
+| **📥 Einzelne Quelle aufnehmen** | `Cmd+P` → "Einzelne Quelle aufnehmen" — eine bestimmte Notiz auswählen, Entitäten und Konzepte als Wiki-Seiten extrahieren |
+| **📂 Aus Ordner aufnehmen** | `Cmd+P` → "Aus Ordner aufnehmen" — Ordner wählen, alle Notizen als Stapel verarbeiten |
+| **🔍 Wiki anfragen** | `Cmd+P` → "Wiki anfragen" — Fragen stellen, Streaming-Antworten mit `[[wiki-links]]` erhalten |
+| **🛠️ Wiki prüfen** | `Cmd+P` → "Wiki prüfen" — Gesundheits-Scan: Duplikate, tote Links, verwaiste Seiten, leere Seiten, fehlende Aliase |
+| **📋 Index neu generieren** | `Cmd+P` → "Index neu generieren" — `wiki/index.md` mit aktuellen Seiten und Aliasen neu aufbauen |
+| **💡 Schema-Aktualisierungen vorschlagen** | `Cmd+P` → "Schema-Aktualisierungen vorschlagen" — LLM analysiert Wiki und schlägt Schema-Verbesserungen vor |
 
 Re-Ingesting derselben Source führt zu inkrementellen Updates auf Entity/Concept-Seiten (neue Info wird gemerged). Summary-Seiten werden regeneriert.
 
@@ -90,10 +90,10 @@ Re-Ingesting derselben Source führt zu inkrementellen Updates auf Entity/Concep
 Wenn Sie von einer Version **vor v1.7.11** (oder noch früher) upgraden, wurden Ihre Wiki-Seiten ohne mehrere Funktionen generiert, die in späteren Versionen hinzugekommen sind. Führen Sie nach dem Upgrade diese Schritte aus, um Ihr Wiki auf den neuesten Stand zu bringen:
 
 **1️⃣ Index neu aufbauen**
-`Cmd+P` → **"Regenerate index"** — Baut `wiki/index.md` mit Alias-Einträgen für jede Seite neu auf. Dies ermöglicht die Alias-basierte Suche (z. B. findet die Suche nach "DSA" die Seite "DeepSeek-Sparse-Attention"). Das alte Index-Format enthielt nur Seitentitel.
+`Cmd+P` → **"Index neu generieren"** — Baut `wiki/index.md` mit Alias-Einträgen für jede Seite neu auf. Dies ermöglicht die Alias-basierte Suche (z. B. findet die Suche nach "DSA" die Seite "DeepSeek-Sparse-Attention"). Das alte Index-Format enthielt nur Seitentitel.
 
-**2️⃣ Lint Wiki ausführen**
-`Cmd+P` → **"Lint Wiki"** — Durchsucht Ihr gesamtes Wiki und zeigt Folgendes an:
+**2️⃣ Wiki prüfen ausführen**
+`Cmd+P` → **"Wiki prüfen"** — Durchsucht Ihr gesamtes Wiki und zeigt Folgendes an:
 - **🏷️ Fehlende Aliases**: Seiten ohne Aliases (alle Seiten vor v1.7.11). Klicken Sie **"Complete Aliases"** — der LLM generiert Übersetzungen, Akronyme und alternative Namen im Batch. Dies ist entscheidend für die Duplikaterkennung.
 - **🔄 Doppelte Seiten**: Seiten mit überlappenden Inhalten (z. B. "CoT" vs "Chain-of-Thought", die von älteren Versionen ohne Alias-basierte Deduplizierung erstellt wurden). Klicken Sie **"Merge Duplicates"**, um sie zu verschmelzen und alle Aliases zu erhalten.
 - **💀 Tote Links / Leere Seiten / Orphans**: Übliche Wiki-Wartungsprobleme.
@@ -162,12 +162,12 @@ Settings → **Ingestion Acceleration**:
 
 | Befehl | Beschreibung |
 |---------|-------------|
-| **📥 Ingest single source** | Einzelne Note auswählen → Wiki-Pages mit Entities, Concepts und Summary generieren |
-| **📂 Ingest from folder** | Beliebigen Ordner auswählen → Wiki aus bestehenden Notizen im Batch generieren |
-| **🔍 Query wiki** | Konversationelles Q&A mit Streaming Output und `[[wiki-links]]` |
-| **🛠️ Lint wiki** | Vollständiger Health Scan: Duplikate, tote Links, leere Pages, Orphans, fehlende Aliases, Widersprüche |
-| **📋 Regenerate index** | `wiki/index.md` manuell neu aufbauen |
-| **💡 Suggest schema updates** | LLM analysiert Wiki und schlägt Schema-Verbesserungen vor |
+| **📥 Einzelne Quelle aufnehmen** | Einzelne Note auswählen → Wiki-Pages mit Entities, Concepts und Summary generieren |
+| **📂 Aus Ordner aufnehmen** | Beliebigen Ordner auswählen → Wiki aus bestehenden Notizen im Batch generieren |
+| **🔍 Wiki anfragen** | Konversationelles Q&A mit Streaming Output und `[[wiki-links]]` |
+| **🛠️ Wiki prüfen** | Vollständiger Health Scan: Duplikate, tote Links, leere Pages, Orphans, fehlende Aliases, Widersprüche |
+| **📋 Index neu generieren** | `wiki/index.md` manuell neu aufbauen |
+| **💡 Schema-Aktualisierungen vorschlagen** | LLM analysiert Wiki und schlägt Schema-Verbesserungen vor |
 
 ---
 

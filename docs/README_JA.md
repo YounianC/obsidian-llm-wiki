@@ -4,9 +4,7 @@
 
 > AI駆動の構造化知識ベース — ノートを自動的にWikiに変換。[Andrej KarpathyのLLM Wiki概念](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)に基づく実装。
 
-**作者:** Greener-Dalii | **バージョン:** 1.8.0
-
-![Version](https://img.shields.io/badge/version-1.8.0-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-8%2B-cyan?style=flat-square)
+![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-8%2B-cyan?style=flat-square)
 
 [English](../README.md) | [中文文档](README_CN.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Deutsch](README_DE.md) | [Français](README_FR.md) | [Español](README_ES.md) | [Português](README_PT.md)
 
@@ -76,10 +74,12 @@ LLM-Wikiはこれを逆転させます。あなたが手作業でグラフを構
 
 | 方法 | 操作 |
 |------|------|
-| **📥 `sources/`からIngest** | `Cmd+P` → "Ingest Sources" — `sources/`フォルダ全体を処理 |
-| **📂 任意のフォルダからIngest** | `Cmd+P` → "Ingest from Folder" — フォルダを選択し、既存ノートからWikiを生成 |
-| **🔍 WikiをQuery** | `Cmd+P` → "Query Wiki" — 質問し、`[[wiki-links]]`を伴うストリーミング回答を取得 |
-| **🛠️ WikiをLint** | `Cmd+P` → "Lint Wiki" — 重複検出、dead links、orphansの健康スキャン |
+| **📥 単一ソースの取り込み** | `Cmd+P` → "単一ソースの取り込み" — 特定のノートを選択し、エンティティとコンセプトをWikiページとして抽出 |
+| **📂 フォルダーからの取り込み** | `Cmd+P` → "フォルダーからの取り込み" — フォルダを選択し、全ノートをバッチ処理 |
+| **🔍 Wikiに問い合わせ** | `Cmd+P` → "Wikiに問い合わせ" — 質問し、`[[wiki-links]]`付きのストリーミング回答を取得 |
+| **🛠️ WikiのLint** | `Cmd+P` → "WikiのLint" — 重複検出、dead links、orphans、空ページ、不足エイリアスの健全性スキャン |
+| **📋 インデックスの再生成** | `Cmd+P` → "インデックスの再生成" — `wiki/index.md`をエイリアス情報付きで再構築 |
+| **💡 スキーマ更新の提案** | `Cmd+P` → "スキーマ更新の提案" — LLMがWikiを分析しスキーマ改善を提案 |
 
 同じSourceを再ingestすると、Entity/Conceptページは増分更新（新情報がmerge）。Summaryページはregenerateされる。
 
@@ -90,10 +90,10 @@ LLM-Wikiはこれを逆転させます。あなたが手作業でグラフを構
 **v1.7.11より前のバージョン**（またはそれ以前）からアップグレードする場合、既存のWikiページはその後のリリースで追加されたいくつかの機能なしで生成されています。アップグレード後、以下の手順でWikiを最新状態に更新してください：
 
 **1️⃣ インデックスを再構築**
-`Cmd+P` → **"Regenerate index"** — これにより`wiki/index.md`が全ページのaliasエントリを含む形で再構築され、alias-aware検索が有効になります（例：「DSA」の検索で「DeepSeek-Sparse-Attention」が見つかる）。以前のインデックス形式はページタイトルしか表示していませんでした。
+`Cmd+P` → **"インデックスの再生成"** — これにより`wiki/index.md`が全ページのaliasエントリを含む形で再構築され、alias-aware検索が有効になります（例：「DSA」の検索で「DeepSeek-Sparse-Attention」が見つかる）。以前のインデックス形式はページタイトルしか表示していませんでした。
 
-**2️⃣ Lint Wikiを実行**
-`Cmd+P` → **"Lint Wiki"** — Wiki全体をスキャンし、以下を表示します：
+**2️⃣ WikiのLintを実行**
+`Cmd+P` → **"WikiのLint"** — Wiki全体をスキャンし、以下を表示します：
 - **🏷️ Missing aliases**: Aliasがないページ（v1.7.11以前の全ページ）。**"Complete Aliases"** をクリックすると、LLMが翻訳、acronym、別名を一括生成。重複検出に不可欠です。
 - **🔄 Duplicate pages**: 重複コンテンツを持つページ（例：alias-aware dedupがない旧バージョンで作成された「CoT」と「Chain of Thought」）。**"Merge Duplicates"** をクリックして統合し、すべてのaliasを保持します。
 - **Dead links / Empty pages / Orphans**: 標準的なWikiメンテナンス項目。
@@ -162,12 +162,12 @@ Settings → **Ingestion Acceleration**:
 
 | コマンド | 説明 |
 |---------|------|
-| **📥 Ingest single source** | 単一ノートを選択 → Entity、Concept、Summaryを含むWikiページを生成 |
-| **📂 Ingest from folder** | 任意のフォルダを選択 → 既存ノートからWikiを一括生成 |
-| **🔍 Query wiki** | ストリーミング出力と`[[wiki-links]]`を伴う対話式Q&A |
-| **🛠️ Lint wiki** | 包括的健康スキャン：重複、dead links、empty pages、orphans、missing aliases、矛盾 |
-| **📋 Regenerate index** | `wiki/index.md`を手動で再構築 |
-| **💡 Suggest schema updates** | LLMがWikiを分析しSchema改善を提案 |
+| **📥 単一ソースの取り込み** | 単一ノートを選択 → Entity、Concept、Summaryを含むWikiページを生成 |
+| **📂 フォルダーからの取り込み** | 任意のフォルダを選択 → 既存ノートからWikiを一括生成 |
+| **🔍 Wikiに問い合わせ** | ストリーミング出力と`[[wiki-links]]`を伴う対話式Q&A |
+| **🛠️ WikiのLint** | 包括的健康スキャン：重複、dead links、empty pages、orphans、missing aliases、矛盾 |
+| **📋 インデックスの再生成** | `wiki/index.md`を手動で再構築 |
+| **💡 スキーマ更新の提案** | LLMがWikiを分析しSchema改善を提案 |
 
 ---
 

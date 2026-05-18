@@ -42,7 +42,8 @@ export async function getExistingWikiPages(
       path: f.path,
       title: f.basename,
       wikiLink: `[[${relPath}|${f.basename}]]`,
-      aliases: fm?.aliases,
+      // parseFrontmatter normalizes aliases to array, but guard anyway
+      aliases: Array.isArray(fm?.aliases) ? fm.aliases : undefined,
     });
   }
   return pages;
