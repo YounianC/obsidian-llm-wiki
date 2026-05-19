@@ -293,6 +293,10 @@ ui/                 # ユーザーインターフェース
 
 ## ❓ FAQ
 
+> **プラグインを最新に保ってください。** このプロジェクトは頻繁に更新され、数日ごとに新機能や修正が追加されます。Obsidianで **設定 → コミュニティプラグイン → 更新を確認** を定期的に実行してください。
+>
+> その他の質問は [GitHub FAQ Discussion](https://github.com/green-dalii/obsidian-llm-wiki/discussions/28) をご覧ください。
+
 ### 🏷️ Lintでほとんどのページに「missing aliases」と表示されるのはなぜ？
 
 v1.7.11より前に生成されたページにはaliasが含まれていません。これは想定内で無害です — aliasは必須ではなく機能強化です。Lintレポートの **"Complete Aliases"** をクリックすると、LLMが不足している全ページに対して翻訳、acronym、別名を一括生成します。Aliasが揃うと、重複検出とalias-aware検索がはるかに効果的になります。

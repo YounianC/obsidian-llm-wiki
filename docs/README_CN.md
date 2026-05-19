@@ -293,6 +293,10 @@ ui/                 # 用户界面
 
 ## ❓ 常见问题 (FAQ)
 
+> **请保持插件更新。** 本项目迭代频繁，新功能和修复每隔几天就会推送。在 Obsidian 中定期前往 **设置 → 第三方插件 → 检查更新** 以获取最新版。
+>
+> 更多问题请参阅 [GitHub FAQ Discussion](https://github.com/green-dalii/obsidian-llm-wiki/discussions/28)。
+
 ### 🏷️ 为什么 Lint 显示大量页面"缺失别名"？
 
 v1.7.11 之前生成的页面不包含别名。这很正常，别名是增强功能而非必需项。在 Lint 报告中点击 **"Complete Aliases"**，LLM 会批量生成翻译、缩写和变体名。一旦有了别名，重复检测和别名感知搜索的效果会显著提升。

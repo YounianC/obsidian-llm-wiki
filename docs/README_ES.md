@@ -295,6 +295,10 @@ ui/                 # Interfaz de usuario
 
 ## ❓ FAQ
 
+> **Mantén el plugin actualizado.** Este proyecto se actualiza con frecuencia — nuevas funciones y correcciones llegan cada pocos días. En Obsidian, ve regularmente a **Configuración → Plugins comunitarios → Buscar actualizaciones**.
+>
+> Más preguntas en la [GitHub FAQ Discussion](https://github.com/green-dalii/obsidian-llm-wiki/discussions/28).
+
 ### 🏷️ ¿Por qué Lint muestra "aliases faltantes" en casi todas mis páginas?
 
 Las páginas generadas antes de v1.7.11 no incluían aliases. Esto es normal e inofensivo — los aliases son una mejora, no un requisito. Haz clic en **"Complete Aliases"** en el informe de Lint para que el LLM genere traducciones, acrónimos y nombres alternativos para todas las páginas deficientes en un solo lote. Una vez que existen aliases, la detección de duplicados y la búsqueda consciente de aliases son mucho más efectivas.
