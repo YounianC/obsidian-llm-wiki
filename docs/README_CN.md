@@ -4,7 +4,7 @@
 
 > 基于 [Andrej Karpathy 的 LLM Wiki 概念](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) 实现的知识库生成系统，自动从笔记中提取实体与概念，构建互联的 Wiki 页面。
 >
-> **Obsidian 官方评分 93/100** | 原生支持 8 种语言 | 活跃维护，持续进化
+> **Obsidian 官方评分 94/100** | 原生支持 8 种语言 | 活跃维护，持续进化
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/green-dalii/obsidian-llm-wiki) ![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-8%2B-cyan?style=flat-square)
 
@@ -248,17 +248,25 @@ aliases: ["监督学习", "Supervised Learning"]
 
 > 💡 为什么不使用 RAG？Karpathy 在[原始构想](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)中指出，RAG 将知识碎片化，破坏了 LLM 在完整知识图谱上的推理能力。
 
-**🌟 重点推荐：**
+**💰 性价比优先策略：** 不必追求旗舰模型。以下**经济实惠的替代方案**能以更低成本获得出色效果：
 
-| 模型 | 上下文窗口 | 推荐理由 |
-|------|-----------|----------|
-| **DeepSeek V4** | 1M tokens | 首选推荐 — 极低价格，中文能力出色 |
-| **Gemini 3.1 Pro** | 1M+ tokens | 最大上下文窗口，推理能力强 |
-| **Claude Opus 4.7** | 1M tokens | 最强智能体编程和推理能力 |
-| **GPT-5.5** | 1M tokens | OpenAI 最新旗舰，AI 智能指数榜首 |
-| **Claude Sonnet 4.6** | 1M tokens | 速度、成本与质量的良好平衡 |
+| 档位 | 模型 | 上下文窗口 | 推荐理由 |
+|------|------|-----------|----------|
+| **🌟 性价比首选** | **DeepSeek V4-Flash** | 1M tokens | 最低价($0.14/M)，284B MoE，批量摄入首选 |
+| **🌟 性价比首选** | **Gemini-3.5-Flash** | 1M tokens | 输出速度比 GPT-5.5 快 4 倍，智能体任务出色 |
+| **🌟 性价比首选** | **Qwen3.6-Plus** | 1M tokens | 编码和智能体能力强劲，价格有竞争力 |
+| **🌟 性价比首选** | **Grok-4** | 2M tokens | 2M 超长上下文，超大型 Wiki 首选 |
+| **均衡型** | **Claude Sonnet 4.6** | 1M tokens | 质量与成本平衡佳，$3/$15 每百万 token |
+| **轻量型** | **Claude Haiku 4.5** | 200K tokens | 快速经济，适合小型 Wiki |
+| **经济型** | **MiMo-V2.5-Flash** | 1M tokens | 小米高性价比选择，309B MoE 架构 |
+| **旗舰型** | Claude Opus 4.7 | 1M tokens | 极致质量，成本较高 — 选择性使用 |
+| **旗舰型** | GPT-5.5 | 1M tokens | 顶级推理，成本较高 — 选择性使用 |
 
 对于本地模型（Ollama）：上下文窗口通常较小（8K–128K），建议使用云端 Provider 做摄入 + 本地模型做查询。
+
+**🔌 Anthropic Compatible (Coding Plan):** 如果你的 Provider 提供 Anthropic 兼容 API 端点，选择 "Anthropic Compatible" 并输入 Provider 的 Base URL 和 API Key。
+
+> 💡 **订阅套餐：** Coding Plan、OpenAI Pro 或 Anthropic Pro 等订阅套餐是使用频繁时控制成本的绝佳选择。本插件支持这些服务。
 
 ---
 
@@ -313,79 +321,69 @@ ui/                 # 用户界面
 >
 > 更多问题请参阅 [GitHub FAQ Discussion](https://github.com/green-dalii/obsidian-llm-wiki/discussions/28)。
 
-### 🏷️ 为什么 Lint 显示大量页面"缺失别名"？
+### 💡 通用
 
-v1.7.11 之前生成的页面不包含别名。这很正常，别名是增强功能而非必需项。在 Lint 报告中点击 **"Complete Aliases"**，LLM 会批量生成翻译、缩写和变体名。一旦有了别名，重复检测和别名感知搜索的效果会显著提升。
+**这个插件到底能做什么？**
+你放入笔记，它提取人物、概念和理论，生成互联的 Wiki 页面，带 `[[双向链接]]`。你可以提问，从*你的*笔记中获取答案——而不是互联网的幻觉。
 
-### 🔄 为什么会出现相似名称的重复页面（如"CoT"和"思维链"）？
+**最低要求？**
+Obsidian v1.6.6+，桌面端（Windows/macOS/Linux），LLM Provider API Key。Ollama 本地运行无需 API Key。参见上方 [配置 LLM Provider](#🔑-配置-llm-provider)。
 
-旧版本（v1.7.10 之前）没有别名感知的重复检测机制。当你以不同名称摄入同一概念的内容时，LLM 会创建独立页面。运行 **Lint Wiki** — 如果发现重复页面，点击 **"Merge Duplicates"** 合并。合并后的页面会保留双方的别名，防止未来再次重复。
+**该选哪个模型？**
+参见上方的 [模型推荐](#-模型推荐)。推荐长上下文模型——Wiki 越大，LLM 需要更多上下文。
 
-### ⚡ 如何加速大源文件的摄入速度？
+### 🏷️ 别名与重复
 
-在 **设置 → 摄入加速** 中调整两项：
-- **🚀 页面生成并发度**：从 1 提升到 3（限流宽松的 Provider 可设 5），并行处理多个实体/概念页面。
-- **⏱️ 批次延迟**：值越低越快，但可能触发限流。从 300ms 开始；如遇 HTTP 429 错误，增大到 500–800ms。
+**为什么 Lint 显示大量页面"缺失别名"？**
+v1.7.11 之前生成的页面不包含别名。这很正常——别名是增强功能，不是缺陷。在 Lint 报告中点击 **Complete Aliases**，LLM 会批量生成翻译、缩写和变体名。有了别名后，重复检测和别名搜索效果显著提升。
 
-同时可检查 **📊 提取粒度**："标准"或"粗略"产生的页面更少，速度更快。
+**为什么会出现重复页面（如"CoT"和"思维链"）？**
+v1.7.10 之前没有别名感知的重复检测。运行 **Lint Wiki** → **Merge Duplicates** 合并。合并后的页面保留双方别名，防止未来再出现。
 
-### 🧊 在大 Wiki 上运行 Lint 时插件会卡死？
+**重复检测如何工作？（v1.7.10+）**
+两层语义检测：第一层（LLM 始终验证）捕获跨语言匹配、缩写、高相似标题。第二层填充剩余预算，匹配中等相似度候选。别名对第一层至关重要——如果页面是 v1.7.11 之前生成的，请运行 **Complete Aliases**。
 
-这是已知问题，已在 v1.7.15 和 v1.7.17 中修复。如果你使用的版本早于 v1.7.15，请升级到最新版——Lint 系统现在包含异步让出点，每 50 个页面和每 500 次比较时将控制权交还给 Obsidian 的 UI 线程，解决了 1200+ 页面 Wiki 上 10–40 秒的假死问题。
+**什么是"污染页面"？（v1.9.0）**
+文件夹前缀被意外编入文件名的页面，如 `concepts/concepts布局优化.md`。运行 **Lint Wiki** → **🧹 Fix Polluted Pages** 即可重命名并更新所有入链。
 
-### ✏️ 可以手动编辑 Wiki 页面吗？
+### ⚡ 性能与成本
 
-可以。插件尊重你的编辑：
-- 在 frontmatter 中设置 `reviewed: true` 可保护页面不被重新摄入时覆盖。已审核页面仅接收真正有意义的新增内容。
-- `created` 日期在更新时保留，仅刷新 `updated`。
-- 手动添加的别名、标签和来源在合并时会被保留。
+**如何加速摄入？**
+在 **设置 → 摄入加速** 中：增加**页面生成并发度**到 3–5（并行创建页面），降低**批次延迟**到 100–300ms（注意限流风险）。选择"标准"或"粗略"的**提取粒度**可减少产出的页面数量。
 
-### 🦙 如何使用 Ollama 本地模型？
+**为什么遇到 HTTP 429 错误？**
+插件会自动检测限流模式并建议：降低并发度到 1–2，增大批次延迟到 500–800ms，或切换到更高限额的 Provider。
 
-1. 安装 [Ollama](https://ollama.com) 并拉取模型：`ollama pull gemma4`
-2. 在插件设置中选择 **"Ollama (Local)"** 作为 Provider
-3. 点击 **Fetch Models** 填充模型列表，或手动输入模型名
-4. 无需 API Key
+**如何控制 API 成本？**
+- 自动维护默认关闭（仅在需要后台处理时启用）
+- 智能批量跳过自动跳过已摄入文件
+- "标准"或"粗略"粒度 = 更少 LLM 调用
+- 批次延迟 > 500ms 仅间隔调用，不增加 token 消耗
+- Lint 报告在运行修复前显示计数，让你判断是否值得
 
-> 💡 本地模型上下文窗口通常较小（8K–128K）。建议使用云端 Provider 做摄入（需要最大上下文），本地模型做查询。
+### 🧹 维护
 
-### 🗣️ 界面语言和 Wiki 输出语言有什么区别？
+**Smart Fix All 做什么？**
+按因果关系顺序运行修复（v1.9.0+）：
+1. 🧹 修复污染页面 → 2. 🏷️ 补全别名 → 3. 🔄 合并重复 → 4. 🔗 修复断链 → 5. 🔗 链接孤立页 → 6. 📝 扩充空洞页
 
-- **🗣️ 界面语言**（设置顶部）：控制插件自身的 UI——设置标签、按钮文字、通知提示。目前支持英文和中文。
-- **🌐 Wiki 输出语言**（v1.6.5 引入）：控制 LLM 撰写 Wiki 页面时使用的语言。支持 8 种语言（英/中/日/韩/德/法/西/葡）加自定义输入。你可以英文界面 + 中文 Wiki，反之亦然。
+**Lint 在大 Wiki 上卡死？**
+升级到 v1.7.17+——Lint 现在每 50 页让出给 Obsidian UI 线程，即使在 1200+ 页的 Wiki 上也不会多秒卡死。
 
-### 🔍 为什么 Query 找不到我明知存在的页面？
+### 🔍 故障排查
 
-三个常见原因：
-1. **📋 索引过期**：执行 `Cmd+P` → **"重新生成索引"** 重新构建，包含当前页面和别名。
-2. **🏷️ 缺少别名**：没有别名（v1.7.11 之前生成的页面），LLM 只能按精确标题匹配。运行 Lint → Complete Aliases 修复。
-3. **🎯 搜索词不匹配**：尝试页面标题、别名或相关术语。LLM 做的是语义匹配而非关键词搜索——换个说法可能就找到了。
+**Query 找不到我明知存在的页面？**
+三个常见原因：（1）索引过期 → **重新生成索引**。（2）缺少别名 → **Complete Aliases**。（3）换个说法——LLM 做语义匹配，不是关键词搜索。
 
-### 🛠️ "Smart Fix All" 做什么？按什么顺序执行？
+**可以手动编辑 Wiki 页面吗？**
+可以。在 frontmatter 中设置 `reviewed: true` 可保护页面不被覆盖。手动添加的别名、标签和来源在合并时保留。
 
-一键智能修复按因果关系顺序执行，尽量不产生新问题：
-1. **Phase 0 — 🏷️ 补全别名**：填充缺失别名，确保后续重复检测准确
-2. **Phase 1 — 🔄 合并重复**：融合重复页面（许多断链和孤立的根本原因）
-3. **Phase 2 — 🔗 修复断链**：修复损坏的 `[[wiki-links]]`（大部分在合并后自动解决）
-4. **Phase 3 — 🔗 链接孤立页**：为没有入链的页面添加链接
-5. **Phase 4 — 📝 扩充空洞页**：用 LLM 内容填充空白页面
+**如何安全升级？**
+插件不会修改你的源文件。备份 `wiki/` → 更新插件 → **重新生成索引** → **Lint Wiki** → 选择性修复。
 
-### 💰 如何避免意外的 API 费用？
-
-- **🔄 自动维护默认关闭** — 除非需要持续后台处理，否则不要启用。
-- **💡 智能批量跳过**（v1.7.7）自动跳过已摄入文件，重复运行文件夹摄入不会重复处理。
-- **📊 提取粒度** 设为"标准"或"粗略"比"精细"使用更少 API 调用。
-- **⏱️ 批次延迟** 超过 500ms 会给 API 更多喘息空间，但不增加 token 消耗——只间隔调用。
-- **🔍 Lint 报告** 在运行任何修复前显示各项计数，你可以据此判断哪些值得花 API 费用。
-
-### 📦 如何升级而不丢失 Wiki 数据？
-
-插件不会修改 `sources/` 中的源文件。`wiki/` 中的页面只在你明确运行修复或重新摄入时才会被修改。安全起见：
-1. 💾 备份你的 Vault（或仅 `wiki/` 文件夹）
-2. 🔄 更新插件
-3. 📋 先运行 **Regenerate index**
-4. 🔍 运行 **Lint Wiki** 了解需要处理的问题
-5. 🛠️ 选择性地应用修复——不需要一次性全部修复
+**如何获得帮助？**
+- [GitHub Issues](https://github.com/green-dalii/obsidian-llm-wiki/issues) — 提交 Bug
+- [GitHub Discussions](https://github.com/green-dalii/obsidian-llm-wiki/discussions) — 提问与反馈
 
 ---
 

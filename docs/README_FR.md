@@ -4,7 +4,7 @@
 
 > Base de connaissances structurée alimentée par IA. Ingestion automatique des notes et génération d'un Wiki interconnecté — inspiré du concept de [LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) d'Andrej Karpathy.
 >
-> **Note officielle Obsidian 93/100** | Support natif de 8 langues | Maintenance active, évolution continue
+> **Note officielle Obsidian 94/100** | Support natif de 8 langues | Maintenance active, évolution continue
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/green-dalii/obsidian-llm-wiki) ![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-8%2B-cyan?style=flat-square)
 
@@ -248,19 +248,25 @@ Ce plugin suit la philosophie de Karpathy : **donner au LLM le contexte Wiki com
 
 > 💡 **Pourquoi pas RAG ?** La [critique originale de Karpathy](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) soutient que RAG fragmente les connaissances et altère la capacité du LLM à raisonner sur le graphe de connaissances complet.
 
-**🌟 Recommandations principales :**
+**💰 Stratégie rapport qualité-prix :** Vous n'avez pas besoin de modèles phares. Les **alternatives économiques** suivantes offrent d'excellents résultats à des coûts plus bas :
 
-| Modèle | Fenêtre de contexte | Motivation |
-|--------|---------------------|------------|
-| **DeepSeek V4** | 1M tokens | Meilleur rapport qualité-prix — coût minimal, excellent support chinois |
-| **Gemini 3.1 Pro** | 1M+ tokens | Fenêtre de contexte maximale, raisonnement solide |
-| **Claude Opus 4.7** | 1M tokens | Coding et raisonnement agentique de premier plan |
-| **GPT-5.5** | 1M tokens | Dernier flagship OpenAI, indice d'intelligence IA élevé |
-| **Claude Sonnet 4.6** | 1M tokens | Excellent équilibre entre vitesse, coût et qualité |
+| Niveau | Modèle | Fenêtre de contexte | Motivation |
+|--------|--------|---------------------|------------|
+| **🌟 Rapport Q/P** | **DeepSeek V4-Flash** | 1M tokens | Prix le plus bas ($0.14/M), 284B MoE, idéal pour l'ingestion batch |
+| **🌟 Rapport Q/P** | **Gemini-3.5-Flash** | 1M tokens | 4× plus rapide que GPT-5.5, excellent pour les tâches agentiques |
+| **🌟 Rapport Q/P** | **Qwen3.6-Plus** | 1M tokens | Capacités coding & agent fortes, prix compétitif |
+| **🌟 Rapport Q/P** | **Grok-4** | 2M tokens | 2M contexte, idéal pour les wikis très volumineux |
+| **Équilibré** | **Claude Sonnet 4.6** | 1M tokens | Bon équilibre qualité/coût, $3/$15 par million de tokens |
+| **Léger** | **Claude Haiku 4.5** | 200K tokens | Rapide et économique, pour wikis plus petits |
+| **Économique** | **MiMo-V2.5-Flash** | 1M tokens | Option abordable de Xiaomi, architecture MoE 309B |
+| **Phare** | Claude Opus 4.7 | 1M tokens | Qualité ultime, coût élevé — utiliser sélectivement |
+| **Phare** | GPT-5.5 | 1M tokens | Raisonnement top niveau, coût élevé — utiliser sélectivement |
 
 Pour les modèles locaux (Ollama) : les fenêtres de contexte sont généralement plus petites (8K–128K). Envisagez d'utiliser un provider cloud pour l'ingestion et un modèle local pour le Query.
 
 **🔌 Anthropic Compatible (Coding Plan) :** Si votre provider offre un endpoint API compatible Anthropic, sélectionnez « Anthropic Compatible » et saisissez votre Base URL et API Key du provider.
+
+> 💡 **Forfaits d'abonnement :** Les forfaits Coding Plan, OpenAI Pro ou Anthropic Pro sont d'excellentes options pour contrôler les coûts en cas d'utilisation fréquente. Ce plugin prend en charge ces services.
 
 ---
 
@@ -315,78 +321,69 @@ ui/                 # Interface utilisateur
 >
 > Plus de questions dans la [GitHub FAQ Discussion](https://github.com/green-dalii/obsidian-llm-wiki/discussions/28).
 
-### 🏷️ Pourquoi Lint affiche-t-il « alias manquants » sur presque toutes mes pages ?
+### 💡 Général
 
-Les pages générées avant la v1.7.11 n'incluaient pas d'alias. C'est normal et sans danger — les alias sont une amélioration, pas une obligation. Cliquez sur **"Complete Aliases"** dans le rapport Lint pour que le LLM génère des traductions, acronymes et noms alternatifs pour toutes les pages déficientes en un seul batch. Une fois les alias présents, la détection des doublons et la recherche par alias deviennent bien plus efficaces.
+**Que fait ce plugin exactement ?**
+Déposez des notes, il extrait les personnes, concepts et théories, puis génère un Wiki interconnecté avec `[[Wiki-links]]`. Posez des questions et obtenez des réponses basées sur *vos* notes — pas des hallucinations d'internet.
 
-### 🔄 Pourquoi ai-je des pages en double avec des noms similaires (ex. « CoT » et « chaîne de pensée ») ?
+**Configuration minimale ?**
+Obsidian v1.6.6+, bureau (Windows/macOS/Linux), une clé API d'un provider LLM. Ollama fonctionne en local sans clé API.
 
-Les versions plus anciennes (avant v1.7.10) n'avaient pas de détection des doublons basée sur les alias. Lorsque vous ingériez du contenu sur le même concept avec des noms différents, le LLM créait des pages séparées. Lancez **Lint Wiki** → si des doublons sont trouvés, cliquez sur **"Merge Duplicates"** pour les fusionner. La page fusionnée préserve les alias des deux, évitant ainsi les futurs doublons.
+**Quel modèle choisir ?**
+Voir [Recommandations de modèles](#-recommandations-de-modèles) ci-dessus. Les modèles à long contexte sont recommandés — plus votre Wiki est grand, plus le LLM a besoin de contexte.
 
-### ⚡ Comment accélérer l'ingestion pour les fichiers sources volumineux ?
+### 🏷️ Alias & Doublons
 
-Deux paramètres dans **Paramètres → Ingestion Acceleration** :
-- **🚀 Page Generation Concurrency** : Passez de 1 à 3 (ou 5 pour les providers avec des limites de débit élevées). Cela traite plusieurs pages Entity/Concept en parallèle.
-- **⏱️ Batch Delay** : Des valeurs plus basses sont plus rapides mais risquent le rate limiting. Commencez à 300 ms ; augmentez à 500–800 ms si vous voyez des erreurs HTTP 429.
+**Pourquoi Lint affiche-t-il « alias manquants » sur presque toutes mes pages ?**
+Les pages générées avant v1.7.11 n'incluaient pas d'alias. C'est inoffensif — les alias sont une amélioration, pas un défaut. Cliquez sur **Complete Aliases** dans le rapport Lint pour générer des traductions, acronymes et noms alternatifs en un lot.
 
-Vérifiez également **📊 Extraction Granularity** : « Standard » ou « Coarse » produisent moins de pages que « Fine » et sont plus rapides.
+**Pourquoi ai-je des pages en double avec des noms similaires ?**
+Avant v1.7.10, pas de détection des doublons basée sur les alias. Lancez **Lint Wiki** → **Merge Duplicates** pour fusionner.
 
-### 🧊 Le plugin se fige quand j'exécute Lint sur un gros Wiki. Que faire ?
+**Comment fonctionne la détection des doublons ? (v1.7.10+)**
+Détection sémantique à deux niveaux : Niveau 1 (toujours vérifié par LLM) détecte les correspondances inter-langues, abréviations, titres très similaires. Niveau 2 remplit le budget de tokens restant avec des candidats de similarité modérée.
 
-C'était un problème connu corrigé dans les v1.7.15 et v1.7.17. Si vous êtes sur une version antérieure à la v1.7.15, mettez à jour vers la dernière version — le système Lint intègre désormais des points de yield asynchrones qui redonnent la main au thread UI d'Obsidian toutes les 50 pages et toutes les 500 comparaisons, évitant le gel de 10 à 40 secondes qui se produisait sur les Wikis de 1200+ pages.
+**Que sont les « pages polluées » ? (v1.9.0)**
+Pages avec préfixes de dossier accidentellement intégrés aux noms de fichier (ex. : `concepts/conceptsOptimisationLayout.md`). Lancez **Lint Wiki** → **🧹 Fix Polluted Pages** pour renommer et mettre à jour les liens entrants.
 
-### ✏️ Puis-je modifier manuellement les pages Wiki ?
+### ⚡ Performance & Contrôle des coûts
 
-Oui. Le plugin respecte vos modifications :
-- Définissez `reviewed: true` dans le frontmatter pour protéger une page d'une réécriture lors de la ré-ingestion. Les pages « reviewed » reçoivent uniquement du nouveau contenu qui est annexé.
-- La date `created` est préservée lors des mises à jour ; seul `updated` est actualisé.
-- Les alias, tags et sources ajoutés manuellement sont préservés lors des fusions.
+**Comment accélérer l'ingestion ?**
+Dans **Paramètres → Ingestion Acceleration** : augmentez la **Page Generation Concurrency** à 3–5, réduisez le **Batch Delay** à 100–300 ms (attention au rate limiting). Choisissez « Standard » ou « Coarse » pour **Extraction Granularity**.
 
-### 🦙 Comment utiliser les modèles locaux avec Ollama ?
+**Pourquoi des erreurs HTTP 429 ?**
+Le plugin détecte automatiquement le rate limiting et suggère : réduire la concurrence à 1–2, augmenter le Batch Delay à 500–800 ms, ou changer de provider.
 
-1. Installez [Ollama](https://ollama.com) et téléchargez un modèle : `ollama pull gemma4`
-2. Dans les paramètres du plugin, sélectionnez **"Ollama (Local)"** comme provider
-3. Cliquez sur **Fetch Models** pour peupler la liste des modèles, ou saisissez le nom du modèle manuellement
-4. Aucune clé API requise
+**Comment contrôler les coûts API ?**
+- Auto-Maintenance désactivé par défaut (à activer uniquement si nécessaire)
+- Smart Batch Skip ignore automatiquement les fichiers déjà ingérés
+- Granularité « Standard » ou « Coarse » = moins d'appels LLM
+- Batch Delay > 500 ms espace les appels sans augmenter la consommation de tokens
+- Le rapport Lint affiche les comptes avant exécution
 
-> 💡 Les modèles locaux ont généralement des fenêtres de contexte plus petites (8K–128K). Envisagez d'utiliser un provider cloud pour l'ingestion (qui nécessite le plus de contexte) et votre modèle local pour le Query.
+### 🧹 Maintenance
 
-### 🗣️ Quelle est la différence entre la langue de l'interface et la langue de sortie du Wiki ?
+**Que fait Smart Fix All ?**
+Exécute les correctifs par ordre causal (v1.9.0+) :
+1. 🧹 Corriger les pages polluées → 2. 🏷️ Compléter les alias → 3. 🔄 Fusionner les doublons → 4. 🔗 Réparer les liens morts → 5. 🔗 Lier les orphelins → 6. 📝 Développer les pages vides
 
-- **🗣️ Interface Language** (en haut des paramètres) : Contrôle la langue propre du plugin — libellés des paramètres, texte des boutons, Notices. Prend actuellement en charge l'anglais et le chinois.
-- **🌐 Wiki Output Language** (ajouté dans v1.6.5) : Contrôle la langue dans laquelle le LLM rédige les pages Wiki. Prend en charge 8 langues (EN/ZH/JA/KO/DE/FR/ES/PT) plus une saisie personnalisée. Vous pouvez avoir une interface en anglais pendant que votre Wiki est rédigé en japonais.
+**Lint bloque sur un gros Wiki ?**
+Mettez à jour vers v1.7.17+ — Lint cède la main au thread UI d'Obsidian toutes les 50 pages, évitant les blocages.
 
-### 🔍 Pourquoi Query ne trouve-t-il pas des pages dont je connais l'existence ?
+### 🔍 Dépannage
 
-Trois causes fréquentes :
-1. **📋 L'index est obsolète** : Exécutez `Cmd+P` → **"Regenerate index"** pour reconstruire avec les pages et alias actuels.
-2. **🏷️ Les alias sont manquants** : Sans alias (pages pré-v1.7.11), le LLM ne peut faire correspondre que par titre de page exact. Lancez Lint → Complete Aliases pour corriger.
-3. **🎯 Les termes de recherche ne correspondent pas** : Essayez le titre de la page, un alias, ou un terme connexe. Le LLM effectue une correspondance sémantique, pas une recherche par mot-clé — reformuler la question aide.
+**Query ne trouve pas des pages que je connais ?**
+Trois causes : (1) Index obsolète → **Regenerate index**. (2) Alias manquants → **Complete Aliases**. (3) Reformulez — le LLM fait de la correspondance sémantique, pas une recherche par mot-clé.
 
-### 🛠️ Que fait « Smart Fix All » et dans quel ordre ?
+**Puis-je modifier manuellement les pages Wiki ?**
+Oui. Définissez `reviewed: true` dans le frontmatter pour protéger de l'écrasement. Les alias, tags et sources manuels sont préservés lors des fusions.
 
-Smart Fix All exécute les corrections par ordre de causalité pour minimiser la création de nouveaux problèmes :
-1. **Phase 0 — 🏷️ Complete Aliases** : Remplit les alias manquants pour que la détection des doublons fonctionne correctement.
-2. **Phase 1 — 🔄 Merge Duplicates** : Fusionne les pages en double (cause racine de nombreux liens morts et pages orphelines).
-3. **Phase 2 — 🔗 Fix Dead Links** : Répare les `[[wiki-links]]` brisés (beaucoup sont résolus après que la fusion des doublons réécrit les liens).
-4. **Phase 3 — 🔗 Link Orphans** : Ajoute des liens entrants aux pages qui n'en ont aucun.
-5. **Phase 4 — 📝 Expand Empty Pages** : Remplit les pages squelettes avec du contenu généré par le LLM.
+**Mise à niveau sécurisée ?**
+Le plugin ne modifie jamais vos fichiers sources. Sauvegardez `wiki/` → mettez à jour le plugin → **Regenerate index** → **Lint Wiki** → corrigez sélectivement.
 
-### 💰 Comment éviter des coûts d'API imprévus ?
-
-- **🔄 Auto-Maintenance est désactivé par défaut** — ne l'activez pas sauf si vous souhaitez un traitement continu en arrière-plan.
-- **💡 Smart Batch Skip** (v1.7.7) ignore automatiquement les fichiers déjà ingérés, donc relancer l'ingestion d'un dossier ne retraite pas tout.
-- **📊 Extraction Granularity** réglé sur « Standard » ou « Coarse » utilise moins d'appels API que « Fine ».
-- **⏱️ Batch Delay** au-dessus de 500 ms offre plus de marge mais n'augmente pas la consommation de tokens — cela espace seulement les appels.
-- Le **🔍 rapport Lint** affiche les comptages avant d'exécuter des corrections, vous pouvez donc décider ce qui vaut le coût API.
-
-### 📦 Comment effectuer une mise à niveau sans perdre mes données Wiki ?
-
-Le plugin ne modifie jamais vos fichiers sources dans `sources/`. Les pages Wiki dans `wiki/` ne sont modifiées que lorsque vous exécutez explicitement des corrections ou une ré-ingestion. Pour être prudent :
-1. 💾 Sauvegardez votre coffre (ou simplement le dossier `wiki/`)
-2. 🔄 Mettez à jour le plugin
-3. 📋 Exécutez d'abord **Regenerate index**
-4. 🔍 Exécutez **Lint Wiki** pour voir ce qui nécessite attention
+**Comment obtenir de l'aide ?**
+- [GitHub Issues](https://github.com/green-dalii/obsidian-llm-wiki/issues) — signaler des bugs
+- [GitHub Discussions](https://github.com/green-dalii/obsidian-llm-wiki/discussions) — questions & retours
 5. 🛠️ Appliquez les corrections de manière sélective — vous n'êtes pas obligé de tout corriger à la fois
 
 ---

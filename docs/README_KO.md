@@ -4,7 +4,7 @@
 
 > [Andrej Karpathy의 LLM Wiki 개념](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)을 기반으로 한 지식베이스 생성 시스템. 노트에서 Entity와 Concept을 자동 추출해 연결된 Wiki 페이지를 구축합니다.
 >
-> **Obsidian 공식 평점 93/100** | 8개 언어 네이티브 지원 | 활발한 유지보수, 지속 진화
+> **Obsidian 공식 평점 94/100** | 8개 언어 네이티브 지원 | 활발한 유지보수, 지속 진화
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/green-dalii/obsidian-llm-wiki) ![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-8%2B-cyan?style=flat-square)
 
@@ -246,19 +246,25 @@ Supervised learning(지도 학습)은 레이블이 있는 훈련 데이터에서
 
 > 💡 **왜 RAG를 사용하지 않나요?** Karpathy는 [원 개념](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)에서 RAG가 지식을 단편화하고 완전한 지식 그래프에서 LLM의 추론 능력을 저해한다고 지적했습니다.
 
-**🌟 상위 권장:**
+**💰 가성비 우선 전략:** 플래그십 모델이 필요 없습니다. 다음 **경제적인 대안**으로 더 낮은 비용으로 훌륭한 결과를 얻을 수 있습니다:
 
-| 모델 | 컨텍스트 창 | 이유 |
-|------|-------------|------|
-| **DeepSeek V4** | 1M tokens | 최우선 추천 — 매우 낮은 가격, 우수한 중국어 능력 |
-| **Gemini 3.1 Pro** | 1M+ tokens | 가장 큰 컨텍스트 창, 강력한 추론 능력 |
-| **Claude Opus 4.7** | 1M tokens | 가장 강력한 agent 프로그래밍 및 추론 능력 |
-| **GPT-5.5** | 1M tokens | OpenAI 최신 플래그십, AI 지능 인덱스 상위 |
-| **Claude Sonnet 4.6** | 1M tokens | 속도, 비용, 품질의 좋은 균형 |
+| 등급 | 모델 | 컨텍스트 창 | 이유 |
+|------|------|-------------|------|
+| **🌟 가성비 최고** | **DeepSeek V4-Flash** | 1M tokens | 최저가($0.14/M), 284B MoE, 배치 처리에 최적 |
+| **🌟 가성비 최고** | **Gemini-3.5-Flash** | 1M tokens | GPT-5.5보다 4배 빠른 출력, 에이전트 작업 우수 |
+| **🌟 가성비 최고** | **Qwen3.6-Plus** | 1M tokens | 코딩 및 에이전트 능력 강력, 경쟁력 있는 가격 |
+| **🌟 가성비 최고** | **Grok-4** | 2M tokens | 2M 초장문 컨텍스트, 초대형 Wiki에 최적 |
+| **균형형** | **Claude Sonnet 4.6** | 1M tokens | 품질과 비용의 좋은 균형, $3/$15 per 1M tokens |
+| **경량형** | **Claude Haiku 4.5** | 200K tokens | 고속 경제, 소형 Wiki에 적합 |
+| **경제형** | **MiMo-V2.5-Flash** | 1M tokens | Xiaomi의 고가성비 선택, 309B MoE 아키텍처 |
+| **플래그십형** | Claude Opus 4.7 | 1M tokens | 최고 품질, 비용 높음 — 선택적으로 사용 |
+| **플래그십형** | GPT-5.5 | 1M tokens | 최고 수준 추론, 비용 높음 — 선택적으로 사용 |
 
 로컬 모델(Ollama): 컨텍스트 창이 일반적으로 작습니다(8K–128K). 수집에는 cloud provider를, 조회에는 로컬 모델을 사용하는 것을 권장합니다.
 
 **🔌 Anthropic Compatible(Coding Plan):** Provider가 Anthropic 호환 API 엔드포인트를 제공하는 경우, "Anthropic Compatible"을 선택하고 Provider의 Base URL과 API Key를 입력하세요.
+
+> 💡 **구독 플랜:** Coding Plan, OpenAI Pro, Anthropic Pro 등의 구독 플랜은 빈번한 사용 시 비용 관리에 탁월한 선택입니다. 본 플러그인은 이러한 서비스들을 지원합니다.
 
 ---
 
@@ -313,79 +319,69 @@ ui/                 # 사용자 인터페이스
 >
 > 더 많은 질문은 [GitHub FAQ Discussion](https://github.com/green-dalii/obsidian-llm-wiki/discussions/28)을 참조하세요.
 
-### 🏷️ Lint에서 거의 모든 페이지에 "Alias 누락"이 표시되는 이유는 무엇인가요?
+### 💡 일반
 
-v1.7.11 이전에 생성된 페이지에는 Alias가 포함되지 않았습니다. 이는 정상이며 문제가 되지 않습니다 — Alias는 필수가 아닌 개선 기능입니다. Lint 보고서에서 **"Complete Aliases"** 버튼을 클릭하면 LLM이 번역, 약어, 대체 이름을 모든 페이지에 대해 일괄 생성합니다. Alias가 생기면 중복 감지와 Alias 기반 검색이 훨씬 효과적이 됩니다.
+**이 플러그인은 실제로 무엇을 하나요?**
+노트를 넣으면 인물, 개념, 이론을 추출하여 `[[양방향 링크]]`가 있는 상호 연결된 Wiki를 생성합니다. *여러분의* 노트를 기반으로 답변을 얻습니다 — 인터넷 환각이 아닙니다.
 
-### 🔄 이름이 비슷한 중복 페이지(예: "CoT"와 "사고사슬")가 보이는 이유는 무엇인가요?
+**최소 요구사항은?**
+Obsidian v1.6.6+, 데스크톱(Windows/macOS/Linux), LLM Provider API Key. Ollama는 로컬에서 작동하며 API Key가 필요 없습니다.
 
-이전 버전(v1.7.10 이전)에는 Alias를 인식하는 중복 감지 기능이 없었습니다. 같은 개념을 다른 이름으로 수집하면 LLM이 별도의 페이지를 생성했습니다. **Lint Wiki**를 실행하고 중복이 발견되면 **"Merge Duplicates"** 버튼을 클릭하여 융합하세요. 병합된 페이지는 양쪽의 Alias를 모두 보존하여 향후 중복을 방지합니다.
+**어떤 모델을 선택해야 하나요?**
+위의 [모델 권장 사항](#-모델-권장-사항)을 참조하세요. 긴 컨텍스트 모델을 권장합니다 — Wiki가 클수록 LLM은 더 많은 컨텍스트가 필요합니다.
 
-### ⚡ 대용량 Source 파일의 수집 속도를 높이려면 어떻게 하나요?
+### 🏷️ 별칭과 중복
 
-설정 → **Ingestion Acceleration**에서 두 가지를 조정하세요:
-- **🚀 Page Generation Concurrency**: 1에서 3으로 증가(Rate limit이 높은 Provider는 5까지 가능). 여러 Entity/Concept 페이지를 병렬로 처리합니다.
-- **⏱️ Batch Delay**: 값이 낮을수록 빠르지만 Rate limit 위험이 있습니다. 300ms부터 시작하고, HTTP 429 오류가 보이면 500~800ms로 늘리세요.
+**Lint에서 거의 모든 페이지에 "Alias 누락"이 표시되는 이유는 무엇인가요?**
+v1.7.11 이전에 생성된 페이지에는 Alias가 포함되지 않았습니다. 이는 무해합니다 — Alias는 개선 기능이지 필수가 아닙니다. Lint 보고서에서 **Complete Aliases**를 클릭하면 LLM이 번역, 약어, 대체 이름을 일괄 생성합니다. Alias가 생기면 중복 감지와 Alias 기반 검색이 훨씬 효과적입니다.
 
-또한 **📊 Extraction Granularity**를 확인하세요: "Standard"나 "Coarse"는 "Fine"보다 적은 페이지를 생성하여 더 빠릅니다.
+**이름이 비슷한 중복 페이지가 보이는 이유는 무엇인가요?**
+v1.7.10 이전에는 Alias 인식 중복 감지가 없었습니다. **Lint Wiki** 실행 → **Merge Duplicates**를 클릭하여 융합하세요. 병합된 페이지는 양쪽의 Alias를 모두 보존하여 향후 중복을 방지합니다.
 
-### 🧊 큰 Wiki에서 Lint를 실행하면 플러그인이 멈춥니다. 문제가 무엇인가요?
+**중복 감지는 어떻게 작동하나요? (v1.7.10+)**
+2계층 의미론적 감지: 1계층(항상 LLM 검증)은 교차 언어 일치, 약어, 높은 유사도 제목을 포착합니다. 2계층은 중간 유사도 후보로 남은 예산을 채웁니다. Alias는 1계층에 매우 중요합니다 — 페이지가 v1.7.11 이전이면 **Complete Aliases**를 실행하세요.
 
-v1.7.15 및 v1.7.17에서 수정된 알려진 문제입니다. v1.7.15 이전 버전을 사용 중이라면 최신 릴리스로 업그레이드하세요 — Lint 시스템에 비동기 Yield 지점이 추가되어 50페이지마다, 500회 비교마다 Obsidian UI 스레드에 제어권을 반환하므로, 1200페이지 이상의 Wiki에서 발생하던 10~40초 프리즈 현상이 해결되었습니다.
+**"오염된 페이지"란 무엇인가요? (v1.9.0)**
+폴더 접두사가 실수로 파일명에 포함된 페이지 (예: `concepts/concepts레이아웃최적화.md`). **Lint Wiki** → **🧹 Fix Polluted Pages**로 이름을 변경하고 모든 인바운드 링크를 업데이트합니다.
 
-### ✏️ Wiki 페이지를 수동으로 편집할 수 있나요?
+### ⚡ 성능 및 비용 관리
 
-네. 플러그인은 사용자의 편집을 존중합니다:
-- Frontmatter에 `reviewed: true`를 설정하면 재수집 시 페이지가 덮어쓰기되지 않도록 보호됩니다. 검토된 페이지에는 진정으로 새로운 내용만 추가됩니다.
-- `created` 날짜는 업데이트 시 보존되며, `updated`만 갱신됩니다.
-- 수동으로 추가한 Alias, 태그, Source는 병합 시 보존됩니다.
+**수집 속도를 높이려면 어떻게 하나요?**
+**설정 → Ingestion Acceleration**에서: **Page Generation Concurrency**를 3~5로 증가(병렬 페이지 생성), **Batch Delay**를 100~300ms로 낮춤(속도 제한 주의). "Standard" 또는 "Coarse" **추출 세분화**를 선택하면 더 적은 페이지가 생성됩니다.
 
-### 🦙 Ollama로 로컬 모델을 사용하려면 어떻게 하나요?
+**HTTP 429 오류가 발생하는 이유는 무엇인가요?**
+플러그인이 자동으로 속도 제한을 감지하고 제안합니다: 동시성을 1~2로 낮춤, Batch Delay를 500~800ms로 증가, 또는 더 높은 제한의 Provider로 전환.
 
-1️⃣ [Ollama](https://ollama.com)를 설치하고 모델을 Pull합니다: `ollama pull gemma4`
-2️⃣ 플러그인 설정에서 Provider로 **"Ollama (Local)"** 을 선택합니다
-3️⃣ **Fetch Models**를 클릭하여 모델 목록을 가져오거나, 모델 이름을 직접 입력합니다
-4️⃣ API Key가 필요 없습니다
+**API 비용을 어떻게 제어하나요?**
+- Auto-Maintenance는 기본 OFF (필요할 때만 활성화)
+- Smart Batch Skip이 이미 수집된 파일을 자동 건너뜀
+- "Standard" 또는 "Coarse" 세분화 = 더 적은 LLM 호출
+- Batch Delay > 500ms는 호출 간격만 벌리고 토큰 소비는 증가하지 않음
+- Lint 보고서는 수정 실행 전에 카운트를 표시하여 비용 대비 가치 판단 가능
 
-> 💡 로컬 모델은 일반적으로 컨텍스트 창이 작습니다(8K~128K). 수집(가장 큰 컨텍스트 필요)에는 Cloud Provider를, Query에는 로컬 모델을 사용하는 것을 권장합니다.
+### 🧹 유지보수
 
-### 🗣️ UI 언어와 Wiki 출력 언어의 차이는 무엇인가요?
+**Smart Fix All은 무엇을 하나요?**
+인과 관계 순서로 수정 실행 (v1.9.0+):
+1. 🧹 오염 페이지 수정 → 2. 🏷️ Alias 완성 → 3. 🔄 중복 병합 → 4. 🔗 데드 링크 수정 → 5. 🔗 고아 페이지 연결 → 6. 📝 빈 페이지 확장
 
-- **🗣️ Interface Language**(설정 상단): 플러그인 UI 자체를 제어합니다 — 설정 라벨, 버튼 텍스트, 알림. 현재 영어와 중국어를 지원합니다.
-- **🌐 Wiki Output Language**(v1.6.5 추가): LLM이 Wiki 페이지를 작성할 언어를 제어합니다. 8개 언어(EN/ZH/JA/KO/DE/FR/ES/PT)와 Custom 입력을 지원합니다. UI는 영어로, Wiki는 일본어로 설정할 수 있습니다.
+**큰 Wiki에서 Lint가 멈춥니다?**
+v1.7.17+로 업그레이드 — Lint가 50페이지마다 Obsidian UI 스레드에 제어권을 반환하여 1200+ 페이지 Wiki에서도 프리즈를 방지합니다.
 
-### 🔍 Query가 분명 존재하는 페이지를 찾지 못하는 이유는 무엇인가요?
+### 🔍 문제 해결
 
-세 가지 일반적인 원인이 있습니다:
-1. **📋 인덱스가 오래됨**: `Cmd+P` → **"Regenerate index"** 를 실행하여 현재 페이지와 Alias로 다시 빌드하세요.
-2. **🏷️ Alias 누락**: Alias가 없으면(v1.7.11 이전 페이지) LLM은 정확한 페이지 제목으로만 매칭할 수 있습니다. Lint를 실행한 후 Complete Aliases로 수정하세요.
-3. **🎯 검색어가 일치하지 않음**: 페이지 제목, Alias 또는 관련 용어를 시도해보세요. LLM은 키워드 검색이 아닌 의미 기반 매칭을 수행하므로 표현을 바꾸면 도움이 됩니다.
+**Query가 분명 존재하는 페이지를 찾지 못하는 이유는 무엇인가요?**
+세 가지 일반적인 원인: (1) 인덱스가 오래됨 → **Regenerate index**. (2) Alias 누락 → **Complete Aliases**. (3) 표현을 바꿔보세요 — LLM은 키워드 검색이 아닌 의미 기반 매칭을 수행합니다.
 
-### 🛠️ "Smart Fix All"은 무엇을 하며 어떤 순서로 실행되나요?
+**Wiki 페이지를 수동으로 편집할 수 있나요?**
+네. Frontmatter에 `reviewed: true`를 설정하면 덮어쓰기로부터 보호됩니다. 수동으로 추가한 Alias, 태그, Source는 병합 시 보존됩니다.
 
-Smart Fix All은 인과 관계 순서로 수정을 실행하여 새로운 문제를 최소화합니다:
-1. **Phase 0 — 🏷️ Alias 완성**: 누락된 Alias를 채워 중복 감지가 제대로 작동하도록 합니다.
-2. **Phase 1 — 🔄 중복 병합**: 중복 페이지를 융합합니다(많은 Dead link와 Orphan의 근본 원인).
-3. **Phase 2 — 🔗 Dead link 수정**: 깨진 `[[wiki-links]]`를 복구합니다(중복 병합 후 링크 재작성으로 대부분 해결됨).
-4. **Phase 3 — 🔗 Orphan 연결**: 인바운드 링크가 없는 페이지에 링크를 추가합니다.
-5. **Phase 4 — 📝 빈 페이지 확장**: Stub 페이지를 LLM이 생성한 콘텐츠로 채웁니다.
+**안전하게 업그레이드하려면?**
+플러그인은 소스 파일을 수정하지 않습니다. `wiki/` 백업 → 플러그인 업데이트 → **Regenerate index** → **Lint Wiki** → 선택적으로 수정.
 
-### 💰 예상치 못한 API 비용을 방지하려면 어떻게 하나요?
-
-- **🔄 Auto-Maintenance는 기본 OFF**입니다 — 지속적인 백그라운드 처리가 필요한 경우에만 활성화하세요.
-- **💡 Smart Batch Skip**(v1.7.7)이 이미 수집된 파일을 자동으로 건너뛰므로, 폴더 수집을 다시 실행해도 모든 것을 재처리하지 않습니다.
-- **📊 Extraction Granularity**를 "Standard"나 "Coarse"로 설정하면 "Fine"보다 API 호출이 적습니다.
-- **⏱️ Batch Delay**를 500ms 이상으로 설정하면 API에 더 여유를 주지만 Token 사용량이 늘어나지는 않습니다 — 단순히 호출 간격을 벌릴 뿐입니다.
-- **🔍 Lint 보고서**는 수정을 실행하기 전에 각 항목의 개수를 보여주므로, API 비용을 들일 가치가 있는지 판단할 수 있습니다.
-
-### 📦 Wiki 데이터를 잃지 않고 업그레이드하려면 어떻게 하나요?
-
-플러그인은 `sources/`의 Source 파일을 절대 수정하지 않습니다. `wiki/`의 페이지는 사용자가 명시적으로 수정이나 재수집을 실행할 때만 변경됩니다. 안전을 위해:
-1. 💾 Vault(또는 `wiki/` 폴더만)를 백업하세요
-2. 🔄 플러그인을 업데이트하세요
-3. 📋 먼저 **Regenerate index**를 실행하세요
-4. 🔍 **Lint Wiki**를 실행하여 무엇에 주의가 필요한지 확인하세요
-5. 🛠️ 선택적으로 수정을 적용하세요 — 한 번에 모두 수정할 필요는 없습니다
+**도움을 받으려면?**
+- [GitHub Issues](https://github.com/green-dalii/obsidian-llm-wiki/issues) — 버그 신고
+- [GitHub Discussions](https://github.com/green-dalii/obsidian-llm-wiki/discussions) — 질문 및 피드백
 
 ---
 
