@@ -128,7 +128,13 @@ Settings → **Ingestion Acceleration**:
 
 **5️⃣ Review new settings (added since v1.4.0–v1.7.x):**
 - **🌐 Wiki Output Language** (v1.6.5): Independent from UI language — your Wiki can be in Chinese while the plugin UI stays in English, or vice versa.
-- **📊 Extraction Granularity** (v1.6.2): Fine/Standard/Coarse controls how deeply the LLM extracts entities from sources. "Standard" is a good default.
+- **📊 Extraction Granularity** (v1.6.2, expanded in v1.10.0): Five options control how deeply the LLM extracts entities from sources:
+  - **Fine** (~100 items) — Deep analysis, edge-case mentions included. High token cost, best for key sources.
+  - **Standard** (~50 items) — Balanced extraction. Good default for daily notes.
+  - **Coarse** (~10 items) — Quick overview, core entities only. Low cost, fast ingestion.
+  - **Minimal** (~5 items) — Essential items only. Ideal for batch processing 100+ files or testing new sources.
+  - **Custom** (1–300 items) — User-defined entity/concept limits for specialized workflows.
+  > 💡 **Recommendation**: Use Minimal or Coarse for large folders to save time and API costs. Use Fine selectively on key documents that warrant deep analysis.
 - **🔄 Auto-Maintenance** (v1.4.0): Optional file watcher, periodic Lint, and startup health check. All default OFF — enable only if you want automatic background processing.
 
 > **🛡️ Safety**: Parallel generation uses `Promise.allSettled` — if one page fails, others continue. Failed pages are retried individually with exponential backoff. Smart Batch Skip (v1.7.7) automatically detects already-ingested files to save time and API costs.
@@ -139,7 +145,7 @@ Settings → **Ingestion Acceleration**:
 
 ### 📊 Knowledge Quality
 
-- **🔍 Entity/Concept Extraction** — LLM extracts entities (people, orgs, products, events) and concepts (theories, methods, terms) from your notes
+- **🔍 Entity/Concept Extraction** — LLM extracts entities (people, orgs, products, events) and concepts (theories, methods, terms) from your notes with flexible extraction granularity (Minimal~5 items, Coarse~10, Standard~50, Fine~100, Custom 1–300) to balance analysis depth vs. API cost
 - **🏷️ Mandatory Page Aliases** — Every generated page includes at least 1 alias (translation, acronym, alternate name), enabling cross-language duplicate detection
 - **🔄 Duplicate Detection & Merge** — Semantic tiering catches true duplicates (cross-language translations, abbreviations, spelling variants); intelligent LLM merge fuses content and preserves aliases
 - **🧩 Smart Knowledge Fusion** — Multi-source updates merge new info without redundancy, contradictions preserved with attribution, `reviewed: true` pages protected from overwrite
@@ -349,7 +355,7 @@ Pages with folder prefixes accidentally baked into filenames — e.g. `concepts/
 ### ⚡ Performance & Cost
 
 **How do I speed up ingestion?**
-In **Settings → Ingestion Acceleration**: increase **Page Generation Concurrency** to 3–5 (parallel page creation), lower **Batch Delay** to 100–300ms (watch for rate limits). Choose "Standard" or "Coarse" **Extraction Granularity** to produce fewer pages.
+In **Settings → Ingestion Acceleration**: increase **Page Generation Concurrency** to 3–5 (parallel page creation), lower **Batch Delay** to 100–300ms (watch for rate limits). Choose "Minimal", "Coarse", or "Standard" **Extraction Granularity** to reduce page count and save API costs.
 
 **Why am I getting HTTP 429 errors?**
 The plugin auto-detects rate-limiting and suggests: lower concurrency to 1–2, increase Batch Delay to 500–800ms, or switch to a higher-limit provider.

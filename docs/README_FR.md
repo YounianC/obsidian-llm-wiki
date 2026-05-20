@@ -128,7 +128,13 @@ Paramètres → **Ingestion Acceleration** :
 
 **5️⃣ Passez en revue les nouveaux paramètres (ajoutés entre v1.4.0 et v1.7.x) :**
 - **🌐 Wiki Output Language** (v1.6.5) : Indépendant de la langue de l'interface — votre Wiki peut être en chinois pendant que l'interface du plugin reste en anglais, ou vice versa.
-- **📊 Extraction Granularity** (v1.6.2) : Fine/Standard/Coarse contrôle la profondeur d'extraction des entités par le LLM. « Standard » est un bon choix par défaut.
+- **📊 Granularité d'extraction** (v1.6.2, v1.10.0 étendu) : Cinq options contrôlent la profondeur d'extraction des entités par le LLM :
+  - **Fine** (~100 éléments) — Analyse approfondie, mentions marginales incluses. Coût en tokens élevé, idéal pour les sources clés.
+  - **Standard** (~50 éléments) — Extraction équilibrée. Bon choix par défaut pour les notes quotidiennes.
+  - **Grossière** (~10 éléments) — Aperçu rapide, entités principales uniquement. Coût faible, ingestion rapide.
+  - **Minimale** (~5 éléments) — Éléments essentiels uniquement. Idéal pour traiter par lot 100+ fichiers ou tester de nouvelles sources.
+  - **Personnalisée** (1–300 éléments) — Limites utilisateur pour entités/concepts, workflows spécialisés.
+  > 💡 **Recommandation** : Utilisez Minimale ou Grossière pour les grands dossiers afin d'économiser temps et coûts API. Fine uniquement pour les documents clés nécessitant une analyse approfondie.
 - **🔄 Auto-Maintenance** (v1.4.0) : Surveillance de fichiers optionnelle, Lint périodique et vérification de santé au démarrage. Tout est désactivé par défaut — activez uniquement si vous souhaitez un traitement automatique en arrière-plan.
 
 > **🛡️ Sécurité :** La génération parallèle utilise `Promise.allSettled` — si une page échoue, les autres poursuivent leur traitement. Les pages en échec sont réessayées individuellement avec backoff exponentiel. Smart Batch Skip (v1.7.7) détecte automatiquement les fichiers déjà ingérés pour économiser du temps et des coûts d'API.
@@ -139,7 +145,7 @@ Paramètres → **Ingestion Acceleration** :
 
 ### 📊 Qualité des connaissances
 
-- **🔍 Extraction Entity/Concept** — Le LLM extrait les Entity (personnes, organisations, produits, événements) et les Concept (théories, méthodes, termes) de vos notes
+- **🔍 Extraction Entity/Concept** — Le LLM extrait les Entity (personnes, organisations, produits, événements) et les Concept (théories, méthodes, termes) de vos notes avec granularité d'extraction flexible (Minimale~5 éléments, Grossière~10, Standard~50, Fine~100, Personnalisée 1–300) pour équilibrer profondeur d'analyse et coûts API
 - **🏷️ Mandatory Page Aliases** — Chaque page générée inclut au moins un alias (traduction, acronyme, nom alternatif), permettant la détection de doublons inter-langues
 - **🔄 Détection et fusion de doublons** — Le Semantic Tiering identifie les vrais doublons (traductions inter-langues, abréviations, variantes orthographiques) ; la fusion intelligente par LLM consolide le contenu et préserve les alias
 - **🧩 Smart Knowledge Fusion** — Les mises à jour multi-sources fusionnent les nouvelles informations sans redondance, préservent les contradictions avec attribution, et protègent les pages `reviewed: true` de l'écrasement
@@ -349,7 +355,7 @@ Pages avec préfixes de dossier accidentellement intégrés aux noms de fichier 
 ### ⚡ Performance & Contrôle des coûts
 
 **Comment accélérer l'ingestion ?**
-Dans **Paramètres → Ingestion Acceleration** : augmentez la **Page Generation Concurrency** à 3–5, réduisez le **Batch Delay** à 100–300 ms (attention au rate limiting). Choisissez « Standard » ou « Coarse » pour **Extraction Granularity**.
+Dans **Paramètres → Ingestion Acceleration** : augmentez la **Page Generation Concurrency** à 3–5, réduisez le **Batch Delay** à 100–300 ms (attention au rate limiting). Choisissez « Minimale », « Grossière » ou « Standard » pour **Granularité d'extraction** afin de réduire le nombre de pages et économiser les coûts API.
 
 **Pourquoi des erreurs HTTP 429 ?**
 Le plugin détecte automatiquement le rate limiting et suggère : réduire la concurrence à 1–2, augmenter le Batch Delay à 500–800 ms, ou changer de provider.

@@ -103,6 +103,7 @@ export const ZH_TEXTS = {
     maxConversationHistoryDesc: '限制对话消息数，避免超出LLM token限制',
     maxConversationHistoryHint: '推荐：不超过50轮',
     numberRangeValidation: '请输入1-50之间的数字',
+    numberRangeClamped: '数值超出范围（1-300），已自动设定为 {}',
 
     // Query Modal UI
     queryModalTitle: 'Query Wiki - 对话式查询',
@@ -220,10 +221,16 @@ export const ZH_TEXTS = {
     // 知识提取
     extractionSectionTitle: '知识提取',
     extractionGranularityName: '提取颗粒度',
-    extractionGranularityDesc: '控制从源文件中提取实体/概念的数量。颗粒度越高，生成页面越多，API Token 消耗越大。',
-    extractionGranularityFine: '精细 — 提取全部包括边缘提及（页面最多、Token 消耗最高）',
-    extractionGranularityStandard: '标准 — 核心 + 重要实体/概念（均衡）',
-    extractionGranularityCoarse: '粗放 — 仅提取最核心的实体/概念（页面最少、Token 消耗最低）',
+    extractionGranularityDesc: '控制每篇源文件提取的实体/概念数量。越高 = 生成页面越多，API消耗越大。\n精细：单篇深度。标准：日常笔记。粗放：快速概览。极简：批量100+文件。自定义：自行设定（最高300个）。\n提示：批量处理大量文件时，建议使用极简或粗放以节省时间和成本。',
+    extractionGranularityFine: '精细 — 单篇深度分析（最多100个）',
+    extractionGranularityStandard: '标准 — 日常笔记（50个）',
+    extractionGranularityCoarse: '粗放 — 快速概览（10个）',
+    extractionGranularityMinimal: '极简 — 批量100+文件（5个）',
+    extractionGranularityCustom: '自定义 — 自行设定上限（1~300）',
+    customEntityLimitName: '自定义实体上限',
+    customEntityLimitDesc: '每篇源文件最多提取的实体数量（1-300）',
+    customConceptLimitName: '自定义概念上限',
+    customConceptLimitDesc: '每篇源文件最多提取的概念数量（1-300）',
 
     // 摄入加速
     accelerationSectionTitle: '摄入加速',

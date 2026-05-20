@@ -128,7 +128,13 @@ Settings → **Ingestion Acceleration**:
 
 **5️⃣ Revise as novas configurações (adicionadas entre v1.4.0–v1.7.x):**
 - **🌐 Wiki Output Language** (v1.6.5): Independente do idioma da interface — sua Wiki pode estar em chinês enquanto a UI do plugin permanece em inglês, ou vice-versa.
-- **📊 Extraction Granularity** (v1.6.2): Fine/Standard/Coarse controla o quão profundamente o LLM extrai Entity das sources. "Standard" é um bom padrão.
+- **📊 Granularidade de extração** (v1.6.2, v1.10.0 estendida): Cinco opções controlam o quão profundamente o LLM extrai Entity das sources:
+  - **Fina** (~100 itens) — Análise profunda, menções marginais incluídas. Alto custo de tokens, ideal para fontes principais.
+  - **Padrão** (~50 itens) — Extração equilibrada. Bom padrão para notas diárias.
+  - **Grossa** (~10 itens) — Visão rápida, apenas Entity principais. Baixo custo, ingestão rápida.
+  - **Mínima** (~5 itens) — Apenas itens essenciais. Ideal para processamento em lote de 100+ arquivos ou testar novas sources.
+  - **Personalizada** (1–300 itens) — Limites definidos pelo usuário para Entity/Concept, workflows especializados.
+  > 💡 **Recomendação**: Use Mínima ou Grossa para grandes pastas para economizar tempo e custos de API. Fina apenas seletivamente para documentos principais que merecem análise profunda.
 - **🔄 Auto-Maintenance** (v1.4.0): File watcher opcional, Lint periódico e verificação de saúde na inicialização. Todos desligados por padrão — ative apenas se quiser processamento automático em segundo plano.
 
 > **🛡️ Segurança**: A geração paralela usa `Promise.allSettled` — se uma página falhar, outras continuam. Páginas com falha são tentadas novamente individualmente com exponential backoff. O Smart Batch Skip (v1.7.7) detecta automaticamente arquivos já ingeridos para economizar tempo e custos de API.
@@ -139,7 +145,7 @@ Settings → **Ingestion Acceleration**:
 
 ### 📊 Qualidade do Conhecimento
 
-- **🔍 Extração de Entity/Concept** — LLM extrai Entity (pessoas, orgs, produtos, eventos) e Concept (teorias, métodos, termos) de suas notas
+- **🔍 Extração de Entity/Concept** — LLM extrai Entity (pessoas, orgs, produtos, eventos) e Concept (teorias, métodos, termos) de suas notas com granularidade de extração flexível (Mínima~5 itens, Grossa~10, Padrão~50, Fina~100, Personalizada 1–300) para equilibrar profundidade de análise e custos de API
 - **🏷️ Aliases Obrigatórios** — Cada página gerada inclui pelo menos 1 alias (tradução, sigla, nome alternativo), permitindo detecção de duplicados entre idiomas
 - **🔄 Detecção e Mesclagem de Duplicados** — Classificação semântica captura duplicados reais (traduções entre idiomas, abreviações, variantes de grafia); mesclagem inteligente por LLM funde conteúdo e preserva aliases
 - **🧩 Fusão Inteligente de Conhecimento** — Atualizações multi-source mesclam nova informação sem redundância, contradições preservadas com atribuição, páginas `reviewed: true` protegidas de sobrescrita
@@ -349,7 +355,7 @@ Páginas com prefixos de pasta acidentalmente incorporados nos nomes de arquivo 
 ### ⚡ Performance e Controle de custos
 
 **Como acelerar a ingestão?**
-Em **Configurações → Ingestion Acceleration**: aumente **Page Generation Concurrency** para 3–5, reduza **Batch Delay** para 100–300ms (cuidado com rate limiting). Escolha granularidade "Standard" ou "Coarse".
+Em **Configurações → Ingestion Acceleration**: aumente **Page Generation Concurrency** para 3–5, reduza **Batch Delay** para 100–300ms (cuidado com rate limiting). Escolha granularidade "Mínima", "Grossa" ou "Padrão" para reduzir o número de páginas e economizar custos de API.
 
 **Por que recebo erros HTTP 429?**
 O plugin detecta automaticamente rate limiting e sugere: reduzir concorrência para 1–2, aumentar Batch Delay para 500–800ms, ou mudar para um provider com limites mais altos.

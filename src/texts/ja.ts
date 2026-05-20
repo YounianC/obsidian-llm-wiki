@@ -103,7 +103,7 @@ export const JA_TEXTS = {
     maxConversationHistoryDesc: 'トークンオーバーフローを防ぐため会話メッセージ数を制限します',
     maxConversationHistoryHint: '推奨：50ラウンド以内',
     numberRangeValidation: '1〜50の数値を入力してください',
-
+    numberRangeClamped: '値が範囲外です（1-300）、自動的に {} に設定されました',
     // Query Modal UI
     queryModalTitle: 'Query Wiki - 対話型問い合わせ',
     queryModalPlaceholder: '質問を入力...',
@@ -220,10 +220,16 @@ export const JA_TEXTS = {
     // Extraction Settings
     extractionSectionTitle: '知識抽出',
     extractionGranularityName: '抽出粒度',
-    extractionGranularityDesc: '抽出されるエンティティ・概念の数を制御します。粒度が高いほど、作成されるページと消費されるAPIトークンが増えます。',
-    extractionGranularityFine: '精细 — 端の言及も含めてすべて抽出（ページ最多、トークンコスト最大）',
-    extractionGranularityStandard: '標準 — コア + 重要なエンティティ・概念（バランス型）',
-    extractionGranularityCoarse: '粗め — 最も中心的なエンティティ・概念のみ（ページ最少、トークンコスト最小）',
+    extractionGranularityDesc: 'ソースファイルごとの抽出数を制御。高いほどページ/API消費が増加。\n精细：深度分析（100個）。標準：日常ノート（50個）。粗め：概要把握（10個）。最小：100件以上一括処理（5個）。カスタム：独自設定（最大300個）。\n提示：ファイル数が多い場合は最小/粗めを使用し時間とコストを節約。',
+    extractionGranularityFine: '精细 — 端の言及も含めてすべて抽出（項目数無制限、トークンコスト最大）',
+    extractionGranularityStandard: '標準 — コア + 重要なエンティティ・概念（約50個、バランス型）',
+    extractionGranularityCoarse: '粗め — 最も中心的なエンティティ・概念のみ（約20個、トークンコスト低）',
+    extractionGranularityMinimal: '最小 — 最も重要なエンティティ・概念のみ（約3個、トークンコスト最小）',
+    extractionGranularityCustom: 'カスタム — 上限を独自設定（1~300）',
+    customEntityLimitName: 'カスタムエンティティ上限',
+    customEntityLimitDesc: 'ソースファイルごとの最大エンティティ抽出数（1-300）',
+    customConceptLimitName: 'カスタム概念上限',
+    customConceptLimitDesc: 'ソースファイルごとの最大概念抽出数（1-300）',
 
     // Ingestion Acceleration
     accelerationSectionTitle: '取り込み高速化',

@@ -1,5 +1,10 @@
 /* LLM Wiki Plugin Styles */
 
+/* Number input field width for settings */
+.llm-wiki-number-input {
+  width: 100px;
+}
+
 /* 查询模态框样式 */
 .llm-wiki-query-textarea {
   width: 100%;

@@ -103,7 +103,7 @@ export const PT_TEXTS = {
     maxConversationHistoryDesc: 'Limitar mensagens da conversa para evitar excesso de tokens',
     maxConversationHistoryHint: 'Recomendado: não ultrapassar 50 rodadas',
     numberRangeValidation: 'Insira um número entre 1 e 50',
-
+    numberRangeClamped: 'Valor fora do intervalo (1-300), automaticamente definido como {}',
     // Query Modal UI
     queryModalTitle: 'Consultar Wiki — Consulta conversacional',
     queryModalPlaceholder: 'Insira sua pergunta...',
@@ -220,10 +220,16 @@ export const PT_TEXTS = {
     // Extraction Settings
     extractionSectionTitle: 'Extração',
     extractionGranularityName: 'Granularidade da extração',
-    extractionGranularityDesc: 'Controla quantas entidades/conceitos são extraídos. Maior granularidade = mais páginas criadas, mais tokens de API consumidos.',
-    extractionGranularityFine: 'Fina — extrair tudo, incluindo menções pontuais (mais páginas, maior custo de tokens)',
-    extractionGranularityStandard: 'Padrão — entidades/conceitos centrais e significativos (equilibrado)',
-    extractionGranularityCoarse: 'Grosseira — apenas entidades/conceitos mais centrais (menos páginas, menor custo de tokens)',
+    extractionGranularityDesc: 'Controla extrações por arquivo fonte. Maior = mais páginas/tokens API.\nFina: análise profunda. Padrão: notas diárias. Grosseira: visão rápida. Mínima: processamento 100+ arquivos. Personalizada: limites próprios (até 300).\nDica: Use Mínima/Grosseira para pastas com muitos arquivos para economizar tempo e custo.',
+    extractionGranularityFine: 'Fina — extrair tudo, incluindo menções pontuais (itens ilimitados, maior custo de tokens)',
+    extractionGranularityStandard: 'Padrão — entidades/conceitos centrais e significativos (~50 itens, equilibrado)',
+    extractionGranularityCoarse: 'Grosseira — apenas entidades/conceitos mais centrais (~20 itens, menor custo de tokens)',
+    extractionGranularityMinimal: 'Mínima — apenas entidades/conceitos essenciais (~3 itens, custo de tokens mais baixo)',
+    extractionGranularityCustom: 'Personalizada — Definir seus próprios limites (1~300)',
+    customEntityLimitName: 'Limite personalizado de entidades',
+    customEntityLimitDesc: 'Número máximo de entidades a extrair por arquivo fonte (1-300)',
+    customConceptLimitName: 'Limite personalizado de conceitos',
+    customConceptLimitDesc: 'Número máximo de conceitos a extrair por arquivo fonte (1-300)',
 
     // Ingestion Acceleration
     accelerationSectionTitle: 'Aceleração da ingestão',

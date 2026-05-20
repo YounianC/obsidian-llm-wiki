@@ -86,7 +86,12 @@ export class PageFactory {
       if (sameTypePages.length === 0) return slugPath;
 
       const pagesList = sameTypePages
-        .map(p => `- path: ${p.path}\n  title: ${p.title}`)
+        .map(p => {
+          const aliasBlock = p.aliases?.length
+            ? `\n  aliases: ${p.aliases.join(', ')}`
+            : '';
+          return `- path: ${p.path}\n  title: ${p.title}${aliasBlock}`;
+        })
         .join('\n');
 
       const client = this.ctx.getClient();

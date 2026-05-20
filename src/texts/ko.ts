@@ -103,6 +103,7 @@ export const KO_TEXTS = {
     maxConversationHistoryDesc: '토큰 초과를 방지하기 위해 대화 메시지를 제한합니다',
     maxConversationHistoryHint: '추천: 50 라운드를 초과하지 않기',
     numberRangeValidation: '1-50 사이의 숫자를 입력하세요',
+    numberRangeClamped: '값이 범위를 초과했습니다 (1-300), 자동으로 {}으로 설정되었습니다',
 
     // Query Modal UI
     queryModalTitle: '위키 질의 - 대화형 질의',
@@ -220,10 +221,16 @@ export const KO_TEXTS = {
     // Extraction Settings
     extractionSectionTitle: '추출',
     extractionGranularityName: '추출 세분화',
-    extractionGranularityDesc: '엔티티/컨셉 추출량을 제어합니다. 세분화가 높을수록 더 많은 페이지가 생성되고 API 토큰이 소비됩니다.',
-    extractionGranularityFine: '세밀 — 가장자리 언급 포함 모두 추출 (최대 페이지, 최고 토큰 비용)',
-    extractionGranularityStandard: '표준 — 핵심 + 중요한 엔티티/컨셉 (균형)',
-    extractionGranularityCoarse: '굵음 — 가장 중심적인 엔티티/컨셉만 (최소 페이지, 최저 토큰 비용)',
+    extractionGranularityDesc: '소스 파일당 추출 수 제어. 높을수록 페이지/API 소비 증가.\n세밀: 심층 분석. 표준: 일상 노트. 굵음: 빠른 개요. 최소: 100개 이상 일괄 처리. 사용자 지정: 자체 설정 (최대 300개).\n팁: 파일이 많은 폴더는 최소/굵음 사용으로 시간 및 비용 절감.',
+    extractionGranularityFine: '세밀 — 가장자리 언급 포함 모두 추출 (항목 수 무제한, 최고 토큰 비용)',
+    extractionGranularityStandard: '표준 — 핵심 + 중요한 엔티티/컨셉 (약50개, 균형)',
+    extractionGranularityCoarse: '굵음 — 가장 중심적인 엔티티/컨셉만 (약20개, 토큰 비용 낮음)',
+    extractionGranularityMinimal: '최소 — 가장 중요한 엔티티/컨셉만 (약3개, 최저 토큰 비용)',
+    extractionGranularityCustom: '사용자 지정 — 자체 상한 설정 (1~300)',
+    customEntityLimitName: '사용자 지정 엔티티 상한',
+    customEntityLimitDesc: '소스 파일당 최대 엔티티 추출 수 (1-300)',
+    customConceptLimitName: '사용자 지정 컨셉 상한',
+    customConceptLimitDesc: '소스 파일당 최대 컨셉 추출 수 (1-300)',
 
     // Ingestion Acceleration
     accelerationSectionTitle: '수집 가속화',

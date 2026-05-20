@@ -69,7 +69,7 @@ export interface ProviderConfig {
 
 // Plugin settings
 
-export type ExtractionGranularity = 'fine' | 'standard' | 'coarse';
+export type ExtractionGranularity = 'fine' | 'standard' | 'coarse' | 'minimal' | 'custom';
 
 export interface LLMWikiSettings {
   provider: string;
@@ -90,6 +90,8 @@ export interface LLMWikiSettings {
 
   // Extraction
   extractionGranularity: ExtractionGranularity;
+  customEntityLimit?: number;
+  customConceptLimit?: number;
 
   // Auto-maintenance
   autoWatchSources: boolean;

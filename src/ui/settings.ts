@@ -343,6 +343,20 @@ export class LLMWikiSettingTab extends PluginSettingTab {
         .setValue(this.tempSettings.wikiFolder)
         .onChange((value) => { this.tempSettings.wikiFolder = value; }));
 
+    // Granularity setting with conditional custom inputs
+    let customEntitySetting: Setting | null = null;
+    let customConceptSetting: Setting | null = null;
+
+    const updateCustomVisibility = (value: string) => {
+      const isCustom = value === 'custom';
+      if (customEntitySetting) {
+        customEntitySetting.settingEl.style.display = isCustom ? 'flex' : 'none';
+      }
+      if (customConceptSetting) {
+        customConceptSetting.settingEl.style.display = isCustom ? 'flex' : 'none';
+      }
+    };
+
     new Setting(containerEl)
       .setName(this.getText('extractionGranularityName'))
       .setDesc(this.getText('extractionGranularityDesc'))
@@ -350,9 +364,74 @@ export class LLMWikiSettingTab extends PluginSettingTab {
         dropdown.addOption('fine', this.getText('extractionGranularityFine'));
         dropdown.addOption('standard', this.getText('extractionGranularityStandard'));
         dropdown.addOption('coarse', this.getText('extractionGranularityCoarse'));
+        dropdown.addOption('minimal', this.getText('extractionGranularityMinimal'));
+        dropdown.addOption('custom', this.getText('extractionGranularityCustom'));
         dropdown.setValue(this.tempSettings.extractionGranularity || 'standard');
-        dropdown.onChange((value: string) => { this.tempSettings.extractionGranularity = value as 'fine' | 'standard' | 'coarse'; });
+        dropdown.onChange((value: string) => {
+          this.tempSettings.extractionGranularity = value as 'fine' | 'standard' | 'coarse' | 'minimal' | 'custom';
+          updateCustomVisibility(value);
+        });
       });
+
+    // Custom entity limit (shown only when custom is selected)
+    customEntitySetting = new Setting(containerEl)
+      .setName(this.getText('customEntityLimitName'))
+      .setDesc(this.getText('customEntityLimitDesc'))
+      .addText(text => {
+        text
+          .setPlaceholder('5')
+          .setValue(String(this.tempSettings.customEntityLimit ?? 5))
+          .onChange((value) => {
+            const parsed = parseInt(value);
+            if (parsed > 300) {
+              this.tempSettings.customEntityLimit = 300;
+              text.setValue('300');
+              new Notice(this.getText('numberRangeClamped').replace('{}', '300'), 3000);
+            } else if (parsed < 1) {
+              this.tempSettings.customEntityLimit = 1;
+              text.setValue('1');
+              new Notice(this.getText('numberRangeClamped').replace('{}', '1'), 3000);
+            } else if (!isNaN(parsed)) {
+              this.tempSettings.customEntityLimit = parsed;
+            }
+          });
+        text.inputEl.type = 'number';
+        text.inputEl.min = '1';
+        text.inputEl.max = '300';
+        text.inputEl.classList.add('llm-wiki-number-input');
+      });
+    customEntitySetting.settingEl.style.display =
+      this.tempSettings.extractionGranularity === 'custom' ? 'flex' : 'none';
+
+    // Custom concept limit (shown only when custom is selected)
+    customConceptSetting = new Setting(containerEl)
+      .setName(this.getText('customConceptLimitName'))
+      .setDesc(this.getText('customConceptLimitDesc'))
+      .addText(text => {
+        text
+          .setPlaceholder('5')
+          .setValue(String(this.tempSettings.customConceptLimit ?? 5))
+          .onChange((value) => {
+            const parsed = parseInt(value);
+            if (parsed > 300) {
+              this.tempSettings.customConceptLimit = 300;
+              text.setValue('300');
+              new Notice(this.getText('numberRangeClamped').replace('{}', '300'), 3000);
+            } else if (parsed < 1) {
+              this.tempSettings.customConceptLimit = 1;
+              text.setValue('1');
+              new Notice(this.getText('numberRangeClamped').replace('{}', '1'), 3000);
+            } else if (!isNaN(parsed)) {
+              this.tempSettings.customConceptLimit = parsed;
+            }
+          });
+        text.inputEl.type = 'number';
+        text.inputEl.min = '1';
+        text.inputEl.max = '300';
+        text.inputEl.classList.add('llm-wiki-number-input');
+      });
+    customConceptSetting.settingEl.style.display =
+      this.tempSettings.extractionGranularity === 'custom' ? 'flex' : 'none';
 
     // Page Generation Concurrency
     const concurrencyValue = this.tempSettings.pageGenerationConcurrency ?? 3;
@@ -397,14 +476,29 @@ export class LLMWikiSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName(this.getText('maxConversationHistoryName'))
       .setDesc(this.getText('maxConversationHistoryDesc'))
-      .addText(text => text
-        .setValue(this.tempSettings.maxConversationHistory.toString())
-        .setPlaceholder('30')
-        .onChange((value) => {
-          const parsed = parseInt(value);
-          if (parsed >= 1 && parsed <= 50) this.tempSettings.maxConversationHistory = parsed;
-          else new Notice(this.getText('numberRangeValidation'), 3000);
-        }));
+      .addText(text => {
+        text
+          .setValue(this.tempSettings.maxConversationHistory.toString())
+          .setPlaceholder('30')
+          .onChange((value) => {
+            const parsed = parseInt(value);
+            if (parsed > 50) {
+              this.tempSettings.maxConversationHistory = 50;
+              text.setValue('50');
+              new Notice(this.getText('numberRangeClamped').replace('{}', '50'), 3000);
+            } else if (parsed < 1) {
+              this.tempSettings.maxConversationHistory = 1;
+              text.setValue('1');
+              new Notice(this.getText('numberRangeClamped').replace('{}', '1'), 3000);
+            } else if (!isNaN(parsed)) {
+              this.tempSettings.maxConversationHistory = parsed;
+            }
+          });
+        text.inputEl.type = 'number';
+        text.inputEl.min = '1';
+        text.inputEl.max = '50';
+        text.inputEl.classList.add('llm-wiki-number-input');
+      });
 
     // Schema Management
     new Setting(containerEl)
@@ -507,12 +601,28 @@ export class LLMWikiSettingTab extends PluginSettingTab {
       new Setting(containerEl)
         .setName(this.getText('autoWatchDebounceName'))
         .setDesc(this.getText('autoWatchDebounceDesc'))
-        .addText(text => text
+        .addText(text => {
+        text
           .setValue(String(Math.round(this.tempSettings.autoWatchDebounceMs / 1000)))
           .onChange((value) => {
             const parsed = parseInt(value);
-            if (parsed >= 1 && parsed <= 60) this.tempSettings.autoWatchDebounceMs = parsed * 1000;
-          }));
+            if (parsed > 60) {
+              this.tempSettings.autoWatchDebounceMs = 60000;
+              text.setValue('60');
+              new Notice(this.getText('numberRangeClamped').replace('{}', '60'), 3000);
+            } else if (parsed < 1) {
+              this.tempSettings.autoWatchDebounceMs = 1000;
+              text.setValue('1');
+              new Notice(this.getText('numberRangeClamped').replace('{}', '1'), 3000);
+            } else if (!isNaN(parsed)) {
+              this.tempSettings.autoWatchDebounceMs = parsed * 1000;
+            }
+          });
+        text.inputEl.type = 'number';
+        text.inputEl.min = '1';
+        text.inputEl.max = '60';
+        text.inputEl.classList.add('llm-wiki-number-input');
+      });
     }
 
     new Setting(containerEl)

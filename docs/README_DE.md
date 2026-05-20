@@ -126,7 +126,13 @@ Settings → **Ingestion Acceleration**:
 
 **5️⃣ Neue Einstellungen prüfen (seit v1.4.0–v1.7.x hinzugekommen):**
 - **🌐 Wiki Output Language** (v1.6.5): Unabhängig von der UI-Sprache — Ihr Wiki kann auf Deutsch sein, während die Plugin-Oberfläche auf Englisch bleibt, oder umgekehrt.
-- **📊 Extraction Granularity** (v1.6.2): Fine/Standard/Coarse steuert, wie tief der LLM Entities aus Quellen extrahiert. "Standard" ist eine gute Voreinstellung.
+- **📊 Extraktionsgranularität** (v1.6.2, v1.10.0 erweitert): Fünf Optionen steuern, wie tief der LLM Entities aus Quellen extrahiert:
+  - **Fein** (~100 Einträge) — Tiefe Analyse, Randfälle eingeschlossen. Hohe Token-Kosten, ideal für Schlüsselquellen.
+  - **Standard** (~50 Einträge) — Ausgewogene Extraktion. Gute Voreinstellung für tägliche Notizen.
+  - **Groß** (~10 Einträge) — Schneller Überblick, nur Kern-Entities. Niedrige Kosten, schnelle Ingestion.
+  - **Minimal** (~5 Einträge) — Nur wesentliche Einträge. Ideal für Batch-Verarbeitung von 100+ Dateien oder Testen neuer Quellen.
+  - **Benutzerdefiniert** (1–300 Einträge) — Benutzerdefinierte Entity/Concept-Limits für spezielle Workflows.
+  > 💡 **Empfehlung**: Verwenden Sie Minimal oder Groß für große Ordner, um Zeit und API-Kosten zu sparen. Fein nur selektiv für Schlüsseldokumente mit tiefer Analyse.
 - **🔄 Auto-Maintenance** (v1.4.0): Optionaler File Watcher, periodischer Lint und Startup Health Check. Standardmäßig alle AUS — nur aktivieren, wenn Sie automatische Hintergrundverarbeitung wünschen.
 
 > **🛡️ Safety**: Parallele Generierung nutzt `Promise.allSettled` — bei Fehler einer Seite laufen andere weiter. Fehlgeschlagene Seiten werden einzeln mit Exponential Backoff wiederholt. Smart Batch Skip (v1.7.7) erkennt automatisch bereits verarbeitete Dateien und spart so Zeit und API-Kosten.
@@ -137,7 +143,7 @@ Settings → **Ingestion Acceleration**:
 
 ### 📊 Knowledge Quality
 
-- **🔍 Entity/Concept Extraction** — LLM extrahiert Entities (Personen, Orgs, Produkte, Events) und Concepts (Theorien, Methoden, Terme) aus Notizen
+- **🔍 Entity/Concept Extraction** — LLM extrahiert Entities (Personen, Orgs, Produkte, Events) und Concepts (Theorien, Methoden, Terme) aus Notizen mit flexibler Extraktionsgranularität (Minimal~5 Einträge, Groß~10, Standard~50, Fein~100, Benutzerdefiniert 1–300) für Balance zwischen Analyse-Tiefe und API-Kosten
 - **🏷️ Mandatory Page Aliases** — Jede generierte Page enthält mindestens einen Alias (Übersetzung, Akronym, alternativer Name); ermöglicht Cross-Language Duplikat-Detection
 - **🔄 Duplicate Detection & Merge** — Semantic Tiering erfasst echte Duplikate (Cross-Language-Übersetzungen, Abkürzungen, Schreibvarianten); intelligentes LLM Merge fusioniert Content und bewahrt Aliases
 - **🧩 Smart Knowledge Fusion** — Multi-Source Updates mergen neue Info ohne Redundanz, Widersprüche werden mit Attribution bewahrt, `reviewed: true` Pages sind vor Überschreibung geschützt
@@ -345,7 +351,7 @@ Zwei Einstellungen in **Settings → Ingestion Acceleration**:
 - **🚀 Page Generation Concurrency**: Erhöhen Sie den Wert von 1 auf 3 (oder 5 für Provider mit hohen Rate Limits). Dadurch werden mehrere Entity/Concept-Seiten parallel verarbeitet.
 - **⏱️ Batch Delay**: Niedrigere Werte sind schneller, bergen aber ein Risiko für Rate Limits. Beginnen Sie bei 300 ms; erhöhen Sie auf 500–800 ms, wenn Sie HTTP-429-Fehler sehen.
 
-Prüfen Sie auch die **📊 Extraction Granularity**: "Standard" oder "Coarse" erzeugen weniger Seiten als "Fine" und sind daher schneller.
+Prüfen Sie auch die **📊 Extraktionsgranularität**: "Minimal", "Groß" oder "Standard" erzeugen weniger Seiten und sparen API-Kosten.
 
 ### 🧊 Das Plugin friert ein, wenn ich Lint auf einem großen Wiki ausführe. Was ist los?
 

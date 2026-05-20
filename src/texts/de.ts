@@ -103,7 +103,7 @@ export const DE_TEXTS = {
     maxConversationHistoryDesc: 'Konversationsnachrichten begrenzen, um Token-Überlauf zu vermeiden',
     maxConversationHistoryHint: 'Empfehlung: 50 Runden nicht überschreiten',
     numberRangeValidation: 'Bitte eine Zahl zwischen 1 und 50 eingeben',
-
+    numberRangeClamped: 'Wert außerhalb des Bereichs (1-300), automatisch auf {} gesetzt',
     // Query Modal UI
     queryModalTitle: 'Wiki-Anfrage — Konversationelle Abfrage',
     queryModalPlaceholder: 'Frage eingeben...',
@@ -220,10 +220,16 @@ export const DE_TEXTS = {
     // Extraction Settings
     extractionSectionTitle: 'Extraktion',
     extractionGranularityName: 'Extraktions-Granularität',
-    extractionGranularityDesc: 'Steuert, wie viele Entitäten/Konzepte extrahiert werden. Höhere Granularität = mehr Seiten erstellt, mehr API-Tokens verbraucht.',
-    extractionGranularityFine: 'Fein — alles einschließlich Randbegegnungen extrahieren (meiste Seiten, höchste Token-Kosten)',
-    extractionGranularityStandard: 'Standard — Kern- und bedeutende Entitäten/Konzepte (ausgewogen)',
-    extractionGranularityCoarse: 'Grob — nur zentralste Entitäten/Konzepte (wenigste Seiten, niedrigste Token-Kosten)',
+    extractionGranularityDesc: 'Steuert Extraktionen pro Quelldatei. Höher = mehr Seiten/API-Verbrauch.\nFein: Tiefenanalyse. Standard: Tägliche Notizen. Grob: Schnelle Übersicht. Minimal: 100+ Dateien stapeln. Benutzerdefiniert: Eigene Limits (max 300).\nTipp: Verwenden Sie Minimal/Grob für Ordner mit vielen Dateien zur Zeit- und Kosteneinsparung.',
+    extractionGranularityFine: 'Fein — alles einschließlich Randbegegnungen extrahieren (Elemente unbegrenzt, höchste Token-Kosten)',
+    extractionGranularityStandard: 'Standard — Kern- und bedeutende Entitäten/Konzepte (~50 Elemente, ausgewogen)',
+    extractionGranularityCoarse: 'Grob — nur zentralste Entitäten/Konzepte (~20 Elemente, niedrigere Token-Kosten)',
+    extractionGranularityMinimal: 'Minimal — nur wesentliche Entitäten/Konzepte (~3 Elemente, niedrigste Token-Kosten)',
+    extractionGranularityCustom: 'Benutzerdefiniert — Eigene Limits festlegen (1~300)',
+    customEntityLimitName: 'Benutzerdefiniertes Entitätslimit',
+    customEntityLimitDesc: 'Maximale Anzahl zu extrahierender Entitäten pro Quelldatei (1-300)',
+    customConceptLimitName: 'Benutzerdefiniertes Konzeptlimit',
+    customConceptLimitDesc: 'Maximale Anzahl zu extrahierender Konzepte pro Quelldatei (1-300)',
 
     // Ingestion Acceleration
     accelerationSectionTitle: 'Aufnahmen-Beschleunigung',

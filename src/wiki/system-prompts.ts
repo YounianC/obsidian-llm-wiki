@@ -118,14 +118,18 @@ const GRANULARITY_INSTRUCTIONS: Record<ExtractionGranularity, string> = {
   fine: 'Extract ALL entities and concepts worth recording from the source, including those mentioned only once or tangentially.',
   standard: 'Extract important and moderately important entities and concepts from the source. Ignore minor items mentioned only in passing.',
   coarse: 'Extract only the most essential entities and concepts from the source — those without which the text cannot be understood. Quality over quantity.',
+  minimal: 'Extract only the most critical entities and concepts from the source — maximum 3 total items. Extreme selectivity for cost control.',
+  custom: 'Extract entities and concepts according to user-defined limits. Follow the specified maximum counts.',
 };
 
 // Numeric limits for entity/concept generation in fix (non-ingestion) contexts.
 // Keyed by granularity: max per type (entities, concepts).
 const GRANULARITY_FIX_LIMITS: Record<ExtractionGranularity, { maxEntities: number; maxConcepts: number }> = {
-  fine:    { maxEntities: 6, maxConcepts: 6 },
+  fine:     { maxEntities: 6, maxConcepts: 6 },
   standard: { maxEntities: 3, maxConcepts: 3 },
-  coarse:  { maxEntities: 2, maxConcepts: 2 },
+  coarse:   { maxEntities: 2, maxConcepts: 2 },
+  minimal:  { maxEntities: 1, maxConcepts: 2 },
+  custom:   { maxEntities: 3, maxConcepts: 3 }, // Use standard as fallback for custom in fix contexts
 };
 
 export function getGranularityInstruction(settings: LLMWikiSettings): string {

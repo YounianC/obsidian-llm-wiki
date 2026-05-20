@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-05-20
+
+### Added
+- **Minimal extraction granularity**: New option limiting extraction to ~5 most important items (entities + concepts), ideal for batch processing 100+ files or testing new sources with minimal token cost
+- **Custom extraction granularity**: User-defined entity/concept limits (1-300 each) via two conditional input fields shown only when "Custom" is selected, enabling fine-grained control for specialized workflows
+- **Number input constraints**: All numeric settings inputs (custom limits, conversation history, debounce delay) now enforce `type='number'` with min/max attributes, auto-clamping to valid range, and Notice feedback when out-of-range values are corrected
+- **CSS class-based input width**: Replaced inline style assignment with `.llm-wiki-number-input` class in styles.css to comply with Obsidian eslint rules
+
+### Fixed
+- **Aliases omitted in duplicate detection** (Issue #30): `analyzeSource()` and `resolveEntityDedup()` now include aliases when building existing pages list, preventing LLM from creating duplicate stub pages for synonym names (e.g., "CoT" vs "思维链")
+- **Numeric inputs accepting text**: Custom limit and conversation history input fields previously allowed arbitrary text input, now restricted to numbers only with HTML5 validation
+
+### Changed
+- **Extraction granularity descriptions**: 8 language files comprehensively updated with selection guide ("Fine: deep analysis, Standard: daily notes, Coarse: quick overview, Minimal: batch 100+ files, Custom: specialized limits") and cost/time optimization tips ("Use Minimal/Coarse for large folders to save time and cost")
+- **Extraction limits unified**: Fine granularity cap changed from unlimited to 100 items, Coarse from 20 to 10 items, providing predictable bounds across all levels
+- **Granularity dropdown labels**: Added `extractionGranularityMinimal` and `extractionGranularityCustom` i18n keys across all 8 languages with language-specific natural translations
+
 ## [1.9.1] - 2026-05-19
 
 ### Fixed

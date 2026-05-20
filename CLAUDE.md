@@ -1,19 +1,26 @@
 # LLM Wiki Plugin Project Development Standards
 
-**Last Updated:** 2026-05-19
+**Last Updated:** 2026-05-20
 
 ---
 
-## Current Phase: v1.9.x — Second Quality Upgrade Round
+## Current Phase: v1.10.0 — Aliases Support & Granularity Expansion
 
-Two independent audits both confirmed B+ rating. Next: P0 bug fixes, encapsulation, i18n, and tsc compliance.
+Completed Issues #30 and #31, plus comprehensive UX improvements.
 
-### P0 — Immediate (in progress)
-- Fix `renderComponent` → `activeRenderComponent` memory leak in QueryModal
-- Fix `lintFixer` encapsulation (access via public method, not private property)
-- Fix `testLLMConnection` hardcoded Chinese strings → TEXTS system
-- Fix related entity/concept page generation: LLM must output `[[wiki-link]]` even for non-existent pages (currently outputs plain text → Lint misses dead links)
-- Ensure `tsc --noEmit` passes
+### Completed (v1.10.0)
+- ✅ **Issue #30 — Aliases omitted in duplicate detection**: Fixed `analyzeSource()` and `resolveEntityDedup()` to include aliases in existingPagesList, preventing LLM from creating duplicate stub pages for synonym names (e.g., "CoT" vs "思维链")
+- ✅ **Issue #31 — Granularity expansion**: Added Minimal granularity (5 items) + Custom option (user-defined 1-300 limits) with conditional input fields, comprehensive i18n updates across 8 languages
+- ✅ **UX improvements**: All numeric inputs now enforce `type='number'` with HTML5 validation, auto-clamping to valid range with Notice feedback, CSS class-based width control (compliant with Obsidian eslint rules)
+- ✅ **Extraction limits unified**: Fine 100, Standard 50, Coarse 10, Minimal 5, Custom 1-300 (predictable bounds across all granularity levels)
+- ✅ **Description optimization**: Granularity descriptions across 8 languages now include selection guide ("Fine: deep analysis, Standard: daily notes, Coarse: quick overview, Minimal: batch 100+ files, Custom: specialized limits") and cost/time optimization tips
+
+### Recently Completed (v1.9.x)
+- Fixed `renderComponent` → `activeRenderComponent` memory leak in QueryModal
+- Fixed `lintFixer` encapsulation (public proxy method `fixPollutedPage()`)
+- Fixed `testLLMConnection` hardcoded Chinese strings → TEXTS system
+- Fixed related entity/concept page generation: LLM now outputs `[[wiki-link]]` for non-existent pages (Lint can detect dead links)
+- `tsc --noEmit` passes with 0 errors (tsconfig moduleResolution, skipLibCheck, include scope)
 
 ### P1 — Short-term
 - PageFactory entity/concept method unification (8 pairs → generic)

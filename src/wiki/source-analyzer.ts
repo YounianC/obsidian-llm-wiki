@@ -26,16 +26,30 @@ export class SourceAnalyzer {
     console.debug('File content length:', content.length);
 
     const existingPages = await getExistingWikiPages(this.ctx.app, this.ctx.settings.wikiFolder);
-    const existingPagesList = existingPages.map(p => `- ${p.wikiLink}`).join('\n');
+    const existingPagesList = existingPages.map(p => {
+      const aliasSuffix = p.aliases?.length ? ` \`aliases: ${p.aliases.join(', ')}\`` : '';
+      return `- ${p.wikiLink}${aliasSuffix}`;
+    }).join('\n');
     console.debug('Existing Wiki pages count:', existingPages.length);
 
     // Iterative batch extraction parameters — linked to granularity setting
     const MAX_TOKENS = 16000;
     const granularity = this.ctx.settings.extractionGranularity || 'standard';
+
+    // Handle custom granularity with user-defined limits
+    let customMaxTotalItems: number | null = null;
+    if (granularity === 'custom') {
+      const entityLimit = this.ctx.settings.customEntityLimit ?? 5;
+      const conceptLimit = this.ctx.settings.customConceptLimit ?? 5;
+      customMaxTotalItems = Math.min(entityLimit + conceptLimit, 300);
+    }
+
     const granularityConfig: Record<string, { initialBatchSize: number; maxBatchesBase: number; maxTotalItems: number | null }> = {
-      fine:   { initialBatchSize: 30, maxBatchesBase: 12, maxTotalItems: null },
-      standard:{ initialBatchSize: 20, maxBatchesBase: 6,  maxTotalItems: 50 },
-      coarse: { initialBatchSize: 10, maxBatchesBase: 3,  maxTotalItems: 20 }
+      fine:     { initialBatchSize: 30, maxBatchesBase: 12, maxTotalItems: 100 },
+      standard: { initialBatchSize: 20, maxBatchesBase: 6,  maxTotalItems: 50 },
+      coarse:   { initialBatchSize: 10, maxBatchesBase: 3,  maxTotalItems: 10 },
+      minimal:  { initialBatchSize: 5,  maxBatchesBase: 1,  maxTotalItems: 5 },
+      custom:   { initialBatchSize: 5,  maxBatchesBase: 1,  maxTotalItems: customMaxTotalItems }
     };
     const config = granularityConfig[granularity] || granularityConfig.standard;
     const MIN_BATCH_SIZE = 5;
