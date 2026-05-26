@@ -815,7 +815,22 @@ function normalizeFrontmatterDates(content: string, dateStr: string): string {
   return content.replace(/^---\n[\s\S]*?\n---/, `---\n${newFm}\n---`);
 }
 
-// Standalone helper: determine if a page is substantively empty.
+// Fix double-nested wiki-links caused by log.md wrapping already-formatted
+// wiki-link strings. e.g. [[[[entities/Foo|Foo]]]] → [[entities/Foo|Foo]]
+// Returns the fixed content and a count of fixes applied.
+export function fixDoubleNestedWikiLinks(content: string): { fixed: number; content: string } {
+  let fixed = 0;
+  // Match [[[[target|display]]]] or [[[[target]]]]
+  const doubleNestRegex = /\[\[\[\[([^\]|#]+)(?:[|#]([^\]]+))?\]\]\]\]/g;
+  const result = content.replace(doubleNestRegex, (_fullMatch, target: string, display?: string) => {
+    fixed++;
+    if (display) {
+      return `[[${target}|${display}]]`;
+    }
+    return `[[${target}]]`;
+  });
+  return { fixed, content: result };
+}
 // Stub pages (Auto-generated stub page) are always treated as empty
 // regardless of character count, since the template text itself inflates
 // the count past the threshold.

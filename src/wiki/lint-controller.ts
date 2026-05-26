@@ -1,13 +1,13 @@
 // Lint Controller — Wiki health analysis and fix orchestration.
 // Extracted from main.ts to keep the plugin entry point manageable.
 
-import { App, Notice } from 'obsidian';
+import { App, Notice, TFile } from 'obsidian';
 import { LLMWikiSettings, LLMClient } from '../types';
 import { LintFixCallbacks, LintCounts, LintReportModal, FixReportModal, FixReportPhase } from '../ui/modals';
 import { TEXTS } from '../texts';
 import { PROMPTS } from '../prompts';
 import { cleanMarkdownResponse, parseJsonResponse, parseFrontmatter, detectRateLimitFailures, formatRateLimitNotice } from '../utils';
-import { isPageEmpty, detectPollutedPages } from './lint-fixes';
+import { isPageEmpty, detectPollutedPages, fixDoubleNestedWikiLinks } from './lint-fixes';
 import { generateDuplicateCandidates, DuplicateCandidate } from './lint/duplicate-detection';
 import { runAliasCompletion, runDeadLinkFixes, runEmptyPageFixes, runOrphanFixes, runDuplicateMerges } from './lint/fix-runners';
 import { WikiEngine } from './wiki-engine';
@@ -20,11 +20,17 @@ export interface LintContext {
   onAnalyzeSchema: () => void;
 }
 
-export async function runLintWiki(ctx: LintContext): Promise<void> {
+export async function runLintWiki(ctx: LintContext, signal?: AbortSignal): Promise<void> {
   if (!ctx.llmClient) {
     new Notice(TEXTS[ctx.settings.language].errorNoApiKey);
     return;
   }
+
+  const checkCancelled = () => {
+    if (signal?.aborted) {
+      throw new DOMException('Lint cancelled by user', 'AbortError');
+    }
+  };
 
   new Notice(TEXTS[ctx.settings.language].lintWikiStart);
 
@@ -73,6 +79,7 @@ export async function runLintWiki(ctx: LintContext): Promise<void> {
     const totalPages = wikiFiles.length;
     const BATCH_READ = 200;
     for (let i = 0; i < wikiFiles.length; i += BATCH_READ) {
+      checkCancelled();
       const batch = wikiFiles.slice(i, i + BATCH_READ);
       const batchResults = await Promise.all(
         batch.map(async file => {
@@ -88,6 +95,39 @@ export async function runLintWiki(ctx: LintContext): Promise<void> {
       .replace('{current}', String(totalPages))
       .replace('{total}', String(totalPages)));
     console.debug(`lintWiki: read ${totalPages}/${totalPages} pages`);
+
+    // ---- 0. Double-nested wiki-link fix (programmatic, no LLM) ----
+    // Fixes [[[[entities/Foo|Foo]]]] → [[entities/Foo|Foo]] caused by historical
+    // updateLog bug. Scans wiki pages already in memory + log.md.
+    stageNotice.setMessage(t.lintScanningLinks);
+    let doubleNestFixes = 0;
+    for (const [path, info] of pageMap) {
+      const { fixed, content } = fixDoubleNestedWikiLinks(info.content);
+      if (fixed > 0) {
+        doubleNestFixes += fixed;
+        info.content = content;
+        const abstractFile = ctx.app.vault.getAbstractFileByPath(path);
+        if (abstractFile instanceof TFile) {
+          await ctx.app.vault.modify(abstractFile, content);
+        }
+        console.debug(`lintWiki: fixed ${fixed} double-nested link(s) in ${path}`);
+      }
+    }
+    // Also scan log.md (excluded from wikiFiles filter)
+    const logPath = `${ctx.settings.wikiFolder}/log.md`;
+    const logFile = ctx.app.vault.getAbstractFileByPath(logPath);
+    if (logFile instanceof TFile) {
+      const logContent = await ctx.app.vault.read(logFile);
+      const { fixed, content } = fixDoubleNestedWikiLinks(logContent);
+      if (fixed > 0) {
+        doubleNestFixes += fixed;
+        await ctx.app.vault.modify(logFile, content);
+        console.debug(`lintWiki: fixed ${fixed} double-nested link(s) in log.md`);
+      }
+    }
+    if (doubleNestFixes > 0) {
+      console.debug(`lintWiki: total ${doubleNestFixes} double-nested link(s) fixed`);
+    }
 
     // ---- 1. Alias deficiency check (runs first — enables better duplicate detection) ----
     const aliasDeficientPages: Array<{ path: string; content: string; basename: string }> = [];
@@ -183,6 +223,7 @@ export async function runLintWiki(ctx: LintContext): Promise<void> {
           const allDuplicates: Array<{target: string, source: string, reason: string}> = [];
           const dedupFailures: Array<{ name: string; reason: string }> = [];
           for (let i = 0; i < batches.length; i += concurrency) {
+            checkCancelled();
             const chunk = batches.slice(i, i + concurrency);
             const results = await Promise.allSettled(
               chunk.map(async (batch, bi) => {
@@ -485,6 +526,7 @@ export async function runLintWiki(ctx: LintContext): Promise<void> {
       .replace('{progReport}', progReport || 'No issues detected by programmatic checks.');
 
     stageNotice.setMessage(t.lintAnalyzingLLM);
+    checkCancelled();
     const llmReport = await ctx.llmClient.createMessage({
       model: ctx.settings.model,
       max_tokens: 4000,
@@ -780,6 +822,12 @@ export async function runLintWiki(ctx: LintContext): Promise<void> {
 
   } catch (error) {
     stageNotice?.hide();
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      const t = TEXTS[ctx.settings.language] || TEXTS.en;
+      new Notice((t as unknown as Record<string, string>).ingestionCancelled || 'Lint cancelled', 5000);
+      console.debug('Lint cancelled by user');
+      return;
+    }
     const errMsg = error instanceof Error ? error.message : String(error);
     new Notice(TEXTS[ctx.settings.language].lintWikiFailed + ': ' + errMsg, 0);
     console.error(error);

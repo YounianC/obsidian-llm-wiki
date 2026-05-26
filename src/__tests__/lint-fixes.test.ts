@@ -1,5 +1,39 @@
 import { describe, it, expect } from 'vitest';
-import { isPageEmpty, detectPollutedPages } from '../wiki/lint-fixes';
+import { isPageEmpty, detectPollutedPages, fixDoubleNestedWikiLinks } from '../wiki/lint-fixes';
+
+describe('fixDoubleNestedWikiLinks', () => {
+  it('fixes double-nested with display text', () => {
+    const { fixed, content } = fixDoubleNestedWikiLinks('Some text [[[[entities/Foo|Foo]]]] more text');
+    expect(fixed).toBe(1);
+    expect(content).toBe('Some text [[entities/Foo|Foo]] more text');
+  });
+
+  it('fixes double-nested without display text', () => {
+    const { fixed, content } = fixDoubleNestedWikiLinks('See [[[[concepts/Bar]]]] here');
+    expect(fixed).toBe(1);
+    expect(content).toBe('See [[concepts/Bar]] here');
+  });
+
+  it('fixes multiple double-nested links', () => {
+    const { fixed, content } = fixDoubleNestedWikiLinks('[[[[a|b]]]] and [[[[c]]]]');
+    expect(fixed).toBe(2);
+    expect(content).toBe('[[a|b]] and [[c]]');
+  });
+
+  it('does not affect normal wiki-links', () => {
+    const text = 'Normal [[entities/Foo|Foo]] link and [[Bar]] too';
+    const { fixed, content } = fixDoubleNestedWikiLinks(text);
+    expect(fixed).toBe(0);
+    expect(content).toBe(text);
+  });
+
+  it('handles content with no wiki-links', () => {
+    const text = 'Plain text without any brackets';
+    const { fixed, content } = fixDoubleNestedWikiLinks(text);
+    expect(fixed).toBe(0);
+    expect(content).toBe(text);
+  });
+});
 
 describe('isPageEmpty', () => {
   it('detects stub marker as empty', () => {

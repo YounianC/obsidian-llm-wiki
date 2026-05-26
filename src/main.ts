@@ -131,14 +131,26 @@ export default class LLMWikiPlugin extends Plugin {
     this.addCommand({
       id: 'cancel-ingestion',
       name: t.cmdCancelIngestion,
-      callback: () => this.wikiEngine.cancelIngestion()
+      callback: () => {
+        if (this.wikiEngine.isIngesting()) {
+          this.wikiEngine.cancelIngestion();
+        } else if (this.wikiEngine.isLintRunning()) {
+          this.wikiEngine.cancelLint();
+        }
+      }
     });
 
     this.ingestStatusBar = this.addStatusBarItem();
     this.ingestStatusBar.addClass('llm-wiki-status-bar');
     this.ingestStatusBar.addClass('llm-wiki-status-bar-hidden');
     this.ingestStatusBar.setText('LLM wiki');
-    this.ingestStatusBar.onclick = () => this.wikiEngine.cancelIngestion();
+    this.ingestStatusBar.onclick = () => {
+      if (this.wikiEngine.isIngesting()) {
+        this.wikiEngine.cancelIngestion();
+      } else if (this.wikiEngine.isLintRunning()) {
+        this.wikiEngine.cancelLint();
+      }
+    };
 
     this.wikiEngine.setIngestionCallbacks(
       () => {
@@ -419,13 +431,18 @@ export default class LLMWikiPlugin extends Plugin {
   // ==================== Lint ====================
 
   async lintWiki() {
-    await runLintWiki({
-      app: this.app,
-      settings: this.settings,
-      llmClient: this.llmClient,
-      wikiEngine: this.wikiEngine,
-      onAnalyzeSchema: () => { void this.suggestSchemaUpdate(); },
-    });
+    const signal = this.wikiEngine.startLintOperation();
+    try {
+      await runLintWiki({
+        app: this.app,
+        settings: this.settings,
+        llmClient: this.llmClient,
+        wikiEngine: this.wikiEngine,
+        onAnalyzeSchema: () => { void this.suggestSchemaUpdate(); },
+      }, signal);
+    } finally {
+      this.wikiEngine.endLintOperation();
+    }
   }
 
   // ==================== Schema ====================

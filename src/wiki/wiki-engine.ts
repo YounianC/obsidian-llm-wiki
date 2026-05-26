@@ -50,6 +50,7 @@ export class WikiEngine {
   private pageFactory: PageFactory;
   private conversationIngestor: ConversationIngestor;
   private abortController: AbortController | null = null;
+  private lintAbortController: AbortController | null = null;
   wasCancelled = false;
   private onIngestionStart: (() => void) | null = null;
   private onIngestionEnd: (() => void) | null = null;
@@ -142,6 +143,32 @@ export class WikiEngine {
 
   isIngesting(): boolean {
     return this.abortController !== null;
+  }
+
+  startLintOperation(): AbortSignal {
+    this.lintAbortController = new AbortController();
+    this.onIngestionStart?.();
+    return this.lintAbortController.signal;
+  }
+
+  cancelLint(): void {
+    if (this.lintAbortController) {
+      this.lintAbortController.abort();
+      const t = TEXTS[this.settings.language] || TEXTS.en;
+      const msg = (t as unknown as Record<string, string>).ingestionCancelling
+        || 'Cancelling — will stop after current batch completes';
+      new Notice(msg, 6000);
+      console.debug('Lint cancellation requested');
+    }
+  }
+
+  isLintRunning(): boolean {
+    return this.lintAbortController !== null;
+  }
+
+  endLintOperation(): void {
+    this.lintAbortController = null;
+    this.onIngestionEnd?.();
   }
 
   private checkCancelled(): void {
