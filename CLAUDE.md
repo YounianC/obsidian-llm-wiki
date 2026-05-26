@@ -4,10 +4,44 @@
 
 ---
 
-## Current Phase: v1.11.0 — Full Issue Resolution & UX Hardening
+## Current Phase: v1.12.0 — Test Infrastructure & Structural Refinement
+
+Two independent audits (v1.11.0) converged on two gaps: (1) core module test vacuum, (2) structural issues in lint-controller. P0 addresses both.
+
+### P0 — In Progress
+
+| Item | Source | Effort |
+|------|--------|--------|
+| Production build strip `console.debug` (esbuild `drop`) | 审计二：213条三版未清理 | 10min |
+| Mock infrastructure + `page-factory.ts` core tests | 两审计共识：~4500行核心零测试 | 1周 |
+| `runLintWiki` phase extraction (835→6×~80行) | 审计二：835行，趋势增长 | 半天 |
+
+### P1 — Planned
+
+| Item | Source | Effort |
+|------|--------|--------|
+| Query local keyword filter (Layer 1 only, no vector) | 审计一：60-70%查询零API成本 | 1天 |
+| Architecture diagram (Mermaid) + debug guide | 审计一：新贡献者入门 | 2小时 |
+
+### P2 — Backlog
+
+| Item | Effort |
+|------|--------|
+| Good First Issue tagging | 10min |
+| esbuild upgrade (fix dev-only vulnerability) | 10min |
+
+### Evaluated & Rejected (v1.12.0)
+
+| Proposal | Source | Reason |
+|----------|--------|--------|
+| Hexagonal Architecture refactoring | 审计一 | Over-engineering for Obsidian plugin; mock alone enables testing |
+| Vector search (Ollama embeddings) | 审计一 | Requires Ollama + embedding model; <1% of users have this |
+| Hash-bucket dedup optimization | 审计一 | No user-reported perf issue; solve when it hurts |
+| page-factory try/catch 补全 | 审计二 | Exceptions bubble to wiki-engine's centralized error handler by design |
+| API URL validation | 审计一 | Obsidian's requestUrl already validates; self-phishing impossible |
 
 ### Completed (v1.11.0)
-- ✅ **Issue #42 — llmReady gating**: New users must complete Provider → API Key → Fetch Models → Test Connection before core features unlock. `llmReady` field in settings. Status indicator in settings panel. Existing users auto-migrated. Anthropic model list now calls real API.
+- ✅ **Issue #42 — llmReady gating**: New users must complete Provider → API Key → Fetch Models → Test Connection before core features unlock.
 - ✅ **Issue #43 — Cancel ingestion mid-run**: `AbortController` with checkpoints at batch boundaries. Status bar item (clickable) + command palette (`Cancel current ingestion`). Folder loop breaks on cancel. Immediate Notice feedback.
 - ✅ **Issue #44 — Ribbon icon + ingest current file**: `addRibbonIcon('sticker')` + command `Ingest current file`. Uses `getActiveFile()` to skip file picker. 8-language i18n.
 - ✅ **Issue #41 — 529 "Overloaded" not retried**: Error messages embed HTTP status codes. All retry regex patterns include `overload` keyword. All 3 client classes covered.
