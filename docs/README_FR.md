@@ -100,6 +100,7 @@ Ce projet évolue rapidement — de nouvelles fonctionnalités, corrections de b
 | **🛠️ Vérifier le wiki** | `Cmd+P` → « Vérifier le wiki » — scan de santé : doublons, liens morts, pages orphelines, pages vides, alias manquants |
 | **📋 Régénérer l'index** | `Cmd+P` → « Régénérer l'index » — reconstruire `wiki/index.md` avec les pages actuelles et les alias |
 | **⏹️ Annuler opération** | `Cmd+P` → "Cancel current ingestion" ou clic barre de statut — arrêt propre aux limites de lot |
+| **🎯 Ingestion en un clic** | Icône `sticker` dans la barre latérale ou `Cmd+P` → "Ingest current file" — ingère directement le fichier actif |
 | **💡 Suggérer des mises à jour du schéma** | `Cmd+P` → « Suggérer des mises à jour du schéma » — le LLM analyse le Wiki et propose des améliorations du schéma |
 
 La ré-ingestion d'une même source effectue des mises à jour incrémentales sur les pages Entity/Concept (fusion des nouvelles informations). Les pages de résumé sont régénérées.

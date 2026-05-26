@@ -99,6 +99,7 @@ Dieses Projekt entwickelt sich rasch — neue Funktionen, Fehlerbehebungen und V
 | **📋 Index neu generieren** | `Cmd+P` → "Index neu generieren" — `wiki/index.md` mit aktuellen Seiten und Aliasen neu aufbauen |
 | **💡 Schema-Aktualisierungen vorschlagen** | `Cmd+P` → "Schema-Aktualisierungen vorschlagen" — LLM analysiert Wiki und schlägt Schema-Verbesserungen vor |
 | **⏹️ Vorgang abbrechen** | `Cmd+P` → "Cancel current ingestion" oder Statusleisten-Klick — sicheres Stoppen an Batch-Grenzen |
+| **🎯 One-Click-Aufnahme** | `sticker` Icon in Seitenleiste oder `Cmd+P` → "Ingest current file" — aktuelle Datei direkt aufnehmen |
 
 Re-Ingesting derselben Source führt zu inkrementellen Updates auf Entity/Concept-Seiten (neue Info wird gemerged). Summary-Seiten werden regeneriert.
 

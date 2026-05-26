@@ -98,6 +98,7 @@ LLM-Wikiはこれを逆転させます。あなたが手作業でグラフを構
 | **🛠️ WikiのLint** | `Cmd+P` → "WikiのLint" — 重複検出、dead links、orphans、空ページ、不足エイリアスの健全性スキャン |
 | **📋 インデックスの再生成** | `Cmd+P` → "インデックスの再生成" — `wiki/index.md`をエイリアス情報付きで再構築 |
 | **⏹️ 操作キャンセル** | `Cmd+P` → "Cancel current ingestion" またはステータスバークリック — バッチ境界で安全に停止し、完了済みの作業を保持 |
+| **🎯 ワンクリック取込** | 左サイドバーの `sticker` アイコンまたは `Cmd+P` → "Ingest current file" — 現在開いているファイルを直接取込 |
 | **💡 スキーマ更新の提案** | `Cmd+P` → "スキーマ更新の提案" — LLMがWikiを分析しスキーマ改善を提案 |
 
 同じSourceを再ingestすると、Entity/Conceptページは増分更新（新情報がmerge）。Summaryページはregenerateされる。
