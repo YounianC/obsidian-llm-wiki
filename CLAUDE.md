@@ -27,16 +27,20 @@
 - ✅ **Issue #30/#31 — Aliases + Granularity expansion**: Minimal/Custom options, UX improvements, i18n across 8 languages.
 
 ### P1 — Short-term
-- LLM client retry extraction (shared `withRetry`)
-- `createMessageStream` language type consistency
-- `parseJsonResponse` + `mergeFrontmatter` unit tests
+- LLM client retry extraction (shared `withRetry`) — duplicated across 3 clients
+- `createMessageStream` language type consistency — interface vs implementation mismatch
+- Ingest current file (no file picker) + ribbon icon (Issue #44) — one-click ingest
 
 ### P2 — Medium-term
-- `slugify` debug log reduction (8→2)
-- Residual Chinese comment cleanup
-- Ingest current file (no file picker) + ribbon icon (Issue #44)
-- Anthropic prompt caching via `cache_control: ephemeral` (Issue #38)
-- `mentions_in_source` filtering in merge prompts (Issue #39)
+- `parseJsonResponse` + `mergeFrontmatter` unit tests — auditors' #1 test priority
+- Anthropic prompt caching via `cache_control: ephemeral` (Issue #38) — cost savings
+- `mentions_in_source` filtering in merge prompts (Issue #39) — merge quality
+- `slugify` debug log reduction (8→2) — high-frequency noise
+- Residual Chinese comment cleanup — codebase language consistency
+
+### P3 — Nice-to-have
+- Source title in frontmatter (Issue #36) — needs clarification from issue author
+- Connection failure UX (Issue #42) — network error guidance
 
 ### Already Evaluated (not doing)
 - `getExistingWikiPages` cache bypass → Solve when it hurts
