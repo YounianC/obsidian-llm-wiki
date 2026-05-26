@@ -166,7 +166,6 @@ export interface LLMClient {
     max_tokens: number;
     system?: string;
     messages: Array<{role: 'user' | 'assistant'; content: string}>;
-    language: 'en' | 'zh' | 'ja' | 'ko' | 'de' | 'fr' | 'es' | 'pt';
     onChunk: (chunk: string) => void;
   }): Promise<string>;
 

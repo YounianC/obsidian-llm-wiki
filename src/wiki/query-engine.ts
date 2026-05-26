@@ -385,7 +385,6 @@ export class QueryModal extends Modal {
             max_tokens: 3000,
             system: wikiContext,
             messages: conversationMessages,
-            language: this.plugin.settings.language,
             onChunk: (chunk) => {
               if (this.aborted) return;
               this.accumulatedResponse += chunk;
