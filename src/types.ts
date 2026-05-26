@@ -146,6 +146,7 @@ export interface IngestReport {
   elapsedSeconds?: number;
   skippedFiles?: number;
   totalFilesInFolder?: number;
+  cancelled?: boolean;
 }
 
 // LLM Client interface

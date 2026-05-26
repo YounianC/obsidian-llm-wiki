@@ -316,6 +316,11 @@ export const JA_TEXTS = {
     cmdLintWiki: 'WikiのLint',
     cmdRegenerateIndex: 'インデックスの再生成',
     cmdSuggestSchema: 'スキーマ更新の提案',
+    cmdCancelIngestion: '現在の取り込みをキャンセル',
+
+    // Ingestion status bar
+    ingestionStatusBar: '取り込み中... クリックでキャンセル',
+    ingestionCancelled: '取り込みがキャンセルされました',
 
     // Lint Report
     lintReportTitle: 'Wiki Lintレポート',

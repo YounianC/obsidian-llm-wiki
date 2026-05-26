@@ -319,6 +319,11 @@ export const EN_TEXTS = {
     cmdLintWiki: 'Lint wiki',
     cmdRegenerateIndex: 'Regenerate index',
     cmdSuggestSchema: 'Suggest schema updates',
+    cmdCancelIngestion: 'Cancel current ingestion',
+
+    // Ingestion status bar
+    ingestionStatusBar: 'Ingesting... click to cancel',
+    ingestionCancelled: 'Ingestion cancelled',
 
     // Lint Report
     lintReportTitle: 'Wiki lint report',

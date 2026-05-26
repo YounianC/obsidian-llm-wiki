@@ -311,3 +311,8 @@
   gap: 12px;
   justify-content: flex-end;
 }
+
+/* Ingestion status bar */
+.llm-wiki-status-bar-hidden {
+  display: none;
+}

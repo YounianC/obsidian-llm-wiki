@@ -317,6 +317,11 @@ export const ZH_TEXTS = {
     cmdLintWiki: '维护 Wiki',
     cmdRegenerateIndex: '重新生成索引',
     cmdSuggestSchema: '建议 Schema 更新',
+    cmdCancelIngestion: '取消当前提取',
+
+    // Ingestion status bar
+    ingestionStatusBar: '提取中... 点击取消',
+    ingestionCancelled: '提取已取消',
 
     // 维护报告
     lintReportTitle: 'Wiki 维护报告',

@@ -49,6 +49,10 @@ export class WikiEngine {
   private sourceAnalyzer: SourceAnalyzer;
   private pageFactory: PageFactory;
   private conversationIngestor: ConversationIngestor;
+  private abortController: AbortController | null = null;
+  wasCancelled = false;
+  private onIngestionStart: (() => void) | null = null;
+  private onIngestionEnd: (() => void) | null = null;
   private pagesCache: Array<{path: string; title: string; wikiLink: string; aliases?: string[]}> | null = null;
   private pagesCacheTime = 0;
   private readonly PAGES_CACHE_TTL_MS = 5000;
@@ -119,6 +123,28 @@ export class WikiEngine {
     this.onDone = cb;
   }
 
+  setIngestionCallbacks(onStart: (() => void) | null, onEnd: (() => void) | null): void {
+    this.onIngestionStart = onStart;
+    this.onIngestionEnd = onEnd;
+  }
+
+  cancelIngestion(): void {
+    if (this.abortController) {
+      this.abortController.abort();
+      console.debug('Ingestion cancellation requested');
+    }
+  }
+
+  isIngesting(): boolean {
+    return this.abortController !== null;
+  }
+
+  private checkCancelled(): void {
+    if (this.abortController?.signal.aborted) {
+      throw new DOMException('Ingestion cancelled by user', 'AbortError');
+    }
+  }
+
   // Proxy for lint-controller to access LintFixer methods without exposing the class
   async fixPollutedPage(oldPath: string, newBasename: string): Promise<string> {
     return this.lintFixer.fixPollutedPage(oldPath, newBasename);
@@ -142,6 +168,11 @@ export class WikiEngine {
     console.debug('=== Ingestion started ===');
     console.debug('Source file:', file.path);
     const totalStartTime = Date.now();
+
+    // Setup cancellation support
+    this.wasCancelled = false;
+    this.abortController = new AbortController();
+    this.onIngestionStart?.();
 
     // Long-source warning: read file early to estimate processing time.
     // Large files trigger iterative batch extraction (multiple LLM passes),
@@ -180,6 +211,8 @@ export class WikiEngine {
       const analysisTime = Date.now() - analysisStart;
       console.debug(`[Time] Source analysis phase: ${analysisTime}ms`);
       console.debug('Analysis result:', JSON.stringify(analysis, null, 2));
+
+      this.checkCancelled();
 
       const totalSteps = 1 + analysis.entities.length + analysis.concepts.length + analysis.related_pages.length + 2;
       let step = 1;
@@ -231,6 +264,7 @@ export class WikiEngine {
 
       // Process in batches based on concurrency setting
       for (let i = 0; i < tasks.length; i += concurrency) {
+        this.checkCancelled();
         const batch = tasks.slice(i, i + concurrency);
 
         // Execute batch with Promise.allSettled for error isolation
@@ -343,6 +377,7 @@ export class WikiEngine {
 
       // 分批并行处理
       for (let i = 0; i < relatedTasks.length; i += relatedConcurrency) {
+        this.checkCancelled();
         const batch = relatedTasks.slice(i, i + relatedConcurrency);
 
         // 执行batch并行更新
@@ -459,11 +494,33 @@ export class WikiEngine {
       });
 
     } catch (error) {
+      const createdPages = analysis?.created_pages || [];
+
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        this.wasCancelled = true;
+        console.debug('=== Ingestion cancelled by user ===');
+        const t = TEXTS[this.settings.language] || TEXTS.en;
+        new Notice((t as unknown as Record<string, string>).ingestionCancelled || 'Ingestion cancelled', 5000);
+        this.onDone?.({
+          sourceFile: file.path,
+          createdPages,
+          updatedPages: analysis?.updated_pages || [],
+          entitiesCreated: createdPages.filter(p => p.includes('/entities/')).length,
+          conceptsCreated: createdPages.filter(p => p.includes('/concepts/')).length,
+          failedItems,
+          contradictionsFound: analysis?.contradictions?.length || 0,
+          success: false,
+          cancelled: true,
+          errorMessage: 'Cancelled by user',
+          elapsedSeconds: Math.round((Date.now() - totalStartTime) / 1000)
+        });
+        return;
+      }
+
       console.error('=== Ingestion failed ===');
       console.error('Error:', error);
       const errorMsg = error instanceof Error ? error.message : String(error);
 
-      const createdPages = analysis?.created_pages || [];
       this.onDone?.({
         sourceFile: file.path,
         createdPages,
@@ -477,6 +534,9 @@ export class WikiEngine {
         elapsedSeconds: Math.round((Date.now() - totalStartTime) / 1000)
       });
       throw error;
+    } finally {
+      this.abortController = null;
+      this.onIngestionEnd?.();
     }
   }
 

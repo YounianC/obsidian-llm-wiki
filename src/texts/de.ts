@@ -316,6 +316,11 @@ export const DE_TEXTS = {
     cmdLintWiki: 'Wiki prüfen',
     cmdRegenerateIndex: 'Index neu generieren',
     cmdSuggestSchema: 'Schema-Aktualisierungen vorschlagen',
+    cmdCancelIngestion: 'Aktuelle Aufnahme abbrechen',
+
+    // Ingestion status bar
+    ingestionStatusBar: 'Aufnahme läuft... zum Abbrechen klicken',
+    ingestionCancelled: 'Aufnahme abgebrochen',
 
     // Lint Report
     lintReportTitle: 'Wiki-Prüfbericht',

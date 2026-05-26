@@ -317,6 +317,11 @@ export const KO_TEXTS = {
     cmdLintWiki: '위키 린트',
     cmdRegenerateIndex: '인덱스 재생성',
     cmdSuggestSchema: '스키마 업데이트 제안',
+    cmdCancelIngestion: '현재 수집 취소',
+
+    // Ingestion status bar
+    ingestionStatusBar: '수집 중... 클릭하여 취소',
+    ingestionCancelled: '수집이 취소되었습니다',
 
     // Lint Report
     lintReportTitle: '위키 린트 보고서',

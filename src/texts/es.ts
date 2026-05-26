@@ -316,6 +316,11 @@ export const ES_TEXTS = {
     cmdLintWiki: 'Verificar wiki',
     cmdRegenerateIndex: 'Regenerar índice',
     cmdSuggestSchema: 'Sugerir actualizaciones del esquema',
+    cmdCancelIngestion: 'Cancelar ingesta actual',
+
+    // Ingestion status bar
+    ingestionStatusBar: 'Ingiriendo... clic para cancelar',
+    ingestionCancelled: 'Ingesta cancelada',
 
     // Lint Report
     lintReportTitle: 'Informe de verificación lint de la Wiki',

@@ -42,6 +42,7 @@ export default class LLMWikiPlugin extends Plugin {
   schemaManager: SchemaManager;
   autoMaintainManager: AutoMaintainManager;
   private progressNotice: Notice | null = null;
+  private ingestStatusBar: HTMLElement | null = null;
 
   async onload() {
     await this.loadSettings();
@@ -126,6 +127,34 @@ export default class LLMWikiPlugin extends Plugin {
       name: t.cmdSuggestSchema,
       callback: () => this.suggestSchemaUpdate()
     });
+
+    this.addCommand({
+      id: 'cancel-ingestion',
+      name: t.cmdCancelIngestion,
+      callback: () => this.wikiEngine.cancelIngestion()
+    });
+
+    this.ingestStatusBar = this.addStatusBarItem();
+    this.ingestStatusBar.addClass('llm-wiki-status-bar');
+    this.ingestStatusBar.addClass('llm-wiki-status-bar-hidden');
+    this.ingestStatusBar.setText('LLM wiki');
+    this.ingestStatusBar.onclick = () => this.wikiEngine.cancelIngestion();
+
+    this.wikiEngine.setIngestionCallbacks(
+      () => {
+        const texts = TEXTS[this.settings.language] || TEXTS.en;
+        const label = (texts as unknown as Record<string, string>).ingestionStatusBar || 'Ingesting... click to cancel';
+        if (this.ingestStatusBar) {
+          this.ingestStatusBar.setText(label);
+          this.ingestStatusBar.removeClass('llm-wiki-status-bar-hidden');
+        }
+      },
+      () => {
+        if (this.ingestStatusBar) {
+          this.ingestStatusBar.addClass('llm-wiki-status-bar-hidden');
+        }
+      }
+    );
 
     this.addSettingTab(new LLMWikiSettingTab(this.app, this));
 
@@ -324,6 +353,10 @@ export default class LLMWikiPlugin extends Plugin {
           this.showProgress(`[${i + 1}/${ingestCount}] ${file.basename}`);
           console.debug(`(${i + 1}/${ingestCount}) ingesting: ${file.path}`);
           await this.wikiEngine.ingestSource(file);
+          if (this.wikiEngine.wasCancelled) {
+            console.debug(`Folder ingestion cancelled at file ${i + 1}/${ingestCount}`);
+            break;
+          }
           console.debug(`(${i + 1}/${ingestCount}) ingestion success: ${file.path}`);
         } catch (error) {
           console.error(`(${i + 1}/${ingestCount}) ingestion failed: ${file.path}`, error);
