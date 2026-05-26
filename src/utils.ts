@@ -11,7 +11,6 @@ export function slugify(text: string): string {
   }
 
   const trimmed = text.trim();
-  console.debug('after trim:', trimmed, 'length:', trimmed.length);
 
   // Step 1: Remove ASCII control characters (char code < 32) and filesystem-unsafe symbols
   const afterRemoveInvalid = trimmed
@@ -19,7 +18,6 @@ export function slugify(text: string): string {
     .filter(c => c.charCodeAt(0) >= 32)
     .join('')
     .replace(/[/\\:*?"<>|,()'、，。；：！？（）【】《》]/g, '');
-  console.debug('after removing invalid chars:', afterRemoveInvalid, 'length:', afterRemoveInvalid.length);
 
   if (afterRemoveInvalid.length === 0) {
     console.warn('slugify: empty after removing invalid chars，using fallback name');
@@ -29,11 +27,9 @@ export function slugify(text: string): string {
 
   // Step 2: Convert spaces and dots to dashes
   const afterSpaceToDash = afterRemoveInvalid.replace(/[\s.]+/g, '-');
-  console.debug('after space-to-dash:', afterSpaceToDash, 'length:', afterSpaceToDash.length);
 
   // Step 3: Merge multiple dashes
   const afterMergeDash = afterSpaceToDash.replace(/-+/g, '-');
-  console.debug('after dash merge:', afterMergeDash, 'length:', afterMergeDash.length);
 
   // Step 4: Remove leading and trailing dashes
   const finalSlug = afterMergeDash.replace(/^-|-$/g, '').trim();
