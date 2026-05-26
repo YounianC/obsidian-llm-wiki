@@ -14,6 +14,31 @@
 
 ---
 
+## 📑 Contents
+
+- [💡 What is LLM-Wiki?](#what-is-llm-wiki)
+- [⚡ Why Obsidian + LLM-Wiki?](#why-obsidian--llm-wiki)
+- [🚀 Quick Start](#quick-start)
+  - [📦 Installation](#installation)
+  - [🔄 Updating](#updating)
+  - [🔑 Configure an LLM Provider](#configure-an-llm-provider)
+  - [🎮 Usage](#usage)
+  - [⚠️ Upgrading from an Older Version?](#upgrading-from-an-older-version)
+- [✨ Features](#features)
+  - [📊 Knowledge Quality](#knowledge-quality)
+  - [🛠️ Maintenance](#maintenance)
+  - [💬 Query & Feedback](#query--feedback)
+  - [🌐 LLM & Language](#llm--language)
+  - [🏗️ Architecture & Performance](#architecture--performance)
+- [⌨️ Commands](#commands)
+- [📖 Example](#example)
+- [🤖 Model Recommendations](#model-recommendations)
+- [❓ FAQ](#faq)
+- [📜 License](#license)
+- [🙏 Acknowledgments](#acknowledgments)
+
+---
+
 ## 💡 What is LLM-Wiki?
 
 You write. AI organizes. You ask. That's it.

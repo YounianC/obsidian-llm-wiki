@@ -24,12 +24,13 @@ pnpm build
 
 ## Quality Checks
 
-All three checks must pass before submitting any change:
+All four checks must pass before submitting any change:
 
 ```bash
-pnpm lint    # ESLint with Obsidian plugin rules (0 errors, 0 warnings)
-pnpm test    # Vitest unit tests
-pnpm build   # esbuild production build (must exit cleanly)
+pnpm lint          # ESLint with Obsidian plugin rules (0 errors, 0 warnings)
+pnpm test          # Vitest unit tests (113 tests, 0 failures)
+npx tsc --noEmit   # TypeScript type check (0 errors)
+pnpm build         # esbuild production build (must exit cleanly)
 ```
 
 ## Code Conventions
@@ -41,6 +42,8 @@ pnpm build   # esbuild production build (must exit cleanly)
 - **Booleans**: prefix with `is/has/can` (e.g., `isValid`, `hasContent`)
 - **Commit messages**: English, conventional commits format (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`)
 - **Obsidian Bot compliance**: 15 `eslint-plugin-obsidianmd` rules enforced by `pnpm lint`
+- **llmReady guard**: New core features must call `requireLLMReady()` at entry points. The plugin requires a successful connection test before core features are available.
+- **i18n**: UI strings use the TEXTS system. English strings in `src/texts/en.ts` are the canonical source; all 7 other languages must be updated in lockstep.
 
 ## Project Structure
 
@@ -51,11 +54,16 @@ src/
 ├── utils.ts             # Utilities (slugify, parseJson, frontmatter parsing)
 ├── llm-client.ts        # LLM clients (Anthropic, OpenAI-compatible)
 ├── wiki/                # Wiki engine modules
-│   ├── wiki-engine.ts   # Orchestrator
-│   ├── query-engine.ts  # Conversational query
+│   ├── wiki-engine.ts   # Orchestrator (ingest, lint, log)
+│   ├── query-engine.ts  # Conversational query with streaming
+│   ├── source-analyzer.ts # Iterative batch extraction
 │   ├── page-factory.ts  # Entity/concept CRUD + merge
-│   ├── lint-fixes.ts    # Fix logic (dead links, orphans, empty pages)
-│   ├── lint/            # Lint sub-modules
+│   ├── conversation-ingest.ts # Chat → wiki knowledge
+│   ├── lint-controller.ts # Lint orchestration
+│   ├── lint-fixes.ts    # Fix logic (dead links, orphans, stubs)
+│   ├── contradictions.ts # Contradiction detection
+│   ├── system-prompts.ts # Language directive + section labels
+│   ├── lint/            # Lint sub-modules (duplicate detection)
 │   └── prompts/         # LLM prompt templates by domain
 ├── schema/              # Schema co-evolution
 ├── ui/                  # Settings + Modals
@@ -71,14 +79,14 @@ src/
 
 ## Testing
 
-Unit tests cover pure utility functions in `src/__tests__/`. Run with:
+Unit tests cover pure utility functions in `src/__tests__/` (113 tests across 2 files). Run with:
 
 ```bash
 pnpm test          # single run
 pnpm test:watch    # watch mode
 ```
 
-Functions that depend on Obsidian APIs (vault I/O, file operations) should be tested manually in Obsidian.
+Functions that depend on Obsidian APIs (vault I/O, file operations) should be tested manually in Obsidian. When adding new features, include unit tests for any pure logic (parsing, transformation, validation).
 
 ## Architecture Principles
 
@@ -91,10 +99,13 @@ This plugin follows [Karpathy's LLM Wiki vision](https://gist.github.com/karpath
 
 ## Pull Request Process
 
-1. Run `pnpm lint && pnpm test && pnpm build` — all must pass
-2. Update CHANGELOG.md if the change is user-visible
-3. Commit with English conventional commit message
-4. Open a PR against `main` branch
+1. Run `pnpm lint && pnpm test && npx tsc --noEmit && pnpm build` — all must pass
+2. Add or update unit tests for any changed pure logic
+3. Update CHANGELOG.md if the change is user-visible
+4. Update all 8 README language variants if the change affects user-facing features or workflow
+5. Update CLAUDE.md and memory files to reflect completed work
+6. Commit with English conventional commit message
+7. Open a PR against `main` branch
 
 ## Questions?
 

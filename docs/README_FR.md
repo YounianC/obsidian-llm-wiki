@@ -14,6 +14,36 @@
 
 ---
 
+## 📑 Contents
+
+- [💡 Présentation](#présentation)
+- [⚡ Pourquoi Obsidian + LLM-Wiki ?](#pourquoi-obsidian-llm-wiki)
+- [🚀 Démarrage rapide](#démarrage-rapide)
+  - [📦 Installation](#installation)
+  - [🔄 Mettre à jour le plugin](#mettre-à-jour-le-plugin)
+  - [🔑 Configuration d'un Provider LLM](#configuration-dun-provider-llm)
+  - [🎮 Utilisation](#utilisation)
+  - [⚠️ Mise à niveau depuis une version antérieure ?](#mise-à-niveau-depuis-une-version-antérieure)
+- [✨ Fonctionnalités](#fonctionnalités)
+  - [📊 Qualité des connaissances](#qualité-des-connaissances)
+  - [🛠️ Maintenance](#maintenance)
+  - [💬 Query et feedback](#query-et-feedback)
+  - [🌐 LLM et langue](#llm-et-langue)
+  - [🏗️ Architecture et performance](#architecture-et-performance)
+- [⌨️ Commandes](#commandes)
+- [📖 Exemple](#exemple)
+- [🤖 Guide de sélection de modèle](#guide-de-sélection-de-modèle)
+- [🏗️ Architecture](#architecture)
+- [❓ FAQ](#faq)
+  - [💡 Général](#général)
+  - [🏷️ Alias & Doublons](#alias-doublons)
+  - [⚡ Performance & Contrôle des coûts](#performance-contrôle-des-coûts)
+  - [🧹 Maintenance](#maintenance)
+  - [🔍 Dépannage](#dépannage)
+- [📜 Licence](#licence)
+- [🙏 Remerciements](#remerciements)
+
+
 ## 💡 Présentation
 
 Vous écrivez. L'IA organise. Vous interrogez. Rien de plus.

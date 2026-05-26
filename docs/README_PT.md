@@ -14,6 +14,37 @@
 
 ---
 
+## 📑 Contents
+
+- [💡 O que é LLM-Wiki?](#o-que-é-llm-wiki)
+- [⚡ Por que Obsidian + LLM-Wiki?](#por-que-obsidian-llm-wiki)
+- [🚀 Início Rápido](#início-rápido)
+  - [📦 Instalação](#instalação)
+  - [🔄 Atualizar o plugin](#atualizar-o-plugin)
+  - [🔑 Configurar um LLM Provider](#configurar-um-llm-provider)
+  - [🎮 Uso](#uso)
+  - [⚠️ Atualizando de uma Versão Anterior?](#atualizando-de-uma-versão-anterior)
+- [✨ Funcionalidades](#funcionalidades)
+  - [📊 Qualidade do Conhecimento](#qualidade-do-conhecimento)
+  - [🛠️ Manutenção](#manutenção)
+  - [💬 Consulta e Feedback](#consulta-e-feedback)
+  - [🌐 LLM e Idioma](#llm-e-idioma)
+  - [🏗️ Arquitetura e Desempenho](#arquitetura-e-desempenho)
+- [⌨️ Comandos](#comandos)
+- [📖 Exemplo](#exemplo)
+- [Menções na Source](#menções-na-source)
+- [🤖 Guia de Seleção de Modelo](#guia-de-seleção-de-modelo)
+- [🏗️ Arquitetura](#arquitetura)
+- [❓ Perguntas Frequentes (FAQ)](#perguntas-frequentes-faq)
+  - [💡 Geral](#geral)
+  - [🏷️ Aliases e Duplicados](#aliases-e-duplicados)
+  - [⚡ Performance e Controle de custos](#performance-e-controle-de-custos)
+  - [🧹 Manutenção](#manutenção)
+  - [🔍 Solução de Problemas](#solução-de-problemas)
+- [📜 Licença](#licença)
+- [🙏 Agradecimentos](#agradecimentos)
+
+
 ## 💡 O que é LLM-Wiki?
 
 Você escreve. A IA organiza. Você pergunta. Simples assim.
