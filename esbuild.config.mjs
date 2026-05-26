@@ -10,6 +10,7 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = (process.argv[2] === 'production');
+const oneShot = prod || (process.argv[2] === 'dev');
 
 const prodBanner = prod ? 'console.debug = function() {};\n' : '';
 
@@ -42,7 +43,7 @@ const context = await esbuild.context({
   outfile: 'main.js',
 });
 
-if (prod) {
+if (oneShot) {
   await context.rebuild();
   process.exit(0);
 } else {
