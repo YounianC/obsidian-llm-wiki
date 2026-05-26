@@ -99,10 +99,26 @@ src/
 ├── ui/
 │   ├── settings.ts                 # Settings panel
 │   └── modals.ts                   # Lint/Ingest/Query modals
-└── __tests__/                      # Unit tests (vitest, 106 tests)
+└── __tests__/                      # Unit tests (vitest, 121 tests)
 ```
 
 ---
+
+## 🛡️ Three-No Principle (三无原则)
+
+Every change must satisfy all three before being considered complete:
+
+1. **无副作用 (No Side Effects)**: Changes must not affect behavior outside their intended scope. Refactored code must produce identical output. New features must not alter existing workflows.
+2. **无破坏性 (No Breaking Changes)**: No API signature changes without call-site updates. No config format changes. No file format changes. Existing users must not need to reconfigure.
+3. **无测试错误警告 (No Test Errors or Warnings)**: `pnpm lint` must produce 0 errors and 0 warnings. `pnpm test` must pass all tests (0 failures). `npx tsc --noEmit` must produce 0 errors.
+
+Verification gates:
+```
+pnpm lint          # 0 errors, 0 warnings
+pnpm test          # all pass, 0 failures
+npx tsc --noEmit   # 0 errors
+pnpm build         # clean exit
+```
 
 ## ⚠️ Git Safety Protocol
 
