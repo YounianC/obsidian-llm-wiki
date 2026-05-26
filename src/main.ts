@@ -146,7 +146,7 @@ export default class LLMWikiPlugin extends Plugin {
       callback: () => this.ingestActiveFile()
     });
 
-    this.addRibbonIcon('file-up', t.cmdIngestActiveFile, () => {
+    this.addRibbonIcon('sticker', t.cmdIngestActiveFile, () => {
       this.ingestActiveFile();
     });
 

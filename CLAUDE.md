@@ -16,6 +16,9 @@
 - ✅ **Lint double-nested link auto-fix**: Lint now programmatically detects and fixes `[[[[...]]]]` patterns across all wiki directory files. +5 unit tests.
 - ✅ **Lint cancel support**: `runLintWiki` accepts `AbortSignal`, checks at batch boundaries (page reads, LLM dedup, LLM analysis). Shared status bar and command with ingest cancel.
 - ✅ **Cancellation UX feedback**: CancelIngestion immediately shows Notice toast + updates progress indicator.
+- ✅ **ROADMAP P1 — LLM client retry extraction**: Shared `withRetry<T>` helper eliminates duplicated retry loops across all 3 client classes (exponential backoff, error pattern matching, truncation retry). Code reduced -67 lines in `llm-client.ts`.
+- ✅ **ROADMAP P1 — `createMessageStream` language cleanup**: Removed unused `language` parameter from interface and 3 implementations. Auto-detecting question language is correct behavior — better UX than forcing UI language.
+- ✅ **Issue #44 — Ribbon icon + ingest current file**: `addRibbonIcon('sticker')` + command `Ingest current file`. Uses `getActiveFile()` to skip file picker. Validates non-md files and missing API key. 8-language i18n.
 
 ### Completed (v1.10.2)
 - ✅ **Custom granularity per-type limits fix**: Three inconsistencies fixed — `source-analyzer.ts` enforces per-type caps, `getGranularityInstruction()` injects concrete numbers, `getGranularityFixLimits()` reads user settings. +6 unit tests.
@@ -26,10 +29,10 @@
 ### Completed (v1.10.0)
 - ✅ **Issue #30/#31 — Aliases + Granularity expansion**: Minimal/Custom options, UX improvements, i18n across 8 languages.
 
-### P1 — Short-term
-- LLM client retry extraction (shared `withRetry`) — duplicated across 3 clients
-- `createMessageStream` language type consistency — interface vs implementation mismatch
-- Ingest current file (no file picker) + ribbon icon (Issue #44) — one-click ingest
+### P1 — Short-term (all completed ✅)
+- ~~LLM client retry extraction~~ → done v1.10.3
+- ~~`createMessageStream` language type consistency~~ → dead code removed v1.10.3
+- ~~Ingest current file + ribbon icon (Issue #44)~~ → done v1.10.3
 
 ### P2 — Medium-term
 - `parseJsonResponse` + `mergeFrontmatter` unit tests — auditors' #1 test priority
