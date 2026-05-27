@@ -88,13 +88,17 @@ export class SourceAnalyzer {
     // Build granularity instruction from shared definitions
     const granularityInstruction = getGranularityInstruction(this.ctx.settings)
 
-    const templateUntouched = PROMPTS.analyzeSource
+    // B1: Batch 1 uses full existing page list for semantic dedup.
+    // Batch 2+ only needs extracted names — the full 2141-page list is
+    // ~200K chars of prompt bloat. PageFactory.resolvePagePath catches
+    // any remaining semantic duplicates with 3-layer defense.
+    const templateWithPlaceholder = PROMPTS.analyzeSource
       .replace('{{content}}', content)
-      .replace('{{existing_pages}}', existingPagesList);
+      .replace('{{existing_pages}}', '{{page_list}}');
     const batchMarker = '{{batch_context}}';
-    const markerIdx = templateUntouched.indexOf(batchMarker);
-    const staticPrefix = templateUntouched.substring(0, markerIdx);
-    const suffixTemplate = templateUntouched.substring(markerIdx + batchMarker.length);
+    const markerIdx = templateWithPlaceholder.indexOf(batchMarker);
+    const staticPrefix = templateWithPlaceholder.substring(0, markerIdx);
+    const suffixTemplate = templateWithPlaceholder.substring(markerIdx + batchMarker.length);
 
     const client = this.ctx.getClient();
     if (!client) throw new Error('LLM client not initialized');
@@ -102,15 +106,22 @@ export class SourceAnalyzer {
     for (let batchNum = 0; batchNum < MAX_BATCHES; batchNum++) {
       const isFirstBatch = batchNum === 0;
 
+      // B1: Full page list only for first batch; subsequent batches just need dedup names
+      const pageList = isFirstBatch
+        ? existingPagesList
+        : 'Already extracted (do NOT repeat any of these): ' +
+          [...extractedNames].map(n => `"${n}"`).join(', ');
+
       let batchContext: string;
       if (isFirstBatch) {
         batchContext = 'This is the first extraction round. Extract the most important entities and concepts from the source.';
       } else {
-        const nameList = [...extractedNames].map(n => `"${n}"`).join(', ');
-        batchContext = `This is round ${batchNum + 1} of extraction. The following items have already been extracted — do NOT repeat them:\n${nameList}\n\nExtract the next batch of most important entities and concepts from the remaining content. If no more items are worth extracting, return empty arrays [] for entities and concepts.`;
+        batchContext = `This is round ${batchNum + 1} of extraction. Extract the next batch of most important entities and concepts from the remaining content. If no more items are worth extracting, return empty arrays [] for entities and concepts.`;
       }
 
-      const prompt = staticPrefix + batchContext + suffixTemplate
+      const prompt = staticPrefix
+        .replace('{{page_list}}', pageList)
+        + batchContext + suffixTemplate
         .replace('{{granularity_instruction}}', granularityInstruction)
         .replace(/{{batch_size}}/g, String(currentBatchSize));
 
