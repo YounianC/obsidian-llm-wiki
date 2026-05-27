@@ -154,6 +154,17 @@ gh pr merge <PR#> --merge --delete-branch
 git checkout main && git pull origin main
 ```
 
+## Tag & Release workflow
+
+Tags are pushed AFTER the PR is merged to main:
+```bash
+# Ensure you're on the latest main with the merged commit
+git checkout main && git pull origin main
+git tag -a X.Y.Z -m "X.Y.Z"
+git push origin X.Y.Z
+# GitHub Actions creates the draft release automatically
+```
+
 ---
 
 ## 📋 Karpathy Philosophy Compliance
