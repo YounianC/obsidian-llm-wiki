@@ -4,7 +4,7 @@
 
 > AI駆動の構造化知識ベース — ノートを自動的にWikiに変換。[Andrej KarpathyのLLM Wiki概念](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)に基づく実装。
 >
-> **Obsidian公式評価94/100** | 8言語ネイティブ対応 | 活発に維持、継続進化
+> **Obsidian公式評価95/100** | 8言語ネイティブ対応 | 活発に維持、継続進化
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/green-dalii/obsidian-llm-wiki) ![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-8%2B-cyan?style=flat-square)
 
@@ -24,6 +24,7 @@
   - [🔑 LLM Providerを設定](#-llm-providerを設定)
   - [🎮 使用方法](#-使用方法)
   - [⚠️ 旧バージョンからアップグレードする場合](#️-旧バージョンからアップグレードする場合)
+- [⚡ v1.12.0 更新のポイント](#-v1120-更新のポイント)
 - [✨ 特徴](#-特徴)
   - [📊 Knowledge Quality](#-knowledge-quality)
   - [🛠️ Maintenance](#️-maintenance)
@@ -172,6 +173,26 @@ Settings → **Ingestion Acceleration**:
 > **🛡️ Safety**: Parallel generationは`Promise.allSettled`を使用 — 一ページが失敗しても他は継続。失敗ページはexponential backoffで個別retry。Smart Batch Skip（v1.7.7）は既に取り込んだファイルを自動検出して時間とAPIコストを節約します。
 
 ---
+---
+
+## ⚡ v1.12.0 更新のポイント
+
+本リリースは**本番環境向けのパフォーマンス更新**です。Ingestion の抽出フローが根本的に再設計されました——ページリストが各 LLM プロンプトから排除され、Wiki の規模に関わらず一定の速度で抽出が完了します。
+
+**主な改善点：**
+
+- **Ingestion が約80%高速化。** 短いソースが従来の 30〜90 秒から 5〜15 秒に短縮。Wiki が大きいほど効果が顕著です。
+- **抽出品質が大幅向上。** 20万文字のページリストで LLM が混乱し、無関係のエンティティを幻覚する問題が解消されました。
+- **Wiki サイズが個別ファイルの Ingestion 速度に影響しなくなりました。** 1万ページの Wiki でも 500 ページと同じ速度で処理。大規模本番環境での使用が可能に。
+- **スマートバッチ制御。** 短い記事は 1〜2 ラウンドで完了。進捗表示にバッチ数と累計件数を表示。
+- **確定的な Related Page マッチング。** プログラム的な slug+alias マッチングにより、LLM 推測に依存しない高精度な関連ページ検出を実現。
+
+**旧バージョンからアップグレード？** アップグレード後に **Lint Wiki** を1回実行するだけで、過去のデータ問題を自動修復。既存の設定はそのまま保持されます。
+
+**全ユーザーへの本バージョンへのアップグレードを強く推奨します。**
+
+---
+
 
 ## ✨ 特徴
 

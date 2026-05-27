@@ -4,7 +4,7 @@
 
 > Base de connaissances structurée alimentée par IA. Ingestion automatique des notes et génération d'un Wiki interconnecté — inspiré du concept de [LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) d'Andrej Karpathy.
 >
-> **Note officielle Obsidian 94/100** | Support natif de 8 langues | Maintenance active, évolution continue
+> **Note officielle Obsidian 95/100** | Support natif de 8 langues | Maintenance active, évolution continue
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/green-dalii/obsidian-llm-wiki) ![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-8%2B-cyan?style=flat-square)
 
@@ -24,6 +24,7 @@
   - [🔑 Configuration d'un Provider LLM](#-configuration-dun-provider-llm)
   - [🎮 Utilisation](#-utilisation)
   - [⚠️ Mise à niveau depuis une version antérieure ?](#️-mise-à-niveau-depuis-une-version-antérieure-)
+- [⚡ Quoi de neuf dans la v1.12.0](#-quoi-de-neuf-dans-la-v1120)
 - [✨ Fonctionnalités](#-fonctionnalités)
   - [📊 Qualité des connaissances](#-qualité-des-connaissances)
   - [🛠️ Maintenance](#️-maintenance)
@@ -174,6 +175,26 @@ Paramètres → **Ingestion Acceleration** :
 > **🛡️ Sécurité :** La génération parallèle utilise `Promise.allSettled` — si une page échoue, les autres poursuivent leur traitement. Les pages en échec sont réessayées individuellement avec backoff exponentiel. Smart Batch Skip (v1.7.7) détecte automatiquement les fichiers déjà ingérés pour économiser du temps et des coûts d'API.
 
 ---
+---
+
+## ⚡ Quoi de neuf dans la v1.12.0
+
+Il s'agit d'une **mise à jour de performance critique pour la production**. Le processus d'extraction d'ingestion a été fondamentalement repensé — la liste des pages n'est plus intégrée dans chaque appel LLM. L'extraction s'adapte indépendamment de la taille du Wiki.
+
+**Améliorations clés :**
+
+- **L'ingestion est ~80% plus rapide.** Un fichier court qui prenait 30–90 secondes se termine maintenant en 5–15 secondes. Plus le Wiki est grand, plus la différence est marquée.
+- **Qualité d'extraction nettement améliorée.** Sans la liste massive de pages perturbant le LLM, les extractions sont plus précises et n'hallucinent plus d'entités à partir d'autres pages Wiki.
+- **La taille du Wiki ne ralentit plus l'ingestion de fichiers individuels.** Un Wiki de 10 000 pages traite chaque fichier à la même vitesse qu'un Wiki de 500 pages. Prêt pour la production à grande échelle.
+- **Contrôle intelligent des lots.** Les articles courts se terminent en 1–2 tours. L'affichage de progression affiche le nombre de lots et les résultats cumulés.
+- **Correspondance déterministe des pages liées.** La mise en correspondance utilise désormais un algorithme de slug+alias programmatique au lieu de deviner avec le LLM — plus fiable et sans coût supplémentaire.
+
+**Mise à niveau depuis une version antérieure ?** Exécutez **Lint Wiki** une fois après la mise à niveau pour corriger automatiquement les problèmes historiques. Votre configuration existante est préservée.
+
+**Nous recommandons vivement à tous les utilisateurs de mettre à jour vers cette version.**
+
+---
+
 
 ## ✨ Fonctionnalités
 

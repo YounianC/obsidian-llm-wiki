@@ -4,7 +4,7 @@
 
 > Base de conhecimento estruturada com IA que consome suas notas e gera uma Wiki conectada — baseada no [LLM Wiki concept de Andrej Karpathy](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).
 >
-> **Pontuação oficial Obsidian 94/100** | Suporte nativo a 8 idiomas | Manutenção ativa, evolução contínua
+> **Pontuação oficial Obsidian 95/100** | Suporte nativo a 8 idiomas | Manutenção ativa, evolução contínua
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/green-dalii/obsidian-llm-wiki) ![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-8%2B-cyan?style=flat-square)
 
@@ -24,6 +24,7 @@
   - [🔑 Configurar um LLM Provider](#-configurar-um-llm-provider)
   - [🎮 Uso](#-uso)
   - [⚠️ Atualizando de uma Versão Anterior?](#️-atualizando-de-uma-versão-anterior)
+- [⚡ Novidades na v1.12.0](#-novidades-na-v1120)
 - [✨ Funcionalidades](#-funcionalidades)
   - [📊 Qualidade do Conhecimento](#-qualidade-do-conhecimento)
   - [🛠️ Manutenção](#️-manutenção)
@@ -174,6 +175,26 @@ Settings → **Ingestion Acceleration**:
 > **🛡️ Segurança**: A geração paralela usa `Promise.allSettled` — se uma página falhar, outras continuam. Páginas com falha são tentadas novamente individualmente com exponential backoff. O Smart Batch Skip (v1.7.7) detecta automaticamente arquivos já ingeridos para economizar tempo e custos de API.
 
 ---
+---
+
+## ⚡ Novidades na v1.12.0
+
+Esta é uma **atualização de desempenho crítica para produção**. O processo de extração por ingestão foi fundamentalmente redesenhado — a lista de páginas não é mais incluída em cada chamada LLM. A extração agora escala independentemente do tamanho do Wiki.
+
+**Melhorias principais:**
+
+- **A ingestão é ~80% mais rápida.** Um arquivo curto que antes levava 30–90 segundos agora é concluído em 5–15 segundos. Quanto maior o Wiki, mais significativa a diferença.
+- **Qualidade de extração significativamente melhorada.** Sem a lista massiva de páginas confundindo o LLM, a extração é mais limpa e não alucina entidades de outras páginas do Wiki.
+- **O tamanho do Wiki não afeta mais a velocidade de ingestão individual.** Um Wiki de 10.000 páginas processa cada arquivo na mesma velocidade de um de 500 páginas. Pronto para produção em larga escala.
+- **Controle inteligente de lotes.** Artigos curtos são concluídos em 1–2 rodadas. A barra de progresso mostra a contagem de lotes e resultados acumulados.
+- **Correspondência determinista de páginas relacionadas.** A correspondência cruzada usa algoritmo programático de slug+alias em vez de adivinhação do LLM — mais confiável e sem custo adicional.
+
+**Atualizando de uma versão anterior?** Execute **Lint Wiki** uma vez após a atualização para corrigir automaticamente problemas históricos. Sua configuração existente é preservada.
+
+**Recomendamos fortemente que todos os usuários atualizem para esta versão.**
+
+---
+
 
 ## ✨ Funcionalidades
 

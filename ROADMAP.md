@@ -2,37 +2,42 @@
 
 > Feature planning and improvement proposals
 
-**Version:** 1.12.0 | **Updated:** 2026-05-26
+**Version:** 1.12.0 | **Updated:** 2026-05-27
 
 ---
 
 ## Current Status
 
-### v1.12.0 — Test Infrastructure & Structural Refinement
+### Implemented (v1.12.0) — Production-Grade Performance
 
-Two independent third-party audits of v1.11.0 converged on core module test vacuum as the #1 gap. P0 addresses this + structural issues in lint-controller.
+Production-critical performance release. Extraction fundamentally rearchitected — wiki page list no longer embedded in every LLM prompt. Extraction speed is now independent of wiki size.
 
-**P0 — In Progress**
+**Key changes:**
+- Extraction prompt rearchitected: ~80% faster ingestion, scales independently of wiki size
+- Dynamic batch limits, short-content auto-downgrade, convergence detection (A+C+D)
+- Deterministic related_pages matching (slug + alias, zero LLM cost)
+- esbuild upgraded to 0.28.0, console.debug suppressed in production
+- 140 tests across 3 test files (+27)
+- What's New section in all 8 READMEs with proper localized TOC
 
-| Action | Effort | Audit Source |
-|--------|--------|-------------|
-| Production build strip `console.debug` (esbuild `drop`) | 10min | 审计二：213条三版未清理 |
-| Mock infrastructure + `page-factory.ts` core tests | 1周 | 两审计共识：~4500行核心零测试 |
-| `runLintWiki` phase extraction (835→6×~80 lines) | 半天 | 审计二：835行，趋势增长 |
+### Evaluated & Rejected (v1.12.0)
 
-**P1 — Planned**
+| Proposal | Reason |
+|----------|--------|
+| Hexagonal Architecture (Port-Adapter) | Over-engineering for Obsidian plugin context |
+| Vector search (Ollama embeddings) | Requires infrastructure <1% of users have |
+| Hash-bucket dedup (O(n²)→O(n log n)) | No user-reported perf issue; solve when it hurts |
+| Anthropic prompt caching (Issue #38) | System prompts too small for 1024-token cache threshold |
 
-| Action | Effort | Audit Source |
-|--------|--------|-------------|
-| Query local keyword filter (Layer 1, no vector search) | 1天 | 审计一：60-70%查询零API成本 |
-| Architecture diagram (Mermaid) + debug guide | 2小时 | 审计一：新贡献者入门 |
+### Next: v1.12.1+ — P3 items + community
 
-**P2 — Backlog**
+**P3 — Nice-to-have**
 
-| Action | Effort |
-|--------|--------|
-| Good First Issue tagging | 10min |
-| esbuild upgrade (dev-only vulnerability fix) | 10min |
+| Action | Effort | Why |
+|--------|--------|-----|
+| #36 — Source title in frontmatter | 1h | Needs clarification from issue author |
+| Good First Issue tagging | 10min | Community growth |
+| LLM client retry extraction | 2h | Code quality (low priority)
 
 ### Evaluated & Rejected (v1.12.0)
 

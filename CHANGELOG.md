@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2026-05-27
+
+### Added
+- **What's New section in all READMEs**: Prominent localized section highlighting key improvements per version, with proper TOC anchors in 8 languages.
+- **Deterministic related_pages matching**: After extraction, `matchExtractedToExisting` programmatically matches extracted names against existing wiki pages using slug + alias matching. Zero LLM cost, more reliable than LLM-dependent matching.
+- **Extraction progress detail**: Batch progress now shows "Analyzing batch 2/5 (6 entities, 12 concepts so far)..." instead of generic "Analyzing batch 2...".
+- **Lint duplicate batch progress**: Shows "Checking duplicates: batch 2/5..." instead of static "Checking for duplicate pages...".
+- **build:dev command**: `pnpm build:dev` builds a one-shot dev version with debug output preserved, distinct from `pnpm build` (production, suppresses console.debug) and `pnpm dev` (watch mode).
+- **`computeSlug()` silent slug function**: Bulk slug computation without debug logs, used internally by `resolvePagePath` and `matchExtractedToExisting` — eliminates ~30,000 lines of slugify debug output during a single ingestion.
+
+### Changed
+- **Extraction prompt rearchitected**: The full existing wiki page list (~200K chars for 2000+ pages) is no longer embedded in the extraction prompt. This eliminates the largest source of prompt bloat and prevents the LLM from confusing page list content with source content. Extraction speed is now independent of wiki size.
+- **Dynamic batch limits (A)**: `MAX_BATCHES` formula reworked — short sources get fewer batches (2–5), long sources get more (8–15). Previous formula overshot by 3–5× for short content.
+- **Short-content auto-downgrade (C)**: Sources under 20K characters have `maxTotalItems` capped at ~1 item per 600 characters, preventing "hard digging" for wiki-worthy entities beyond what the content actually contains.
+- **Convergence detection (D)**: When a batch yields fewer than half the requested items, batch size is halved once. If the next batch also underperforms, extraction terminates immediately — prevents grinding through many empty rounds.
+- **Silent slug operations**: `resolvePagePath` Fast path 2 now uses `computeSlug` instead of `slugify`, eliminating slugify debug log flood (~30,000 lines per ingestion in dev builds).
+- **Extraction batch progress**: Shows batch count and cumulative entity/concept counts.
+- **Granularity descriptions standardized**: All 8 languages now use ≤ notation with correct numbers (Fine ≤100, Standard ≤50, Coarse ≤10, Minimal ≤5). JA/KO/DE/FR/ES/PT previously had inconsistent values (Fine=unlimited, Coarse=20, Minimal=3).
+- **esbuild upgraded**: 0.17.3 → 0.28.0, fixing dev-server CORS vulnerability (GHSA-67mh-4wv8-2f99).
+- **Production build suppresses console.debug**: Banner injects `console.debug = function() {}` to eliminate all debug output for end users.
+
 ## [1.11.0] - 2026-05-26
 
 ### Added

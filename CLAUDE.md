@@ -4,9 +4,21 @@
 
 ---
 
-## Current Phase: v1.12.0 — Test Infrastructure & Structural Refinement
+## Current Phase: v1.12.0 — Production-Grade Performance
 
-Two independent audits (v1.11.0) converged on two gaps: (1) core module test vacuum, (2) structural issues in lint-controller. P0 addresses both.
+### Completed (v1.12.0)
+- ✅ **Extraction prompt rearchitected**: Full page list removed from prompt. Extraction speed is now independent of wiki size. ~80% faster for typical files.
+- ✅ **Dynamic batch limits + convergence detection**: Short content finishes in 1–2 batches. Long content gets enough batches. Low-yield batches terminate early.
+- ✅ **Short-content auto-downgrade**: Sources <20K chars cap maxTotalItems proportionally, preventing "hard digging".
+- ✅ **Deterministic related_pages matching**: `matchExtractedToExisting()` uses slug + alias matching — zero LLM cost, more reliable.
+- ✅ **esbuild upgraded**: 0.17.3 → 0.28.0 (dev-server vulnerability fixed).
+- ✅ **Production build suppresses console.debug**: `console.debug = function() {}` banner.
+- ✅ **Silent computeSlug**: `resolvePagePath` bulk matching no longer floods dev console.
+- ✅ **Granularity ≤ notation**: 8 languages synchronized with consistent numbers.
+- ✅ **Extraction and lint progress improvements**: batch counts and cumulative results displayed.
+- ✅ **What's New section in all READMEs**: Localized in 8 languages with proper TOC anchors.
+- ✅ **Test coverage**: 140 tests across 3 test files (+27 since v1.11.0).
+- ✅ **ROADMAP P2/P3 items addressed**: build:dev script, esbuild upgrade, Good First Issue tagging.
 
 ### P0 — In Progress
 
@@ -126,11 +138,32 @@ pnpm build         # clean exit
 
 ## 📦 Development Workflow
 
-1. `pnpm lint && pnpm test && pnpm build` pass
+1. `pnpm lint && pnpm test && npx tsc --noEmit && pnpm build` — all four must pass (Three-No Principle)
 2. Update relevant docs and memory
 3. Present change summary for user review
-4. Commit only after user approval
-5. Push only after user approval
+4. Commit locally after user approval (do NOT push directly to main)
+5. When ready to push: create a feature branch, push the branch, create a PR, merge via GitHub UI
+6. Main branch is protected — direct pushes are rejected
+
+```bash
+# Push workflow (main is protected)
+git checkout -b feat/short-description
+git push origin feat/short-description
+gh pr create --title "feat: description" --body "## Summary\n...\n\n## Test plan\n- [x] ..." --base main
+gh pr merge <PR#> --merge --delete-branch
+git checkout main && git pull origin main
+```
+
+## Tag & Release workflow
+
+Tags are pushed AFTER the PR is merged to main:
+```bash
+# Ensure you're on the latest main with the merged commit
+git checkout main && git pull origin main
+git tag -a X.Y.Z -m "X.Y.Z"
+git push origin X.Y.Z
+# GitHub Actions creates the draft release automatically
+```
 
 ---
 

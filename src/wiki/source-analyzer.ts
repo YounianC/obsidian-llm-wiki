@@ -11,7 +11,7 @@ import {
   WIKI_LANGUAGES,
 } from '../types';
 import { PROMPTS } from '../prompts';
-import { parseJsonResponse } from '../utils';
+import { parseJsonResponse, matchExtractedToExisting } from '../utils';
 import { getExistingWikiPages } from './lint-fixes';
 import { getGranularityInstruction } from './system-prompts';
 
@@ -25,12 +25,7 @@ export class SourceAnalyzer {
     const content = await this.ctx.app.vault.read(file);
     console.debug('File content length:', content.length);
 
-    const existingPages = await getExistingWikiPages(this.ctx.app, this.ctx.settings.wikiFolder);
-    const existingPagesList = existingPages.map(p => {
-      const aliasSuffix = p.aliases?.length ? ` \`aliases: ${p.aliases.join(', ')}\`` : '';
-      return `- ${p.wikiLink}${aliasSuffix}`;
-    }).join('\n');
-    console.debug('Existing Wiki pages count:', existingPages.length);
+    console.debug('Existing Wiki pages count: — delayed until post-extraction matching');
 
     // Iterative batch extraction parameters — linked to granularity setting
     const MAX_TOKENS = 16000;
@@ -47,10 +42,31 @@ export class SourceAnalyzer {
       minimal:  { initialBatchSize: 5,  maxBatchesBase: 1,  maxTotalItems: 5 },
       custom:   { initialBatchSize: 5,  maxBatchesBase: 1,  maxTotalItems: null }
     };
-    const config = granularityConfig[granularity] || granularityConfig.standard;
+    const config = { ...(granularityConfig[granularity] || granularityConfig.standard) };
+
+    // C: Short content — auto-downgrade maxTotalItems to avoid "hard digging"
+    // A 6800-char source can't have 50 wiki-worthy items; cap at ~1 per 600 chars.
+    if (content.length < 20000 && config.maxTotalItems !== null) {
+      const reasonableCap = Math.max(5, Math.ceil(content.length / 600));
+      if (config.maxTotalItems > reasonableCap) {
+        console.debug(`[Auto-downgrade] Short content (${content.length} chars), capping maxTotalItems ${config.maxTotalItems} → ${reasonableCap}`);
+        config.maxTotalItems = reasonableCap;
+      }
+    }
+
     const MIN_BATCH_SIZE = 5;
     let currentBatchSize = config.initialBatchSize;
-    const MAX_BATCHES = Math.max(1, Math.ceil(content.length / 500)) + config.maxBatchesBase;
+
+    // A: Dynamic MAX_BATCHES — short content gets fewer batches, long content more.
+    // Base: ~1 batch per 2000 chars of content, plus a small constant.
+    const MAX_BATCHES = Math.min(
+      config.maxBatchesBase * 3,
+      Math.max(2, Math.ceil(content.length / 2000) + 2)
+    );
+
+    // D: Convergence detection — if batch yield is low, halve batch_size once.
+    // If the NEXT batch also has low yield, terminate immediately.
+    let batchSizeHalved = false;
 
     const allEntities: EntityInfo[] = [];
     const allConcepts: ConceptInfo[] = [];
@@ -67,9 +83,12 @@ export class SourceAnalyzer {
     // Build granularity instruction from shared definitions
     const granularityInstruction = getGranularityInstruction(this.ctx.settings)
 
+    // ⚡ Page list removed from extraction prompt — PageFactory.resolvePagePath
+    // handles deduplication via slug/alias/LLM matching. Programmatic
+    // related_pages matching runs after extraction instead.
     const templateUntouched = PROMPTS.analyzeSource
       .replace('{{content}}', content)
-      .replace('{{existing_pages}}', existingPagesList);
+      .replace('{{existing_pages}}', '');  // Empty — dedup handled downstream
     const batchMarker = '{{batch_context}}';
     const markerIdx = templateUntouched.indexOf(batchMarker);
     const staticPrefix = templateUntouched.substring(0, markerIdx);
@@ -85,8 +104,7 @@ export class SourceAnalyzer {
       if (isFirstBatch) {
         batchContext = 'This is the first extraction round. Extract the most important entities and concepts from the source.';
       } else {
-        const nameList = [...extractedNames].map(n => `"${n}"`).join(', ');
-        batchContext = `This is round ${batchNum + 1} of extraction. The following items have already been extracted — do NOT repeat them:\n${nameList}\n\nExtract the next batch of most important entities and concepts from the remaining content. If no more items are worth extracting, return empty arrays [] for entities and concepts.`;
+        batchContext = `This is round ${batchNum + 1} of extraction. Extract the next batch of most important entities and concepts from the remaining content. If no more items are worth extracting, return empty arrays [] for entities and concepts.`;
       }
 
       const prompt = staticPrefix + batchContext + suffixTemplate
@@ -98,7 +116,11 @@ export class SourceAnalyzer {
 
       console.debug(`[Batch ${batchNum + 1}/${MAX_BATCHES}] LLM call started (batch_size=${currentBatchSize})...`);
       console.debug(`[Batch ${batchNum + 1}] Prompt length:`, prompt.length);
-      this.ctx.onProgress?.(`Analyzing batch ${batchNum + 1}...`);
+      if (isFirstBatch) {
+        this.ctx.onProgress?.(`Analyzing batch 1/${MAX_BATCHES}...`);
+      } else {
+        this.ctx.onProgress?.(`Analyzing batch ${batchNum + 1}/${MAX_BATCHES} (${allEntities.length} entities, ${allConcepts.length} concepts so far)...`);
+      }
 
       try {
         const systemPrompt = await this.ctx.buildSystemPrompt('analyze');
@@ -206,6 +228,18 @@ export class SourceAnalyzer {
           break;
         }
 
+        // D: Convergence detection — low yield → halve once → if still low, terminate
+        if (rawTotal < currentBatchSize / 2 && currentBatchSize > MIN_BATCH_SIZE) {
+          if (batchSizeHalved) {
+            console.debug(`[Batch ${batchNum + 1}] Low yield persists after halving (${rawTotal}/${currentBatchSize}), converged — stopping`);
+            break;
+          }
+          const prevSize = currentBatchSize;
+          currentBatchSize = Math.max(MIN_BATCH_SIZE, Math.floor(currentBatchSize / 2));
+          batchSizeHalved = true;
+          console.debug(`[Batch ${batchNum + 1}] Low yield (${rawTotal}/${prevSize}), halving batch_size: ${prevSize} → ${currentBatchSize}`);
+        }
+
         // Granularity-linked cumulative cap
         if (customEntityCap !== null && customConceptCap !== null) {
           // Custom mode: stop when both types reach their per-type caps
@@ -239,6 +273,24 @@ export class SourceAnalyzer {
 
     if (!firstBatchData && allEntities.length === 0 && allConcepts.length === 0) {
       return null;
+    }
+
+    // ── Programmatic related_pages matching ──────────────────────────
+    // After extraction, match extracted names against existing wiki pages
+    // using slug + alias matching (same logic as resolvePagePath Fast path 2).
+    // Replaces the old approach of embedding ~200K chars of page list in prompt.
+    const allExtractedNames = [
+      ...allEntities.map(e => e.name),
+      ...allConcepts.map(c => c.name),
+    ];
+    if (allExtractedNames.length > 0) {
+      try {
+        const existingPages = await getExistingWikiPages(this.ctx.app, this.ctx.settings.wikiFolder);
+        relatedPages = matchExtractedToExisting(allExtractedNames, existingPages);
+        console.debug('[Related pages] Programmatic matching:', relatedPages.length, 'pages matched');
+      } catch (err) {
+        console.warn('[Related pages] Programmatic matching failed:', err);
+      }
     }
 
     const analysis: SourceAnalysis = {
