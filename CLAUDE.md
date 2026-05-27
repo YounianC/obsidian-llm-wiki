@@ -4,9 +4,21 @@
 
 ---
 
-## Current Phase: v1.12.0 — Test Infrastructure & Structural Refinement
+## Current Phase: v1.12.0 — Production-Grade Performance
 
-Two independent audits (v1.11.0) converged on two gaps: (1) core module test vacuum, (2) structural issues in lint-controller. P0 addresses both.
+### Completed (v1.12.0)
+- ✅ **Extraction prompt rearchitected**: Full page list removed from prompt. Extraction speed is now independent of wiki size. ~80% faster for typical files.
+- ✅ **Dynamic batch limits + convergence detection**: Short content finishes in 1–2 batches. Long content gets enough batches. Low-yield batches terminate early.
+- ✅ **Short-content auto-downgrade**: Sources <20K chars cap maxTotalItems proportionally, preventing "hard digging".
+- ✅ **Deterministic related_pages matching**: `matchExtractedToExisting()` uses slug + alias matching — zero LLM cost, more reliable.
+- ✅ **esbuild upgraded**: 0.17.3 → 0.28.0 (dev-server vulnerability fixed).
+- ✅ **Production build suppresses console.debug**: `console.debug = function() {}` banner.
+- ✅ **Silent computeSlug**: `resolvePagePath` bulk matching no longer floods dev console.
+- ✅ **Granularity ≤ notation**: 8 languages synchronized with consistent numbers.
+- ✅ **Extraction and lint progress improvements**: batch counts and cumulative results displayed.
+- ✅ **What's New section in all READMEs**: Localized in 8 languages with proper TOC anchors.
+- ✅ **Test coverage**: 140 tests across 3 test files (+27 since v1.11.0).
+- ✅ **ROADMAP P2/P3 items addressed**: build:dev script, esbuild upgrade, Good First Issue tagging.
 
 ### P0 — In Progress
 
