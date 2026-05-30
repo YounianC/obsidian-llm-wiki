@@ -130,28 +130,16 @@ export class PageFactory {
 
       // Cross-type collision check: if the same name already exists in the opposite
       // folder, skip creation to prevent entity/concept duplicates across folders.
+      // Uses in-memory path match from allPages — no extra I/O needed.
       const otherTypePages = allPages.filter(p => p.path.includes(`/${otherFolder}/`));
-      const otherSlugPath = `${this.ctx.settings.wikiFolder}/${otherFolder}/${slug}.md`;
-      const otherExact = await this.ctx.tryReadFile(otherSlugPath);
-      if (otherExact !== null) {
-        console.debug(`Cross-type collision: "${name}" already exists in /${otherFolder}/, skipping duplicate`);
-        await this.appendAliases(otherSlugPath, [name]);
-        return {
-          path: null,
-          collision: {
-            name,
-            sourceType: pageType,
-            targetType: otherFolder === 'entities' ? 'entity' : 'concept',
-            targetPath: otherSlugPath
-          }
-        };
-      }
-      const otherMatch = otherTypePages.find(p =>
-        computeSlug(p.title).toLowerCase() === targetSlug ||
-        (p.aliases || []).some(a => computeSlug(a).toLowerCase() === targetSlug)
-      );
+      const otherMatch = otherTypePages.find(p => {
+        const slugPath = `${this.ctx.settings.wikiFolder}/${otherFolder}/${slug}.md`;
+        return p.path === slugPath ||
+          computeSlug(p.title).toLowerCase() === targetSlug ||
+          (p.aliases || []).some(a => computeSlug(a).toLowerCase() === targetSlug);
+      });
       if (otherMatch) {
-        console.debug(`Cross-type collision (normalized): "${name}" matched ${otherMatch.path}, skipping duplicate`);
+        console.debug(`Cross-type collision: "${name}" matched ${otherMatch.path}, skipping duplicate`);
         await this.appendAliases(otherMatch.path, [name]);
         return {
           path: null,

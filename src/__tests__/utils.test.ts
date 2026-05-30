@@ -244,27 +244,24 @@ describe('detectRateLimitFailures', () => {
 });
 
 describe('formatRateLimitNotice', () => {
-  it('uses template when rateLimitDetected key exists', () => {
-    const texts = {
-      rateLimitDetected: 'Rate limit: {count} items. Concurrency → {suggestedConcurrency}, delay → {suggestedDelay}ms',
-    };
+  it('uses template from EN texts', () => {
     const result = formatRateLimitNotice(
       { count: 3, rateLimitNames: ['a', 'b', 'c'], suggestedConcurrency: 2, suggestedDelay: 600 },
-      texts,
+      'en',
     );
     expect(result).toContain('3');
     expect(result).toContain('2');
     expect(result).toContain('600');
   });
 
-  it('builds fallback when key is missing', () => {
+  it('falls back to EN for unknown language', () => {
     const result = formatRateLimitNotice(
       { count: 2, rateLimitNames: ['page1', 'page2'], suggestedConcurrency: 1, suggestedDelay: 500 },
-      {},
+      'xx',
     );
     expect(result).toContain('2');
     expect(result).toContain('1');
-    expect(result).toContain('500ms');
+    expect(result).toContain('500');
   });
 });
 
