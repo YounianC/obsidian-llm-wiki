@@ -75,7 +75,9 @@ export class PageFactory {
   // Determine the actual file path for a new entity/concept, using slug-based
   // matching first and falling back to LLM semantic resolution.
   // Returns { path: null, collision: {...} } when a cross-type collision is detected
-  // (same name exists in the opposite folder) — callers must skip page creation.
+  // (same name exists in the opposite folder). Callers must NOT create a new file in
+  // that case, but should merge the new content into collision.targetPath so no
+  // information from the source is lost.
   private async resolvePagePath(
     name: string,
     pageType: 'entity' | 'concept',
@@ -280,7 +282,21 @@ export class PageFactory {
     const result = await this.resolvePagePath(info.name, pageType, info.summary);
     if (result.path === null) {
       if (result.collision) {
-        console.debug(`Skipping ${pageType} "${info.name}": cross-type duplicate exists in ${result.collision.targetType}`);
+        // Cross-type collision: a page for this item already exists in the opposite
+        // folder. Don't create a duplicate file, but merge the new content into the
+        // existing page so the source's summary/mentions/sources aren't lost.
+        // Use the EXISTING page's type for the merge so it keeps its classification.
+        const { targetPath, targetType } = result.collision;
+        const existingContent = await this.ctx.tryReadFile(targetPath);
+        if (existingContent) {
+          const isReviewed = parseFrontmatter(existingContent)?.reviewed === true;
+          if (isReviewed) {
+            await this.appendToReviewedPage(info, sourceFile, existingContent, targetPath);
+          } else {
+            await this.mergePage(info, targetType, sourceFile, existingContent, extraPagePaths, targetPath);
+          }
+          console.debug(`Cross-type collision: merged "${info.name}" content into ${targetType} page ${targetPath}`);
+        }
       }
       return result;
     }
