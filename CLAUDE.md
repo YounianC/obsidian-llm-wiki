@@ -286,6 +286,20 @@ git push origin X.Y.Z
 
 English, conventional commits. `feat:` `fix:` `docs:` `refactor:` `test:` `chore:`
 
+## 🧪 Test-Driven Development (TDD) Standard
+
+**Test before code.** For any new function, module, or behavior change:
+
+1. **Write a failing test first** — define the expected behavior as a test case
+2. **Write just enough code** to make the test pass
+3. **Refactor** — clean up, then verify the test still passes
+
+**Pre-existing code** (core engine files without tests): when modifying a function that has zero tests, add at least one test for the path you're changing before making the code change.
+
+**Exceptions**: trivial one-line changes, pure configuration, documentation.
+
+**Why**: Every bug found since v1.0.0 was discovered by users, not by tests. Core engine files (wiki-engine 1017 lines, query-engine 888 lines) remain at zero test coverage. TDD ensures the next change doesn't add to this debt.
+
 ## ✅ Pre-Commit Checklist
 
 - `pnpm lint` (0 errors), `pnpm test` (all pass), `pnpm build` (clean), `npx tsc --noEmit` (0 errors)
@@ -304,6 +318,10 @@ English, conventional commits. `feat:` `fix:` `docs:` `refactor:` `test:` `chore
 **Exceptions** (no prior approval needed): trivial one-line fixes, running lint/test/build, reading files, documenting existing code.
 
 **Why**: The user is the domain expert on product vision. The AI has tooling capability but lacks product context. Propose, don't dispose.
+
+## 🧪 TDD: Write Tests First
+
+For any new function or behavior change: write a failing test first, then write the implementation, then refactor. When modifying untested core code, add at least one test for the path you're changing. See TDD Standard above.
 
 ---
 
