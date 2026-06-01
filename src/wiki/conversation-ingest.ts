@@ -13,6 +13,7 @@ import {
   cleanMarkdownResponse,
 } from '../utils';
 import { applySectionLabels } from './system-prompts';
+import { UNIVERSAL_LINK_CONSTRAINTS } from './prompts/constraints';
 import { PageFactory } from './page-factory';
 
 export interface ConversationOrchestration {
@@ -208,7 +209,8 @@ CRITICAL RULES:
       .replace('{{created_pages_list}}', createdPagesList)
       .replace(/{{source_file}}/g, `Conversation: ${parsed.source_title}`)
       .replace(/{{date}}/g, actualDate)
-      .replace('{{tags}}', tags);
+      .replace('{{tags}}', tags)
+      .replace('{{constraints}}', UNIVERSAL_LINK_CONSTRAINTS);
 
     const finalSummaryPrompt = applySectionLabels(summaryPrompt, this.ctx.settings);
 

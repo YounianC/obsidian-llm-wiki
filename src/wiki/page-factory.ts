@@ -21,6 +21,7 @@ import {
   truncateMentions,
   filterRedundantAliases,
 } from '../utils';
+import { UNIVERSAL_LINK_CONSTRAINTS } from './prompts/constraints';
 import { applySectionLabels } from './system-prompts';
 import { getExistingWikiPages } from './lint-fixes';
 
@@ -450,7 +451,8 @@ export class PageFactory {
       .replace('{{new_source}}', sourceFile.basename)
       .replace('{{entity_summary}}', info.summary)
       .replace('{{mentions}}', truncateMentions(info.mentions_in_source))
-      .replace('{{key_details}}', info.mentions_in_source?.slice(0, 2).join('; ') || '');
+      .replace('{{key_details}}', info.mentions_in_source?.slice(0, 2).join('; ') || '')
+      .replace('{{constraints}}', UNIVERSAL_LINK_CONSTRAINTS);
 
     const finalPrompt = applySectionLabels(prompt, this.ctx.settings);
 
@@ -502,7 +504,8 @@ export class PageFactory {
       .replace('{{page_name}}', pageName)
       .replace('{{existing_body}}', existingBody)
       .replace('{{source_basename}}', sourceFile.basename)
-      .replace('{{new_info}}', JSON.stringify(analysis.entities.find(e => e.name === pageName) || analysis.concepts.find(c => c.name === pageName) || 'No directly relevant information'));
+      .replace('{{new_info}}', JSON.stringify(analysis.entities.find(e => e.name === pageName) || analysis.concepts.find(c => c.name === pageName) || 'No directly relevant information'))
+      .replace('{{constraints}}', UNIVERSAL_LINK_CONSTRAINTS);
 
     const client = this.ctx.getClient();
     if (!client) throw new Error('LLM client not initialized');

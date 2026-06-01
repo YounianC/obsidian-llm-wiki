@@ -32,6 +32,7 @@ import {
   getExistingWikiPages,
 } from './lint-fixes';
 import { ContradictionManager } from './contradictions';
+import { UNIVERSAL_LINK_CONSTRAINTS } from './prompts/constraints';
 import { SourceAnalyzer } from './source-analyzer';
 import { PageFactory } from './page-factory';
 import { ConversationIngestor, ConversationOrchestration, formatConversation, ConversationHistory } from './conversation-ingest';
@@ -643,7 +644,8 @@ export class WikiEngine {
       .replace('{{created_pages_list}}', createdPagesList || '(none)')
       .replace(/{{source_file}}/g, file.path)
       .replace(/{{date}}/g, new Date().toISOString().split('T')[0])
-      .replace('{{tags}}', analysis.concepts.map(c => c.name).join(', '));
+      .replace('{{tags}}', analysis.concepts.map(c => c.name).join(', '))
+      .replace('{{constraints}}', UNIVERSAL_LINK_CONSTRAINTS);
 
     const finalPrompt = this.applySectionLabels(prompt);
 
