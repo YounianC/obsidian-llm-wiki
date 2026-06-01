@@ -72,3 +72,43 @@
 | page-factory try/catch 补全 | 审计二 | Exceptions bubble to wiki-engine's centralized error handler by design |
 | API URL validation | 审计一 | Obsidian's requestUrl already validates; self-phishing impossible |
 
+
+## ⚠️ Development Protocol: Plan First, Then Execute
+
+**Critical rule learned from Issue #63/#64/#65 fixes and the three-audit process.**
+
+**Before any significant change (including but not limited to):**
+- Refactoring existing code
+- Introducing new types or modules
+- Modifying prompt templates or LLM interaction patterns
+- Making architectural changes (new file/directory/module)
+- Running or executing tasks that have multiple possible approaches
+- Any work that touches core engine files (wiki-engine, source-analyzer, page-factory)
+
+**You MUST:**
+1. **Present your plan to the user first** — explain what you intend to do and why
+2. **Describe your approach and alternatives** — outline the design, key trade-offs, and why you chose this path
+3. **Wait for explicit approval** before writing any code or making commits
+    - "Approval" means the user says something like "yes", "approved", "proceed", "执行", "可以", or equivalent
+    - "Looks good" or "okay" with no clear go-ahead does NOT count as approval for execution
+
+**Anti-patterns:**
+- ❌ Going directly from understanding a problem to writing code without presenting a plan
+- ❌ Making multiple commits across different files without pausing for user review
+- ❌ Assuming tacit approval from silence or lack of objection
+- ❌ "I think this is the right thing" without user confirmation
+
+**Exceptions (can proceed without prior approval):**
+- Trivial bug fixes (typos, one-line parameter changes)
+- Running lint/test/build after a known change
+- Reading files to understand existing code
+- Documenting existing code behavior
+
+**Why this exists:**
+This project operates on a trust-but-verify model. The user is the domain expert who
+understands the product vision. The AI has tool execution capability but lacks the
+context to make product-level decisions independently. The combination works best
+when the AI proposes and the user disposes — not when the AI goes dark and returns
+with a large diff.
+
+Remember: "先规划，再执行" (plan first, then execute).
