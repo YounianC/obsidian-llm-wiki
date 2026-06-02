@@ -38,6 +38,20 @@ export class LLMWikiSettingTab extends PluginSettingTab {
     return (texts[key] as string) ?? TEXTS.en[key] ?? key;
   }
 
+  /**
+   * Check if wiki folder structure exists (entities, concepts, sources, schema).
+   * Uses IO inspection — no persistent flag.
+   */
+  private isWikiInitialized(): boolean {
+    const wikiFolder = this.tempSettings.wikiFolder || 'wiki';
+    return !!(
+      this.app.vault.getAbstractFileByPath(`${wikiFolder}/entities`) &&
+      this.app.vault.getAbstractFileByPath(`${wikiFolder}/concepts`) &&
+      this.app.vault.getAbstractFileByPath(`${wikiFolder}/sources`) &&
+      this.app.vault.getAbstractFileByPath(`${wikiFolder}/schema`)
+    );
+  }
+
   display() {
     const { containerEl } = this;
     containerEl.empty();
@@ -342,11 +356,7 @@ export class LLMWikiSettingTab extends PluginSettingTab {
     });
 
     // Wiki initialization status
-    const wikiFolder = this.tempSettings.wikiFolder || 'wiki';
-    const wikiInitCheck = this.app.vault.getAbstractFileByPath(`${wikiFolder}/entities`)
-      && this.app.vault.getAbstractFileByPath(`${wikiFolder}/concepts`)
-      && this.app.vault.getAbstractFileByPath(`${wikiFolder}/sources`)
-      && this.app.vault.getAbstractFileByPath(`${wikiFolder}/schema`);
+    const wikiInitCheck = this.isWikiInitialized();
     const wikiInitStatus = wikiInitCheck
       ? '✅ ' + (this.getText('wikiInitStatusReady') || 'Wiki initialized')
       : '⚠️ ' + (this.getText('wikiInitStatusNotReady') || 'Wiki not initialized — will auto-create on first ingestion');
@@ -542,12 +552,7 @@ export class LLMWikiSettingTab extends PluginSettingTab {
         .onClick(async () => {
           try {
             // Ensure wiki structure exists before regenerating schema
-            const wikiFolder = this.tempSettings.wikiFolder || 'wiki';
-            const isInit = this.app.vault.getAbstractFileByPath(`${wikiFolder}/entities`)
-              && this.app.vault.getAbstractFileByPath(`${wikiFolder}/concepts`)
-              && this.app.vault.getAbstractFileByPath(`${wikiFolder}/sources`)
-              && this.app.vault.getAbstractFileByPath(`${wikiFolder}/schema`);
-            if (!isInit) {
+            if (!this.isWikiInitialized()) {
               await this.plugin.wikiEngine.ensureWikiStructure();
             }
             await this.plugin.wikiEngine.regenerateDefaultSchema();
