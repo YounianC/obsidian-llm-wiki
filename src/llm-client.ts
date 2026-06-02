@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { requestUrl } from 'obsidian';
 import { LLMClient } from './types';
 import { MAX_RETRIES, RETRY_BASE_DELAY_MS, MAX_TOKENS_BATCH } from './constants';
+import { parseSSEEvents, SSEDelta } from './core/sse-parser';
 
 // Shared retry helper — eliminates duplicated retry loops across all client classes.
 const RETRYABLE = /status 5\d{2}|status 429|overload|network|fetch|econnrefused|etimedout|timeout|abort/i;
@@ -33,6 +34,10 @@ async function withRetry<T>(
   }
   throw lastError;
 }
+
+// Re-export for tests
+export { parseSSEEvents };
+export type { SSEDelta };
 
 export class AnthropicCompatibleClient implements LLMClient {
   private apiKey: string;
@@ -176,39 +181,17 @@ export class AnthropicCompatibleClient implements LLMClient {
     console.debug('[AnthropicCompat SSE] response received, length:', responseText.length,
       'first 200 chars:', responseText.substring(0, 200));
 
-    // Parse SSE events from response body.
-    // Handles both "data: " (with space, Anthropic official) and "data:" (no space,
-    // some third-party proxies). Also handles \r\n and \n line endings.
+    // Parse SSE events using shared parser
+    const deltas = parseSSEEvents(responseText, 'anthropic');
     let fullText = '';
-    const normalizedText = responseText.replace(/\r\n/g, '\n');
-    const events = normalizedText.split('\n\n');
-    for (const event of events) {
-      if (!event.trim()) continue;
-      const dataLine = event.split('\n')
-        .find(line => line.startsWith('data:'));
-      if (!dataLine) continue;
-      try {
-        // Extract JSON from data line: skip "data:" prefix (with or without space)
-        const jsonStart = dataLine.indexOf('{');
-        if (jsonStart === -1) continue;
-        const parsed = JSON.parse(dataLine.substring(jsonStart)) as {
-          type?: string;
-          delta?: { type?: string; text?: string };
-        };
-        if (parsed.type === 'content_block_delta' &&
-            parsed.delta?.type === 'text_delta' &&
-            parsed.delta.text) {
-          fullText += parsed.delta.text;
-          params.onChunk(parsed.delta.text);
-        }
-      } catch {
-        // Skip malformed JSON in SSE
+    for (const delta of deltas) {
+      if (delta.text) {
+        fullText += delta.text;
+        params.onChunk(delta.text);
       }
     }
 
     // Fallback: if SSE parsing yielded nothing, try non-streaming JSON format.
-    // Many Anthropic-compatible providers ignore stream:true and return a
-    // standard JSON response instead of SSE events.
     if (!fullText) {
       console.debug('[AnthropicCompat SSE] SSE parsing empty, trying non-streaming JSON fallback');
       try {
@@ -329,12 +312,12 @@ export class AnthropicClient implements LLMClient {
     const messagesWithLanguageHint = params.system
       ? params.messages
       : [
-        ...params.messages,
-        {
-          role: 'user',
-          content: 'Please respond in the same language as the user\'s question. If the user asks in Chinese, reply in Chinese. If the user asks in English, reply in English. Keep the response language consistent with the user\'s input language.'
-        }
-      ];
+          ...params.messages,
+          {
+            role: 'user',
+            content: 'Please respond in the same language as the user\'s question. If the user asks in Chinese, reply in Chinese. If the user asks in English, reply in English. Keep the response language consistent with the user\'s input language.'
+          }
+        ];
 
     const stream = this.client.messages.stream({
       model: params.model,
@@ -487,33 +470,14 @@ export class OpenAICompatibleClient implements LLMClient {
       });
 
       const responseText = response.text;
+
+      // Parse SSE events using shared parser
+      const deltas = parseSSEEvents(responseText, 'openai');
       let fullText = '';
-
-      // Parse SSE events from response body.
-      const normalizedText = responseText.replace(/\r\n/g, '\n');
-      const events = normalizedText.split('\n\n');
-      for (const event of events) {
-        if (!event.trim()) continue;
-        const dataLine = event.split('\n').find(line => line.startsWith('data:'));
-        if (!dataLine) continue;
-
-        const dataContent = dataLine.substring(5).trim();
-        if (dataContent === '[DONE]') continue;
-
-        try {
-          const parsed = JSON.parse(dataContent) as {
-            choices?: Array<{
-              delta?: { content?: string };
-              finish_reason?: string;
-            }>;
-          };
-          const content = parsed.choices?.[0]?.delta?.content;
-          if (content) {
-            fullText += content;
-            params.onChunk(content);
-          }
-        } catch {
-          // Skip malformed JSON in SSE
+      for (const delta of deltas) {
+        if (delta.text) {
+          fullText += delta.text;
+          params.onChunk(delta.text);
         }
       }
 
