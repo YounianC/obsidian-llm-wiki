@@ -180,6 +180,7 @@ export interface LLMClient {
     messages: Array<{role: 'user' | 'assistant'; content: string}>;
     response_format?: { type: 'json_object' };
     cacheBreakpoint?: number;
+    maxTokensPerCall?: number;  // Issue #75: cap for truncation retry
   }): Promise<string>;
 
   createMessageStream?(params: {

@@ -39,6 +39,7 @@ function createLLMClient(settings: LLMWikiSettings): LLMClient {
       return originalCreate({
         ...params,
         max_tokens: capMaxTokens(params.max_tokens, settings),
+        maxTokensPerCall: settings.maxTokensPerCall,
       });
     };
   }
