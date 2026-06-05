@@ -37,9 +37,6 @@
     "typescript": "5.9.3",
     "vitest": "4.1.6"
   },
-  "dependencies": {
-    "@anthropic-ai/sdk": "0.24.3"
-  },
   "pnpm": {
     "onlyBuiltDependencies": ["esbuild"],
     "overrides": {
