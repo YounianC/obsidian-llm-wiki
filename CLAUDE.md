@@ -4,7 +4,17 @@
 
 ---
 
-## Current Phase: v1.16.2 — Released (P0 bug fix batch)
+## Current Phase: v1.16.3 — Released (v1.16.2 P0 hotfix completion)
+
+### Completed (v1.16.3) — Released 2026-06-07
+- ✅ **Issue #94 (regression fix)**: Each fix phase now manages its own lint-operation lifecycle (startLintOperation + endLintOperation) so the status bar persists across fix phases. Modal closes immediately (preserving original UX); the user gets a top-right progress notice and the bottom-right status bar for cancellation.
+- ✅ **#243 thinkingControlCache key fix**: extracted `getThinkingControlCacheKey()` helper so read and write paths use the same key. Predefined providers without baseUrl override no longer cause permanent cache miss.
+- ✅ **#244 deleteEmptyStubs resilience**: returns `{deleted, failed, errors}` instead of throwing on the first failure. Each file wrapped in try/catch.
+- ✅ **#245 thinkingControlSupported cache after fallback**: `OpenAICompatibleClient` sets `thinkingControlSupported = false` after successful 400-fallback to skip the redundant probe-and-fail round-trip.
+- ✅ **#248 isThinkingControlError tightening**: now requires both HTTP 400 status AND a rejected-field keyword.
+- ✅ **i18n cleanup**: 3 hardcoded English progress strings replaced with i18n keys in 8 locales.
+- ✅ **de.ts trailing-comma fix**: 6 other language files had the same issue — all fixed in lockstep.
+- ✅ **Tests**: 549/549 passing. 4-Gate clean.
 
 ### Completed (v1.16.2) — Released 2026-06-07
 - ✅ **Issue #94: Lint cancellation**: AbortSignal propagated through 5 fix-runner functions. `try/finally` wraps all persistent Notices.
