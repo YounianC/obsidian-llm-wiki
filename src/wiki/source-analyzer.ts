@@ -187,6 +187,7 @@ export class SourceAnalyzer {
 
       try {
         const systemPrompt = await this.ctx.buildSystemPrompt('analyze');
+        console.debug(`[Batch ${batchNum + 1}] Provider:`, this.ctx.settings.provider, '| Model:', this.ctx.settings.model, '| Prompt:', finalPrompt.length, 'chars');
         const response = await client.createMessage({
           model: this.ctx.settings.model,
           max_tokens: maxTokens,
@@ -304,9 +305,10 @@ export class SourceAnalyzer {
         console.error(`[Batch ${batchNum + 1}] Call failed:`, error);
         if (isFirstBatch) {
           const providerName = this.ctx.settings.provider;
+          const modelName = this.ctx.settings.model;
           const errMsg = error instanceof Error ? error.message : String(error);
           throw new Error(
-            `Failed to connect to ${providerName} API: ${errMsg}. ` +
+            `Failed to connect to ${providerName} API (model: ${modelName}): ${errMsg}. ` +
             `Check your network connection, API key, and provider URL in Settings. ` +
             `If the error mentions SSL/TLS, try: (1) restart Obsidian, (2) check VPN/proxy settings, (3) verify the provider URL is correct.`
           );

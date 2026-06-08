@@ -62,6 +62,7 @@ export class WikiEngine {
   private pagesCache: Array<{path: string; title: string; wikiLink: string; aliases?: string[]}> | null = null;
   private pagesCacheTime = 0;
   private readonly PAGES_CACHE_TTL_MS = PAGES_CACHE_TTL_MS;
+  private ctx: EngineContext;
 
   constructor(
     app: App,
@@ -99,6 +100,7 @@ export class WikiEngine {
       onDone: report => this.onDone?.(report),
     };
 
+    this.ctx = ctx;
     this.lintFixer = new LintFixer(ctx);
     this.contradictionManager = new ContradictionManager(ctx);
     this.sourceAnalyzer = new SourceAnalyzer(ctx);
@@ -201,6 +203,11 @@ export class WikiEngine {
 
   private applySectionLabels(prompt: string): string {
     return applySectionLabels(prompt, this.settings);
+  }
+
+  updateSettings(settings: LLMWikiSettings): void {
+    this.settings = settings;
+    this.ctx.settings = settings;
   }
 
   async ingestSource(file: TFile) {

@@ -277,7 +277,8 @@ export default class LLMWikiPlugin extends Plugin {
     this.initializeLLMClient();
     this.schemaManager?.updateSettings(this.settings);
     if (this.wikiEngine) {
-      this.wikiEngine.settings = this.settings;
+      this.wikiEngine.updateSettings(this.settings);
+      console.debug('[saveSettings] wikiEngine provider updated to:', this.settings.provider);
     }
     if (this.autoMaintainManager) {
       this.autoMaintainManager.settings = this.settings;
