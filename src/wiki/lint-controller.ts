@@ -223,12 +223,13 @@ export async function runLintWiki(ctx: LintContext, signal?: AbortSignal): Promi
             // user sees consistent numbers in both places.
             const batchStart = i + 1;
             const batchEnd = Math.min(i + concurrency, batches.length);
+            // progressLabel already contains the batch range (e.g. "1-2/3" or "1/3").
+            // i18n template: 'Verifying duplicates: batch {current}...' — no extra /{total}.
             const progressLabel = batchEnd > batchStart
               ? `${batchStart}-${batchEnd}/${batches.length}`
               : `${batchStart}/${batches.length}`;
             stageNotice.setMessage(t.lintCheckingDuplicatesProgress
-              .replace('{current}', progressLabel)
-              .replace('{total}', String(batches.length)));
+              .replace('{current}', progressLabel));
             const results = await Promise.allSettled(
               chunk.map(async (batch, bi) => {
                 const batchNum = i + bi + 1;
@@ -836,6 +837,8 @@ export async function runLintWiki(ctx: LintContext, signal?: AbortSignal): Promi
     }
 
     stageNotice.hide();
+    // Persist the full lint report to log.md before showing the modal
+    await ctx.wikiEngine.logLintFix(t.lintReportTitle, fullReport);
     new LintReportModal(ctx.app, fullReport, fixCallbacks, counts, ctx.settings.language).open();
     await ctx.wikiEngine.generateIndexFromEngine();
     new Notice(TEXTS[ctx.settings.language].lintWikiComplete);

@@ -476,12 +476,25 @@ export class OpenAICompatibleClient implements LLMClient {
 
     const doRequest = (bodyToUse: Record<string, unknown>) =>
       withRetry(async () => {
-        const response = await requestUrl({
-          url: this.baseUrl + '/chat/completions',
-          method: 'POST',
-          headers: this.getHeaders(),
-          body: JSON.stringify(bodyToUse)
-        });
+        let response: { json: unknown; status: number };
+        try {
+          response = await requestUrl({
+            url: this.baseUrl + '/chat/completions',
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify(bodyToUse)
+          });
+        } catch (err: unknown) {
+          const status = (err as { status?: number }).status;
+          const json = (err as { json?: unknown }).json;
+          const text = (err as { text?: string }).text;
+          if (status === 400) {
+            console.error('[OpenAICompat Debug] 400 error body:', JSON.stringify(json) || text || 'no body');
+            console.error('[OpenAICompat Debug] Request body size:', JSON.stringify(bodyToUse).length);
+            console.error('[OpenAICompat Debug] Model:', params.model, '| max_tokens:', params.max_tokens);
+          }
+          throw err;
+        }
 
         const data = response.json as {
           choices?: Array<{

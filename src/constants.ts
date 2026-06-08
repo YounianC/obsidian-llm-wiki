@@ -31,6 +31,32 @@ export const MIN_SUBSTANTIVE_CHARS = 50;
 export const PAGES_CACHE_TTL_MS = 5000;
 
 // ============================================================================
+// Custom Granularity Limits
+// ============================================================================
+
+/** Maximum custom entity/concept limit per type (settings UI cap). */
+export const CUSTOM_LIMIT_MAX = 500;
+
+/** Minimum custom entity/concept limit per type. */
+export const CUSTOM_LIMIT_MIN = 1;
+
+/** Maximum batch size for custom granularity (LLM quality ceiling). */
+export const CUSTOM_BATCH_SIZE_MAX = 50;
+
+/** Minimum batch size for custom granularity (below this, use default config). */
+export const CUSTOM_BATCH_SIZE_MIN = 10;
+
+/** Tokens per item budget for dynamic max_tokens scaling in source analysis.
+ *  Derived from observed output: 49 items ≈ 12K tokens → ~245 tokens/item.
+ *  400 provides ~60% headroom for verbose summaries + JSON overhead. */
+export const TOKENS_PER_ITEM_BUDGET = 400;
+
+/** Retry cap multiplier for truncation retry in source analysis.
+ *  Actual retry: ONE double-up (20K → 40K). The multiplier sets the cap
+ *  so the retry never exceeds 3× base (60K), preventing runaway token use. */
+export const SOURCE_ANALYZER_RETRY_MULTIPLIER = 3;
+
+// ============================================================================
 // LLM Token Budgets — semantic groups
 // ============================================================================
 

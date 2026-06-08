@@ -10,6 +10,7 @@ import {
 import { TOKENS_QUERY_MODEL_DETECT, NOTICE_NORMAL, NOTICE_ERROR } from './constants';
 import { AnthropicClient, AnthropicCompatibleClient, OpenAICompatibleClient } from './llm-client';
 import { capMaxTokens } from './core/token-cap';
+import { runSchemaAnalyze } from './wiki/schema-analyze';
 
 // Issue #243: derive a consistent cache key for the thinking-control cache.
 // Used in both the read (createLLMClient) and write (testLLMConnection) paths
@@ -276,7 +277,8 @@ export default class LLMWikiPlugin extends Plugin {
     this.initializeLLMClient();
     this.schemaManager?.updateSettings(this.settings);
     if (this.wikiEngine) {
-      this.wikiEngine.settings = this.settings;
+      this.wikiEngine.updateSettings(this.settings);
+      console.debug('[saveSettings] wikiEngine provider updated to:', this.settings.provider);
     }
     if (this.autoMaintainManager) {
       this.autoMaintainManager.settings = this.settings;
@@ -444,6 +446,7 @@ export default class LLMWikiPlugin extends Plugin {
       }
 
       if (ingestCount === 0) {
+        this.wikiEngine.setDoneCallback((report: IngestReport) => this.onIngestDone(report));
         const texts = TEXTS[this.settings.language];
         new Notice(texts.batchIngestAllIngested.replace('{total}', String(totalFiles)), NOTICE_NORMAL);
         return;
@@ -554,25 +557,16 @@ export default class LLMWikiPlugin extends Plugin {
   // ==================== Schema ====================
 
   async suggestSchemaUpdate() {
-    if (!this.requireLLMReady()) return;
-    if (!this.llmClient) {
-      new Notice(TEXTS[this.settings.language].errorNoApiKey);
-      return;
-    }
-
-    new Notice(TEXTS[this.settings.language].analyzingSchema);
-    try {
-      const result = await this.schemaManager.suggestSchemaUpdate('Wiki lint analysis');
-      if (result?.changes_needed) {
-        new Notice(TEXTS[this.settings.language].schemaSuggestionGenerated, NOTICE_ERROR);
-      } else {
-        new Notice(TEXTS[this.settings.language].noSchemaUpdateNeeded, NOTICE_NORMAL);
-      }
-    } catch (error) {
-      console.error('Schema suggestion failed:', error);
-      const errMsg = error instanceof Error ? error.message : String(error);
-      new Notice(TEXTS[this.settings.language].schemaSuggestionFailed + ': ' + errMsg, NOTICE_ERROR);
-    }
+    // ROADMAP v1.17.0 P1 #1: delegate to runSchemaAnalyze so the status bar's
+    // "click to cancel" works for both this call site and the Lint Report
+    // Modal's "Suggest Schema Updates" button (both ultimately reach here).
+    await runSchemaAnalyze({
+      settings: this.settings,
+      llmClient: this.llmClient,
+      wikiEngine: this.wikiEngine,
+      schemaManager: this.schemaManager,
+      requireLLMReady: () => this.requireLLMReady(),
+    });
   }
 
   // ==================== Connection Test ====================

@@ -20,6 +20,7 @@ import {
   detectRateLimitFailures,
   formatRateLimitNotice,
   getText,
+  extractSourceTags,
 } from '../utils';
 import { SchemaManager, SchemaTask } from '../schema/schema-manager';
 import {
@@ -62,6 +63,7 @@ export class WikiEngine {
   private pagesCache: Array<{path: string; title: string; wikiLink: string; aliases?: string[]}> | null = null;
   private pagesCacheTime = 0;
   private readonly PAGES_CACHE_TTL_MS = PAGES_CACHE_TTL_MS;
+  private ctx: EngineContext;
 
   constructor(
     app: App,
@@ -99,6 +101,7 @@ export class WikiEngine {
       onDone: report => this.onDone?.(report),
     };
 
+    this.ctx = ctx;
     this.lintFixer = new LintFixer(ctx);
     this.contradictionManager = new ContradictionManager(ctx);
     this.sourceAnalyzer = new SourceAnalyzer(ctx);
@@ -203,6 +206,11 @@ export class WikiEngine {
     return applySectionLabels(prompt, this.settings);
   }
 
+  updateSettings(settings: LLMWikiSettings): void {
+    this.settings = settings;
+    this.ctx.settings = settings;
+  }
+
   async ingestSource(file: TFile) {
     console.debug('=== Ingestion started ===');
     console.debug('Source file:', file.path);
@@ -226,7 +234,7 @@ export class WikiEngine {
           .replace('{filename}', file.basename)
           .replace('{lines}', String(lineCount))
           .replace('{size}', sizeKB >= 1024 ? `${(sizeKB / 1024).toFixed(1)}MB` : `${sizeKB}KB`),
-        0
+        NOTICE_NORMAL
       );
       console.debug(`[Long Source] ${file.basename}: ${lineCount} lines, ${sizeKB}KB — long ingestion expected`);
     }
@@ -629,6 +637,14 @@ export class WikiEngine {
     const path = normalizePath(`${this.settings.wikiFolder}/sources/${slug}.md`);
     const content = await this.app.vault.read(file);
 
+    // Issue #90: inherit tags from source note frontmatter when available,
+    // so the generated summary page doesn't pollute the tag vocabulary with
+    // LLM-derived concept names. Fallback to LLM-derived tags if source has none.
+    const sourceTags = extractSourceTags(content);
+    const tagsValue = sourceTags.length > 0
+      ? sourceTags.join(', ')
+      : analysis.concepts.map(c => c.name).join(', ');
+
     const createdPagesList = plannedPaths.length > 0
       ? plannedPaths.map(p => {
           const relPath = p.replace(this.settings.wikiFolder + '/', '').replace('.md', '');
@@ -646,7 +662,7 @@ export class WikiEngine {
       .replace('{{created_pages_list}}', createdPagesList || '(none)')
       .replace(/{{source_file}}/g, file.path)
       .replace(/{{date}}/g, new Date().toISOString().split('T')[0])
-      .replace('{{tags}}', analysis.concepts.map(c => c.name).join(', '))
+      .replace('{{tags}}', tagsValue)
       .replace('{{constraints}}', UNIVERSAL_LINK_CONSTRAINTS);
 
     const finalPrompt = this.applySectionLabels(prompt);
@@ -1014,9 +1030,12 @@ export class WikiEngine {
   /** Append a lint-fix entry to the operation log. */
   async logLintFix(operation: string, details: string): Promise<void> {
     const logPath = `${this.settings.wikiFolder}/log.md`;
-    const date = new Date().toISOString().split('T')[0];
+    // Use minute-precision timestamp so multiple entries on the same day are distinguishable.
+    const now = new Date();
+    const date = now.toISOString().split('T')[0];
+    const time = now.toTimeString().slice(0, 5); // HH:MM
     const lang = this.settings.wikiLanguage || 'en';
-    const entry = `\n\n## [${date}] Lint Fix: ${operation}\n\n${details}\n`;
+    const entry = `\n\n## [${date} ${time}] ${operation}\n\n${details}\n`;
     const existingLog = await this.tryReadFile(logPath) || `# Wiki ${lang === 'zh' ? '操作日志' : 'Operation Log'}\n\n`;
     await this.createOrUpdateFile(logPath, existingLog + entry);
   }
