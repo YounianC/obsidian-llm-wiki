@@ -1371,10 +1371,6 @@ describe('scanDeadLinks: per-(source,target) dedup', () => {
         content: '见 [[黄帝/嫘祖]] 与 [[黄帝/嫘祖]]。再次 [[黄帝/嫘祖]]。还 [[黄帝/禅让]] 和 [[黄帝/禅让]]。'
       }]
     ]);
-    // Empty known targets → all wikilinks become dead
-    const { known: knownTargets, knownLower: knownTargetsLower } = {
-      known: new Set<string>(), knownLower: new Set<string>()
-    };
 
     // Use vi import to access scanDeadLinks (re-define test logic since we
     // can't import scanners from here easily — mirror the regex semantics).

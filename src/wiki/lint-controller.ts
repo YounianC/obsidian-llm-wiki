@@ -145,6 +145,25 @@ export async function runLintWiki(ctx: LintContext, signal?: AbortSignal): Promi
       f.path.includes('/entities/') || f.path.includes('/concepts/')
     );
     if (entityConceptFiles.length >= 2 && ctx.llmClient) {
+      // TODO (v1.18.0+, performance): Duplicate detection is the dominant Lint
+      // bottleneck on large wikis (e.g. 580+ pages). Current implementation:
+      //   1. Tier 1: for each pair (A, B) in entityConceptFiles, do a tier-1
+      //      LLM verify → O(N²) pairs × 1 LLM call each (chunked by 100).
+      //   2. Tier 2: indirect signals (shared links, moderate similarity) fill
+      //      the token budget but are also O(N²) in pair generation.
+      //   3. A second LLM verify pass for the Tier-2 candidate list.
+      //
+      // Optimization roadmap (deferred, not in v1.17.0):
+      //   a. Hash-bucket dedup: hash titles (n-gram or phonetic) and only LLM-verify
+      //      pairs that share a bucket. Reduces Tier 1 pair count by 5-10x.
+      //   b. Embedding-based prefilter: use a local embedding model to compute
+      //      Tier 2 candidate pairs, replace the title-similarity heuristic.
+      //   c. Cache LLM verify results in a per-lint-run memo so re-runs don't
+      //      re-verify unchanged pairs.
+      //   d. Skip the second LLM pass if the Tier 1 confidence score is below
+      //      a threshold AND no new entries appeared since the last lint.
+      //
+      // See ROADMAP.md "Lint performance" section for the larger picture.
       stageNotice.setMessage(t.lintCheckingDuplicates);
       try {
         const pagesForDedup: Array<{ path: string; content: string; title: string }> = [];
@@ -476,6 +495,26 @@ export async function runLintWiki(ctx: LintContext, signal?: AbortSignal): Promi
     }
 
     // ---- 3. LLM analysis ----
+    // TODO (v1.18.0+, performance): LLM health analysis is the other major
+    // Lint bottleneck. Current implementation sends the full wiki content
+    // sample (~8 pages × 600 chars) plus the programmatic findings report
+    // plus the full index.md to the LLM in a single call. On large wikis
+    // (500+ pages) this exceeds 16K tokens of input, forcing max_tokens
+    // truncation which then produces low-quality health analysis.
+    //
+    // Optimization roadmap (deferred):
+    //   a. Hierarchical LLM analysis: page-1 pass summarizes each page into
+    //      a compact signature (~200 tokens), page-2 pass reasons over
+    //      signatures. Total tokens bounded by O(N) but quality is similar.
+    //   b. Skip analysis entirely if programmatic checks found 0 issues
+    //      AND user hasn't enabled "deep analysis" in settings.
+    //   c. Cache the LLM analysis result, only re-run if wiki content
+    //      hash changed since last lint.
+    //   d. Parallel LLM analysis: split the wiki into N chunks, analyze
+    //      each in parallel, merge findings. Reduces wall-clock but uses
+    //      N×tokens. Trade-off for large wikis.
+    //
+    // See ROADMAP.md "Lint performance" section.
     const indexContent = await ctx.wikiEngine.tryReadFile(`${ctx.settings.wikiFolder}/index.md`) || '';
 
     let contentSample = '';

@@ -66,6 +66,20 @@ Focused on closing technical debt and adding integration tests for previously un
 
 - #36 — Source title in frontmatter: needs clarification from issue author
 
+### Lint performance (v1.18.0+ future-work)
+
+User-reported bottleneck on 580-page vaults: ~6+ minutes per Lint. The cost concentrates in two LLM call types:
+
+**1. Duplicate detection** (`runDuplicateMerges` in `wiki/lint/fix-runners.ts:runDuplicateMerges` + LLM verify pass in `lint-controller.ts` "lintCheckingDuplicates" block)
+- O(N²) pair generation × O(N/100) LLM batches = dominant cost on large vaults.
+- Optimization roadmap: (a) hash-bucket prefilter (5-10x pair reduction), (b) embedding-based Tier 2 candidate scoring, (c) per-lint-run memo of LLM-verify results, (d) skip second LLM pass if Tier 1 confidence is below threshold and no diff since last run.
+
+**2. LLM health analysis** (single-shot `llmClient.createMessage` in `lint-controller.ts` "lintAnalyzingLLM" block)
+- Single 16K+ token prompt (full wiki index + content sample + findings report) → truncation on large wikis → low-quality output.
+- Optimization roadmap: (a) hierarchical 2-pass analyze (per-page signature then reason), (b) skip when programmatic checks found 0 issues, (c) cache results keyed on content hash, (d) parallel chunked analysis.
+
+Design intent + specific code pointers documented inline in `src/wiki/lint-controller.ts` (TODO marker blocks above the relevant code paths). No implementation scheduled — measurement + profiling first.
+
 ---
 
 ## Version Timeline
