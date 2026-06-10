@@ -554,8 +554,13 @@ export function mergeFrontmatter(
     lines.push(`sources:${yamlStringify(mergedSources)}`);
   }
 
+  // Always emit tags: so the field is never silently dropped on merge.
+  // An empty tags: is preferable to a missing field — it signals that tags
+  // need to be set, rather than hiding the gap entirely (Issue #114).
   if (Array.isArray(fm.tags) && fm.tags.length > 0) {
     lines.push(`tags:${yamlStringify(fm.tags)}`);
+  } else {
+    lines.push('tags:');
   }
 
   if (fm.reviewed) {
