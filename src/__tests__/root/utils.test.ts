@@ -509,6 +509,76 @@ describe('enforceFrontmatterConstraints', () => {
     expect(result).toContain('reviewed: true');
   });
 
+  // Reviewed-guard: a user has explicitly marked this page as reviewed.
+  // Their tag intent (including empty tags — silence is a choice) must be
+  // honored. The function should NOT auto-fill `tags: [other]` / `[term]`
+  // when reviewed. Aligns with lint-fixes.ts:439 (skip reviewed) and
+  // page-factory.ts:288/308 (reviewed = minimal append).
+  it('reviewed-guard: does NOT auto-fill tags fallback when fm.reviewed is true', () => {
+    const input = '---\ntype: entity\nreviewed: true\n---\n\nBody';
+    const result = enforceFrontmatterConstraints(input, 'entity');
+    expect(result).not.toContain('tags: [other]');
+    expect(result).not.toContain('tags: [term]');
+    // The function short-circuits before adding a tags line, so no
+    // tags field is emitted at all when the page has reviewed:true.
+    expect(result).not.toMatch(/^tags:/m);
+  });
+
+  it('reviewed-guard: still strips LLM-hallucinated dates on reviewed pages', () => {
+    // The reviewed-guard protects user intent (tags / type / aliases) but
+    // date fields are programmatic — a hallucinated "created: 2025-13-99"
+    // must still be normalized to today. Safety > user intent on dates.
+    const input = '---\ntype: entity\nreviewed: true\ncreated: 2025-13-99\nupdated: 2099-99-99\n---\n\nBody';
+    const result = enforceFrontmatterConstraints(input, 'entity');
+    const today = new Date().toISOString().split('T')[0];
+    expect(result).toContain('reviewed: true');
+    expect(result).toContain(`created: ${today}`);
+    expect(result).not.toContain('2025-13-99');
+    expect(result).not.toContain('2099-99-99');
+  });
+
+  it('reviewed-guard: preserves v6 out-of-vocab intent for reviewed pages', () => {
+    // If the LLM previously emitted an out-of-vocab tag and the user
+    // accepted it (reviewed: true), we must NOT silently drop the
+    // tag in a future retag/merge call. This is the v6 promise for
+    // reviewed pages specifically.
+    const input = '---\ntype: entity\nreviewed: true\ntags: [Mikrobiologie]\n---\n\nBody';
+    const result = enforceFrontmatterConstraints(input, 'entity');
+    expect(result).toContain('Mikrobiologie');
+  });
+
+  it('reviewed-guard: is a no-op for non-reviewed pages (control test)', () => {
+    // No reviewed: true → existing behavior preserved.
+    // v1.18.0 actual behavior: when LLM doesn't emit tags (no
+    // `tags:` line in input), the function does NOT write a tags
+    // line at all. The fallback `[other]` only fires when the LLM
+    // explicitly emitted `tags: []` (a non-empty-but-empty array).
+    const input = '---\ntype: entity\n---\n\nBody';
+    const result = enforceFrontmatterConstraints(input, 'entity');
+    // No tags line emitted when LLM didn't speak.
+    expect(result).not.toMatch(/^tags:/m);
+  });
+
+  it('reviewed-guard: stops fallback when user explicitly emptied tags', () => {
+    // User sets reviewed: true AND tags: []. LLM might re-emit
+    // tags: [] (which would normally trigger fallback to [other]).
+    // The reviewed-guard suppresses the fallback — silence is the
+    // user's choice, not a default-fill opportunity.
+    const input = '---\ntype: entity\nreviewed: true\ntags: []\n---\n\nBody';
+    const result = enforceFrontmatterConstraints(input, 'entity');
+    expect(result).not.toContain('tags: [other]');
+    expect(result).not.toContain('tags: [term]');
+  });
+
+  it('non-reviewed page with empty tags array still gets fallback (control test)', () => {
+    // For non-reviewed pages, the existing v1.18.0 behavior is
+    // preserved: explicit `tags: []` triggers the default fallback.
+    // The reviewed-guard is opt-in via `reviewed: true`.
+    const input = '---\ntype: entity\ntags: []\n---\n\nBody';
+    const result = enforceFrontmatterConstraints(input, 'entity');
+    expect(result).toContain('tags: [other]');
+  });
+
   it('preserves created but forces updated to today', () => {
     const input = '---\ntype: entity\ncreated: 2026-01-01\nupdated: 2026-05-18\n---\n\nBody';
     const result = enforceFrontmatterConstraints(input, 'entity');

@@ -697,6 +697,27 @@ export function enforceFrontmatterConstraints(
   if (fmEnd === -1) return content;
 
   const fmText = content.substring(3, fmEnd);
+
+  // Reviewed-guard (D4 design): when the page is marked `reviewed: true`
+  // by the user, their intent for type / tags / aliases wins. The
+  // function below is a safety net for LLM output, but the user has
+  // explicitly accepted the current frontmatter — we must not silently
+  // overwrite their choices (especially an empty `tags: []` they may
+  // have intentionally set). Only programmatic safety nets still run:
+  // LLM-hallucinated dates are stripped because the date system is
+  // strictly programmatic, not user-authored.
+  //
+  // This aligns with the rest of the codebase:
+  //   - lint-fixes.ts:439 skips reviewed pages
+  //   - page-factory.ts:288/308 use minimal append on reviewed pages
+  //   - prompts/generation.ts:206-241 has a dedicated preserveReviewed prompt
+  if (/^reviewed:\s*true\s*$/m.test(fmText)) {
+    const today = new Date().toISOString().split('T')[0];
+    return content
+      .replace(/^created:\s*\d{4}-\d{2}-\d{2}\s*$/m, `created: ${today}`)
+      .replace(/^updated:\s*\d{4}-\d{2}-\d{2}\s*$/m, `updated: ${today}`);
+  }
+
   let body = content.substring(fmEnd + 5);
 
   const today = new Date().toISOString().split('T')[0];
