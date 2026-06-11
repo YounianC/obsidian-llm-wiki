@@ -2,7 +2,7 @@
 
 > Feature planning and improvement proposals
 
-**Version:** 1.18.0 | **Updated:** 2026-06-10
+**Version:** 1.18.0 | **Updated:** 2026-06-11
 
 ---
 
@@ -23,7 +23,7 @@ Closes the long-standing #85 (P3) tag-vocabulary request. v2 ships a chip-input 
 - **Default tags as editable baseline (v4).** When the persisted custom CSV is empty, the chip input materializes the default vocabulary as fully-editable chips (same `.llm-wiki-tag-chip` class, same × button). No "preview" / read-only distinction.
 - **Two-row layout (v5).** Chips on the top row, input on its own row below — natural reading flow, no awkward left-alignment.
 - **49 new tests, 0 regressions.** 16 chip input (jsdom), 7 normalize vocabulary, 7 buildActiveTagVocabularySection, 4 appendTagVocabularyToPrompt, 6 preserve-LLM-intent, plus updated legacy tests. 605 → 654 tests passing.
-- **`minAppVersion` bumped 1.6.6 → 1.11.0** to use `Setting.addComponent()` (the only Obsidian API that mounts custom DOM into a Setting row).
+- **`minAppVersion` bumped 1.6.6 → 1.11.0** to use `Setting.addComponent()` (the only Obsidian API that mounts custom DOM into a Setting row). Users on Obsidian <1.11.0 must upgrade to continue using the plugin.
 - **New devDep `jsdom@29.1.1`** for chip input test environment (does NOT affect production bundle).
 
 - **🔴 v7: Programmatic tag audit + LLM-assisted retag (the closing of the loop).** Before v7, the Lint pipeline never reported pages whose frontmatter `tags` fall outside the active vocabulary — silently, out-of-vocab tags survived (v6 preserve-LLM-intent). v7 introduces a pure-function `scanTagViolations()` that runs as part of every Lint (zero token cost, <50ms on 2000-page vaults). A new "🏷️ Retag N page(s) with LLM" button in the Lint Modal calls `runRetagViolations()` which sends the page's first-paragraph summary to the LLM with `appendTagVocabularyToPrompt()` injected; the LLM returns a new `tags: string[]` constrained to the active vocabulary, the runner re-validates the response (defensive), and only the `tags:` line of the frontmatter is rewritten — the body is byte-identical to the input. Source pages get their own static `VALID_SOURCE_TAGS` vocabulary (paper / document / article / book / clippings / transcript / notes / other) — no user override per Issue #85 v7 design decision.

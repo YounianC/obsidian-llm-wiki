@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.18.0] - 2026-06-10
+## [1.18.0] - 2026-06-11
 
 ### Added
 - **User-Controlled Tag Vocabulary (Issue #85) — chip input UX + end-to-end pipeline (v6).** Wiki admins in medical, legal, R&D, and other professional domains can now define a controlled vocabulary for entity/concept frontmatter tags and the LLM actually uses it. The new "Tag Vocabulary" sub-block (embedded in Wiki Configuration — no separate heading) has a **Vocabulary Mode** dropdown:
@@ -17,29 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **🔴 v6: Preserve LLM intent on write.** `enforceFrontmatterConstraints` no longer silently drops out-of-vocab tags. It retains all LLM-emitted tags (with a `console.debug` note when the vocabulary diverges) so the user can see exactly what the model produced and can decide whether to expand their custom vocabulary. Fallback to `DEFAULT_ENTITY_TAG` / `DEFAULT_CONCEPT_TAG` only when the tags array is genuinely empty.
 - **v1 → v2 migration runs on `onload()`.** New `cleanupVocabularyTags()` reads `customEntityTags` / `customConceptTags`, normalizes them via `normalizeVocabularyCsv` (trim, dedupe case-insensitively, drop empty), and writes back to `data.json` so existing users see clean chips on first reload.
 - **`getActiveEntityTags` / `getActiveConceptTags` pure helpers** in `utils.ts` — the single source of truth for "which tags are valid right now". All call-sites (page-factory, lint-fixes × 2) pass `this.ctx.settings`.
-
-### Changed
-- 8-language i18n: rewritten 2 descs (`customEntityTagsDesc` / `customConceptTagsDesc` now describe chip input semantics), added 5 new keys (`tagVocabularyInlineName/Desc`, `tagVocabularyModeDescDefault/Custom`, `chipDuplicateHint`), removed 1 key (`tagVocabularySection`). Mirrored in all 8 locales.
-- **`minAppVersion` bumped 1.6.6 → 1.11.0** to use `Setting.addComponent()` (the only Obsidian API for mounting custom DOM into a Setting row).
-- **New devDep `jsdom@29.1.1`** for the chip input test environment (does NOT affect production bundle; only used by vitest under jsdom env).
-
-### Tests
-- +16 jsdom-based chip input tests (rendering, keyboard handling, IME composition, a11y, dedupe, getValue/onChange).
-- +7 pure `normalizeVocabularyCsv` tests (trim, dedupe, nested tag, idempotency, v1 leftover CSV).
-- +7 `buildActiveTagVocabularySection` tests (default vs custom, nested tags, fallback semantics).
-- +4 `appendTagVocabularyToPrompt` tests (composes with granularity injection, end-to-end custom tags flow).
-- +6 enforceFrontmatterConstraints preserve-LLM-intent tests (retain out-of-vocab, dedupe, nested tag, fallback).
-- Updated 5 legacy tests to reflect the new "preserve LLM intent" behavior.
-- 654 tests passing (605 → 654, +49), 0 regressions.
-
-- **🔴 v7: Programmatic tag audit + LLM-assisted retag.** New `scanTagViolations()` (pure function in `src/wiki/lint/scanners.ts`) walks every entity/concept/source page in the wiki at Lint time and reports any page whose `frontmatter.tags` array contains at least one value not in the active vocabulary. Zero token cost, <50ms on 2000-page vaults. The Lint Report Modal gets a new "🏷️ Retag N page(s) with LLM" button that calls `runRetagViolations()` (in `src/wiki/lint/fix-runners.ts`): the LLM is given the page's first-paragraph summary + the active vocabulary section (via `appendTagVocabularyToPrompt()` from v6), and returns a new `tags: string[]`. The runner re-validates every returned tag against the active vocabulary (defensive), and only the `tags:` line of the frontmatter is rewritten — the body is byte-identical. Source pages get a static `VALID_SOURCE_TAGS` vocabulary (paper / document / article / book / clippings / transcript / notes / other) — NOT user-configurable per Issue #85 v7 design decision. Smart Fix All now runs retag as Phase 5 (after duplicates / orphans / empty pages).
+- **🔴 v7: Programmatic tag audit + LLM-assisted retag.** New `scanTagViolations()` (pure function in `src/wiki/lint/scanners.ts`) walks every entity/concept/source page in the wiki at Lint time and reports any page whose `frontmatter.tags` array contains at least one value not in the active vocabulary. Zero token cost, <50ms on 2000-page vaults. The Lint Report Modal gets a new "🏷️ Retag N page(s) with LLM" button that calls `runRetagViolations()` (in `src/wiki/lint/fix-runners.ts`): the LLM is given the page's first-paragraph summary + the active vocabulary section (via `appendTagVocabularyToPrompt()` from v6), and returns a new `tags: string[]`. The runner re-validates every returned tag against the active vocabulary (defensive), and only the `tags:` line of the frontmatter is rewritten — the body is byte-identical. Source pages get a static `VALID_SOURCE_TAGS` vocabulary (paper / article / book / transcript / clippings / notes / other) — NOT user-configurable per Issue #85 v7 design decision. Smart Fix All now runs retag as Phase 5 (after duplicates / orphans / empty pages).
 - **`enforceFrontmatterConstraints` source-page branch** now validates against `VALID_SOURCE_TAGS` (previously: `[]` = no validation). Page writes still succeed even with out-of-vocab tags thanks to v6's preserve-LLM-intent behavior (only a `console.debug` note when divergence is detected).
-
-### Tests
-- +2 `getActiveSourceTags` (constant + closed-taxonomy enforcement).
-- +11 `scanTagViolations` scanner tests (empty pageMap, all-valid entity, single out-of-vocab tag, custom-vocab override, entity-vs-concept cross-type leak, source-form validation, empty-tags no-false-positive, non-tagged-type skip, sorted output, title extraction).
-- +5 `runRetagViolations` runner tests (already-aborted signal, null client, happy path with body preservation, defensive out-of-vocab filtering, empty-tags safety).
-- 672 tests passing (654 → 672, +18 new), 0 regressions.
+- **Default vocabulary cross-discipline optimization (v8).** Entity `location` → `place` for more natural semantics; Concept `+field`, `+phenomenon`, `+standard`, `-technology` for better distinction; Source `-document` (overlapped with article), `notes` retained. Full backward compatibility via v6 preserve-LLM-intent — removed tags survive in existing frontmatter, flagged by Lint audit for optional LLM-assisted retag.
+- **Reviewed-guard (D4 design).** `enforceFrontmatterConstraints` now respects `fm.reviewed: true`: when a user has marked a page as reviewed, their tag intent (including intentionally empty `tags: []`) is preserved — the function does NOT auto-fill `tags: [other]`. Only LLM-hallucinated dates are still stripped (date fields are strictly programmatic). Aligns with existing reviewed-aware code paths (lint-fixes.ts:439, page-factory.ts:288/308, prompts/generation.ts:206-241).
+- **🔴 Layer A complete: disableThinking propagation (Issue #99 v2).** The v1.16.2 three-layer defense added `disableThinking` parameter to the LLM client interface but ZERO of ~22 production `createMessage` calls passed it. This release completes the wiring: `disableThinking` is declared in `LLMWikiSettings` (default `true`), and all 22 `createMessage`/`createMessageStream` calls across 7 engine files now pass `disableThinking: settings.disableThinking`. Thinking-capable models (Gemma 4, DeepSeek-R1, QwQ) receive `thinking: { type: 'disabled' }` on every call, preventing mid-response CoT and duplicated body output at the source.
+- **AnthropicClient fallback for thinking-mandatory models.** Unlike OpenAICompatibleClient which already had try/catch fallback from v1.16.2, AnthropicCompatibleClient and AnthropicClient would throw unconditionally when a provider rejects `thinking.type='disabled'` (e.g. Claude Fable 5 / Mythos 5). Both clients now wrap the request in try/catch: on 400 + `disableThinking=true` + `isThinkingControlError()`, they cache `thinkingControlSupported=false` and retry the request WITHOUT the thinking field. The redundant ~70-line duplicated request/parse/withTruncationRetry block was refactored into a shared `anthropicDoRequest` helper.
 
 ## [1.17.0] - 2026-06-08
 

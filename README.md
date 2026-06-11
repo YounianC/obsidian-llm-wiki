@@ -6,7 +6,7 @@
 >
 > **Obsidian official score 95/100** | Native support for 8 languages | Actively maintained, continuously evolving
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/green-dalii/obsidian-llm-wiki) [![Release Obsidian plugin](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml/badge.svg)](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml) ![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-12%2B-cyan?style=flat-square)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/green-dalii/obsidian-llm-wiki) [![Release Obsidian plugin](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml/badge.svg)](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml) ![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.11.0%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-12%2B-cyan?style=flat-square)
 
 [English](README.md) | [中文文档](docs/README_CN.md) | [日本語](docs/README_JA.md) | [한국어](docs/README_KO.md) | [Deutsch](docs/README_DE.md) | [Français](docs/README_FR.md) | [Español](docs/README_ES.md) | [Português](docs/README_PT.md)
 
@@ -25,7 +25,7 @@
   - [🔑 Configure an LLM Provider](#-configure-an-llm-provider)
   - [🎮 Usage](#-usage)
   - [⚠️ Upgrading from an Older Version?](#️-upgrading-from-an-older-version)
-- [⚡ What's New in v1.17.0](#-whats-new-in-v1170)
+- [⚡ What's New in v1.18.0](#-whats-new-in-v1180)
 - [✨ Features](#-features)
   - [📊 Knowledge Quality](#-knowledge-quality)
   - [🛠️ Maintenance](#️-maintenance)
@@ -186,30 +186,29 @@ Settings → **LLM Configuration**:
 
 ---
 
-## ⚡ What's New in v1.17.0
+## ⚡ What's New in v1.18.0
 
-This is a **major quality release** with significant ingestion improvements. Closes one tracked issue (#90). The biggest change: long documents that previously couldn't be ingested at all now work, and ingested content carries much richer source attribution. **Zero breaking changes, zero reconfiguration needed.**
+v1.18.0 is a **major feature release** focused on user-controlled tag vocabulary — closing the entire Issue #85 cycle from UI to prompt injection to programmatic audit and LLM-assisted repair. Also includes a complete fix for the thinking-token bleeding regression (Issue #99 v2), a reviewed-guard to protect user-edited pages, and a default tag vocabulary refresh based on cross-discipline analysis.
 
 **Highlights:**
 
-- **Long-document ingestion now actually works.** A 619KB Chinese source like 史记 (Shiji) used to be unprocessable — custom-granularity batch size was hardcoded to a maximum of 15 items regardless of how many you asked for, and the LLM's `max_tokens` was capped below the response length needed for large batches. Now `customEntityLimit` and `customConceptLimit` actually scale the batch pipeline (1-500, default 5 each), and `max_tokens` dynamically scales with batch size (20K-60K) with automatic batch-size halving on truncation. The same long source that previously failed after 3 minutes and 15 items now completes fully and extracts hundreds of entities + concepts from the same document.
+- **🎯 User-Controlled Tag Vocabulary (Issue #85).** You can now define a custom entity/concept tag vocabulary in Settings → Wiki Configuration → Tag Vocabulary. Two modes: **Default** (built-in) or **Custom** (chip input — add tags via Enter, remove via ×). The vocabulary is injected into every LLM prompt so the model emits matching types, not invented ones.
 
-- **Mentions carry source attribution (footnote-style).** The "Mentions in Source" section in entity and concept pages used to be a free-form block of untraceable quotes. Now each quote is rendered as an academic-style footnote: `- "verbatim quote in original language (optional translation)" — [[source-path|display-name]]`. Each quote is linkable to its origin, so future page merges can never mix up which quote came from which source.
+- **🔍 Lint Tag Audit + LLM Retag.** Lint now scans every page for out-of-vocabulary tags. A new "🏷️ Retag N page(s) with LLM" button sends violating pages to the LLM with your active vocabulary — no more manually fixing tags after every ingest.
 
-- **Custom granularity upper bound raised from 300 to 500** to support professional knowledge bases (legal, medical, deep-research).
+- **🧠 Default Vocabulary Refresh.** Entity `location` → `place`. Concept gains `field` (discipline), `phenomenon` (observable patterns), `standard` (conventions); `technology` removed (cross-type ambiguity). Source drops `document` (overlaps with `article`). Full backward compatibility — removed tags survive in existing frontmatter, flagged by Lint for optional retag.
 
-**Other Fixes & Improvements:**
+- **🛡️ reviewed-guard.** `enforceFrontmatterConstraints` now respects `fm.reviewed: true` — user-edited pages keep their tags (even intentionally empty `tags: []`). Only LLM-hallucinated dates are still stripped.
 
-- **Provider settings now sync everywhere.** Switching Provider/API Key/Model in Settings used to fail to propagate to the wiki engine, so your next Ingest/Lint/Query would silently use the old provider. Fixed via a new `wikiEngine.updateSettings()` that keeps the EngineContext in sync with the live settings. The Test Connection button also no longer persists broken config on failure.
-- **Dates are now programmatic, not LLM-generated.** LLM-hallucinated `created`/`updated` dates in source pages (e.g. a 2025 date on a 2026-06-08 ingestion) are stripped and replaced by the system. `created` is preserved on merge; `updated` is always set to today.
-- **Lint reports are now persisted to log.md** with minute-precision timestamps so multiple same-day Lint runs are distinguishable. The Lint Report Modal shows a `📋 Full report saved to log.md` hint pointing to the persisted log entry.
-- **Source pages inherit tags from the source note frontmatter (Issue #90).** Previously the LLM would inject arbitrary concept names (e.g. Alzheimer-Demenz, Neuroprotektion) into source pages, polluting the user's tag vocabulary. Now `tags` is programmatically inherited from the source note's frontmatter.
-- **Test connection restores live settings on failure.** A failed Test Connection used to overwrite your saved config with the broken test settings. Now the previous settings are restored if the test fails.
-- **Folder ingest callback restored on early return.** The `setDoneCallback` is now properly restored when folder ingest exits early with no new files to process, so subsequent ingests use the correct callback.
+- **🧠 disableThinking ON by default (Issue #99 v2).** The v1.16.2 anti-thinking defense was incomplete — the `disableThinking` parameter existed but ZERO production `createMessage` calls passed it. v1.18.0 propagates it to all 22 call sites. Default ON, user-configurable in Settings.
 
-**We strongly recommend all users upgrade to this version.** Long-document ingestion is the headline improvement — if you've ever had a large source file fail with a 400 error or extract only a handful of items, this release fixes that. Source attribution and date integrity improvements apply to every page you generate.
+- **🔌 AnthropicClient fallback for thinking-mandatory models.** Claude Fable 5 / Mythos 5 reject `thinking.type='disabled'` with 400. Both Anthropic clients now catch the error, cache the provider as unsupported, and retry without the thinking field.
 
-**Closes:** #90 — Source pages now inherit tags from the source note frontmatter instead of LLM-generated concept names.
+- **⬆️ minAppVersion bumped 1.6.6 → 1.11.0.** Users on Obsidian <1.11.0 must upgrade to continue using this version. Reason: `Setting.addComponent()` API requirement for the chip input UI.
+
+**We strongly recommend all users upgrade to this version.** The tag vocabulary pipeline is the headline feature — if you've been manually correcting LLM-generated tags after every ingest, this release eliminates that work entirely. The `disableThinking` fix prevents mid-response reasoning corruption for Gemma 4, DeepSeek-R1, and other thinking-capable models. **Note:** this version bumps the minimum Obsidian requirement from v1.6.6 to v1.11.0 — users on older versions must upgrade Obsidian before updating.
+
+**Closes:** #85 (User-controlled tag vocabulary), #99 (Thinking-token bleeding — complete fix).
 ## ⌨️ Commands
 
 | Command | Description |
@@ -358,7 +357,7 @@ ui/                 # User interface
 You drop notes in, it extracts people, concepts, and theories, then generates an interlinked wiki with `[[bidirectional links]]`. Ask questions and get answers grounded in *your* notes — not internet hallucinations.
 
 **Minimum requirements?**
-Obsidian v1.6.6+, desktop (Windows/macOS/Linux), an LLM provider API key. Ollama works locally with no API key. See [Configure an LLM Provider](#-configure-an-llm-provider) above.
+Obsidian v1.11.0+, desktop (Windows/macOS/Linux), an LLM provider API key. Ollama works locally with no API key. See [Configure an LLM Provider](#-configure-an-llm-provider) above.
 
 **Which model should I use?**
 See [Model Selection Guide](#-model-selection-guide) above. Long-context models work best — the larger your wiki, the more context the LLM needs.

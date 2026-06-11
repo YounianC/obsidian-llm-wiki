@@ -1,12 +1,12 @@
 # LLM Wiki Plugin Project Development Standards
 
-**Last Updated:** 2026-06-10
+**Last Updated:** 2026-06-11
 
 ---
 
-## Current Phase: v1.18.0 — User-Controlled Tag Vocabulary (Issue #85)
+## Current Phase: v1.18.0 — User-Controlled Tag Vocabulary (Issue #85) — Released 2026-06-11
 
-### Completed (v1.18.0) — Code complete 2026-06-10 (release pending push)
+### Completed (v1.18.0) — Released 2026-06-11
 - ✅ **Issue #85 v2 (chip input UX)**: replaced v1's textarea CSV with GitHub-Issue-Labels-style chip input. Each tag renders as a discrete chip + × button. Add via Enter / `,` / `;`; remove via × click or Backspace on empty input. Duplicate tags (case-insensitive) are silently skipped with a brief shake animation. CJK IME composition is respected.
 - ✅ **No standalone "Tag Vocabulary" heading**: settings sub-block is now embedded inside Wiki Configuration as a `setName()` row (no `.setHeading()`), reflecting the conceptual hierarchy.
 - ✅ **Default-mode description enumerates actual defaults**: shows the concrete default list inline (`person, organization, project, … (entities) / theory, method, … (concepts)`) so users know what they will get.

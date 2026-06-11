@@ -6,7 +6,7 @@
 >
 > **Obsidian公式評価95/100** | 8言語ネイティブ対応 | 活発に維持、継続進化
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/green-dalii/obsidian-llm-wiki) [![Release Obsidian plugin](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml/badge.svg)](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml) ![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-12%2B-cyan?style=flat-square)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/green-dalii/obsidian-llm-wiki) [![Release Obsidian plugin](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml/badge.svg)](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml) ![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.11.0%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-12%2B-cyan?style=flat-square)
 
 [English](../README.md) | [中文文档](README_CN.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Deutsch](README_DE.md) | [Français](README_FR.md) | [Español](README_ES.md) | [Português](README_PT.md)
 
@@ -26,7 +26,7 @@
   - [🔑 LLM Providerを設定](#-llm-providerを設定)
   - [🎮 使用方法](#-使用方法)
   - [⚠️ 旧バージョンからアップグレードする場合](#️-旧バージョンからアップグレードする場合)
-- [⚡ v1.17.0 更新のポイント](#-v1170-更新のポイント)
+- [⚡ v1.18.0 更新のポイント](#-v1180-更新のポイント)
 - [✨ 特徴](#-特徴)
   - [📊 Knowledge Quality](#-knowledge-quality)
   - [🛠️ Maintenance](#️-maintenance)
@@ -61,28 +61,29 @@
 
 ---
 
-## ⚡ v1.17.0 更新のポイント
+## ⚡ v1.18.0 更新のポイント
+v1.18.0 は、ユーザーが制御可能なタグボキャブラリー（Issue #85）に焦点を当てた**メジャー機能リリース**です。UI からプロンプト注入、プログラム監査、LLM 支援修復までの完全なサイクルを閉じます。thinking-token 回帰の完全修正（Issue #99 v2）、ユーザー編集ページを保護する reviewed-guard、および学際的分析に基づくデフォルトボキャブラリーの更新も含まれます。
 
-本リリースは **品質向上を主眼としたメジャーアップデート** であり、摂取機能が大幅に改善されました。1 つの追跡 Issue (#90) をクローズ。最大の特徴：以前はまったく摂取できなかった長文ドキュメントが処理可能になり、生成コンテンツはより豊富なソース帰属情報を持ちます。**破壊的変更なし、再設定不要。**
+**ハイライト：**
 
-**Highlights:**
+- **🎯 ユーザー制御可能なタグボキャブラリー（Issue #85）。** 設定 → Wiki 設定 → タグボキャブラリーでエンティティ/コンセプトのタグを定義可能。2 つのモード：**Default**（組み込み）または **Custom**（チップ入力）。
 
-- **長文ドキュメントの摂取がついに実用化。** 619KB の中国語ソース（『史記』など）は以前は処理不可能でした——カスタム粒度のバッチサイズがハードコードで最大 15 アイテムに制限され、LLM の `max_tokens` も大きいバッチの応答に必要な上限を下回っていました。現在、`customEntityLimit` と `customConceptLimit` が実際にバッチパイプラインを駆動し（1-500、デフォルト各 5）、`max_tokens` はバッチサイズに応じて動的にスケール（20K-60K）、トランケーション発生時はバッチサイズを半減して自動リトライ。以前 3 分で 15 アイテムで失敗した同じ長文が、今では完全に摂取され、同じ文書から数百のエンティティとコンセプトを抽出します。
+- **🔍 Lint タグ監査 + LLM 再タグ付け。** Lint がアクティブボキャブラリー外の全ページをスキャン。新 "🏷️ LLM で N ページを再タグ付け" ボタン。
 
-- **Mentions がソース帰属情報を保持（学術的脚注スタイル）。** エンティティ・コンセプトページの「Mentions in Source」セクションは以前はトレース不能な自由形式の引用ブロックでした。現在、各引用は学術的脚注としてレンダリングされます：`- "原文（任意の翻訳）" — [[source-path|display-name]]`。各引用は元のソースにリンク可能で、将来のページマージで異なるソースの引用が混ざることはありません。
+- **🧠 デフォルトボキャブラリー更新。** エンティティ location→place。コンセプトに field, phenomenon, standard 追加；technology 削除。ソースから document 削除。完全な後方互換性。
 
-- **カスタム粒度上限を 300 から 500 に引き上げ**、専門領域（法律、医療、深層研究）のナレッジベースをサポートします。
+- **🛡️ reviewed-guard。** enforceFrontmatterConstraints が fm.reviewed: true を尊重。
 
-**Other Fixes & Improvements:**
+- **🧠 disableThinking デフォルト有効（Issue #99 v2）。** 22 の呼び出し箇所すべてに伝播。
 
-- **Provider 設定が完全に同期されるようになりました。** 設定で Provider/API Key/Model を切り替えても wiki engine に伝播せず、後続の Ingest/Lint/Query が古い Provider をサイレントに使用していました。新しい `wikiEngine.updateSettings()` で EngineContext を live settings と同期。Test Connection ボタンも失敗時に破損した設定を保存しなくなりました。
-- **日付が LLM 生成ではなくプログラム生成になりました。** Source ページでの LLM ハルシネーションされた `created`/`updated` 日付（例：2026-06-08 の摂取で 2025 と表示される）は除去され、システムが上書きします。マージ時に `created` は保持、`updated` は常に今日付。
-- **Lint レポートが log.md に永続化**、分単位のタイムスタンプで同日内の複数 Lint 実行を区別可能。Lint Report Modal には `📋 完全なレポートを log.md に保存しました` ヒントが表示されます。
-- **Source ページがソースノート frontmatter の tags を継承（Issue #90）。** 以前は LLM が任意的概念名（例：Alzheimer-Demenz、Neuroprotektion）を注入し、ユーザーのタグ語彙を汚染していました。現在、`tags` はソースノート frontmatter からプログラム的に継承されます。
-- **テスト接続失敗時に live settings を復元。** 以前はテスト失敗が破損したテスト設定を保存済み設定に上書きしていました。テスト失敗時は元の settings が復元されます。
-- **Folder 摂取早期リターン時にコールバックを復元。** `setDoneCallback` が新規ファイルなしの folder 摂取で正しく復元され、後続の摂取が正しいコールバックを使用します。
+- **🔌 thinking 必須モデル向け AnthropicClient フォールバック。** Claude Fable 5 / Mythos 5 のエラーをキャッチし、thinking なしで再試行。
 
-**すべてのユーザーに本バージョンへのアップグレードを強く推奨します。** 長文ドキュメント摂取が本リリースの目玉改善です——大きなソースファイルで 400 エラーや少数のアイテムしか抽出できない問題があれば、本リリースで完全に解決します。ソース帰属と日付整合性の改善は生成するすべてのページに適用されます。
+- **⬆️ minAppVersion を 1.6.6 から 1.11.0 に引き上げ。** Obsidian <1.11.0 のユーザーはアップデートが必要。
+
+**すべてのユーザーに本バージョンへのアップグレードを強くお勧めします。注意： 本バージョンでは最低 Obsidian 要件が v1.6.6 から v1.11.0 に引き上げられました——古いバージョンのユーザーはプラグイン更新前に Obsidian をアップグレードしてください。**
+
+**クローズ：** #85, #99。
+
 ## ✨ 特徴
 
 ### 📊 Knowledge Quality
@@ -287,7 +288,7 @@ ui/                 # ユーザーインターフェース
 ノートを入れると、人物、概念、理論を抽出し、`[[双方向リンク]]` 付きの相互リンクされたWikiを生成します。*あなたの*ノートに基づいた回答が得られます — インターネットの幻覚ではありません。
 
 **最低要件は？**
-Obsidian v1.6.6+、デスクトップ（Windows/macOS/Linux）、LLM ProviderのAPI key。Ollamaはローカルで動作し、API keyは不要です。
+Obsidian v1.11.0+、デスクトップ（Windows/macOS/Linux）、LLM ProviderのAPI key。Ollamaはローカルで動作し、API keyは不要です。
 
 **インストール後、機能が使えないのはなぜですか？**
 設定 → Karpathy LLM Wiki → プロバイダー選択 → APIキー入力 → Fetch Models → モデル選択 → Test Connection。緑の「LLM Ready」表示が出れば全機能が利用可能になります。設定の誤りによる silent failure を防ぐための仕様です。
