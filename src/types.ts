@@ -17,7 +17,7 @@ export interface SourceAnalysis {
 
 export interface EntityInfo {
   name: string;
-  type: 'person' | 'organization' | 'project' | 'product' | 'event' | 'location' | 'other';
+  type: 'person' | 'organization' | 'project' | 'product' | 'event' | 'place' | 'other';
   aliases?: string[];  // Pre-generated aliases from extraction (seeds for page generation)
   summary: string;
   mentions_in_source: string[];
@@ -27,7 +27,7 @@ export interface EntityInfo {
 
 export interface ConceptInfo {
   name: string;
-  type: 'theory' | 'method' | 'technology' | 'term' | 'other';
+  type: 'theory' | 'method' | 'field' | 'phenomenon' | 'standard' | 'term' | 'other';
   aliases?: string[];  // Pre-generated aliases from extraction (seeds for page generation)
   summary: string;
   mentions_in_source: string[];
@@ -89,6 +89,11 @@ export interface LLMWikiSettings {
   // Schema
   enableSchema: boolean;
 
+  // Issue #85: tag vocabulary mode (Issue #85 — user-configurable tag vocabulary)
+  tagVocabularyMode: 'default' | 'custom';
+  customEntityTags: string;
+  customConceptTags: string;
+
   // Extraction
   extractionGranularity: ExtractionGranularity;
   customEntityLimit?: number;
@@ -116,6 +121,19 @@ export interface LLMWikiSettings {
   // true  → provider accepts thinking.type='disabled'
   // false → provider returned 400; subsequent calls skip thinking control
   thinkingControlCache?: Record<string, boolean>;
+
+  // Issue #99 v2: disable thinking-mode for thinking-capable models.
+  // When true, all createMessage calls send `thinking: { type: 'disabled' }`
+  // so the LLM outputs final answer only — no mid-response CoT or
+  // duplicated body. Layer A of the v1.16.2 3-layer defense (commit 8c520cf)
+  // added the parameter, but the production call sites never passed it.
+  // This setting makes the wiring complete. DEFAULT_SETTINGS provides
+  // the default (true) so thinking-capable models (Gemma 4, DeepSeek-R1,
+  // QwQ) output final answers without preamble/mid-stream reasoning.
+  // Users with non-thinking models can leave true; users with thinking
+  // models wanting CoT can set false. Optional in the interface for
+  // backward compat with existing test fixtures.
+  disableThinking?: boolean;
 
   // Issue #75: cap max_tokens per LLM call. 0 = no cap.
   // Recommended for local models with small context windows.
@@ -216,10 +234,21 @@ export const WIKI_LANGUAGES: Record<string, string> = {
 // Valid frontmatter tag values per schema classification rules.
 // `type: entity` pages use entity subtypes as tags.
 // `type: concept` pages use concept subtypes as tags.
-export const VALID_ENTITY_TAGS = ['person', 'organization', 'project', 'product', 'event', 'location', 'other'];
-export const VALID_CONCEPT_TAGS = ['theory', 'method', 'technology', 'term', 'other'];
+export const VALID_ENTITY_TAGS = ['person', 'organization', 'project', 'product', 'event', 'place', 'other'];
+export const VALID_CONCEPT_TAGS = ['theory', 'method', 'field', 'phenomenon', 'standard', 'term', 'other'];
 export const DEFAULT_ENTITY_TAG = 'other';
 export const DEFAULT_CONCEPT_TAG = 'term';
+
+// Issue #85 v7: source pages use a separate, static "form" vocabulary
+// (describing the type of the source artifact — paper, document, etc.)
+// rather than a topic. NOT user-configurable per Issue #85 design
+// decision: source pages have a closed taxonomy that the user picks
+// from, and the lint audit + retag runner validates against this list.
+export const VALID_SOURCE_TAGS = [
+  'paper', 'article', 'book', 'transcript', 'clippings',
+  'notes', 'other',
+] as const;
+export const DEFAULT_SOURCE_TAG = 'other';
 
 // EngineContext — shared dependencies injected into sub-modules.
 // Functions (getClient, tryReadFile) return the latest state at call time,
@@ -406,6 +435,11 @@ export const DEFAULT_SETTINGS: LLMWikiSettings = {
   // Schema
   enableSchema: true,
 
+  // Issue #85: tag vocabulary
+  tagVocabularyMode: 'default',
+  customEntityTags: '',
+  customConceptTags: '',
+
   // Extraction
   extractionGranularity: 'standard',
 
@@ -431,4 +465,12 @@ export const DEFAULT_SETTINGS: LLMWikiSettings = {
   // Local model users can set this when the provider is Ollama, LM Studio,
   // custom, or anthropic-compatible.
   maxTokensPerCall: 0,
+
+  // Issue #99 v2: default ON so thinking-capable models (Gemma 4,
+  // DeepSeek-R1, QwQ) output final answer only — no mid-response CoT
+  // or duplicated body. The v1.16.2 Layer A parameter existed but the
+  // production call sites never passed it; this default makes the
+  // wiring complete. Users with non-thinking models can leave true;
+  // users with thinking models wanting CoT can set false.
+  disableThinking: true,
 };

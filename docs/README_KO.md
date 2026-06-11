@@ -6,7 +6,7 @@
 >
 > **Obsidian 공식 평점 95/100** | 8개 언어 네이티브 지원 | 활발한 유지보수, 지속 진화
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/green-dalii/obsidian-llm-wiki) [![Release Obsidian plugin](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml/badge.svg)](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml) ![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-12%2B-cyan?style=flat-square)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/green-dalii/obsidian-llm-wiki) [![Release Obsidian plugin](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml/badge.svg)](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml) ![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.11.0%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-12%2B-cyan?style=flat-square)
 
 [English](../README.md) | [中文文档](README_CN.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Deutsch](README_DE.md) | [Français](README_FR.md) | [Español](README_ES.md) | [Português](README_PT.md)
 
@@ -26,7 +26,7 @@
   - [🔑 LLM Provider 설정](#-llm-provider-설정)
   - [🎮 사용법](#-사용법)
   - [⚠️ 이전 버전에서 업그레이드하시나요?](#️-이전-버전에서-업그레이드하시나요)
-- [⚡ v1.17.0 업데이트 하이라이트](#-v1170-업데이트-하이라이트)
+- [⚡ v1.18.0 업데이트 하이라이트](#-v1180-업데이트-하이라이트)
 - [✨ 주요 기능](#-주요-기능)
   - [📊 지식 품질](#-지식-품질)
   - [🛠️ 유지 관리](#️-유지-관리)
@@ -61,28 +61,29 @@
 
 ---
 
-## ⚡ v1.17.0 업데이트 하이라이트
+## ⚡ v1.18.0 업데이트 하이라이트
+v1.18.0은 사용자 제어 태그 어휘(Issue #85)에 초점을 맞춘 **메이저 기능 릴리스**입니다. UI부터 프롬프트 주입, 프로그래밍 감사, LLM 지원 수리까지 전체 사이클을 완료합니다. thinking-token 회귀의 완전한 수정(Issue #99 v2), 사용자 편집 페이지를 보호하는 reviewed-guard, 학제간 분석에 기반한 기본 어휘 업데이트도 포함됩니다.
 
-본 릴리스는 **품질 향상을 주요 목적으로 한 메이저 릴리스** 로, 수집 기능이 크게 개선되었습니다. 1개의 추적 Issue (#90)를 닫음. 가장 핵심적인 변화: 이전에는 전혀 수집할 수 없었던 장문 문서가 이제 처리 가능하며, 생성된 콘텐츠는 더 풍부한 출처 귀속 정보를 포함합니다. **호환성 깨짐 없음, 재구성 불필요.**
+**하이라이트:**
 
-**Highlights:**
+- **🎯 사용자 제어 태그 어휘(Issue #85).** 설정 → Wiki 구성 → 태그 어휘에서 엔티티/컨셉 태그 정의 가능. 두 가지 모드: **Default** 또는 **Custom**(칩 입력).
 
-- **장문 문서 수집이 이제 실질적으로 작동합니다.** 619KB 중국어 소스(예: 사기)는 이전에는 처리할 수 없었습니다 — 사용자 정의 그래뉼러리티의 배치 크기가 하드코딩되어 최대 15개 아이템으로 제한되었으며, LLM의 `max_tokens`도 큰 배치 응답에 필요한 상한을 미달했습니다. 이제 `customEntityLimit`와 `customConceptLimit`가 실제로 배치 파이프라인을 구동하며(1-500, 기본 각 5), `max_tokens`는 배치 크기에 따라 동적으로 스케일(20K-60K), 트렁케이션 발생 시 배치 크기를 절반으로 줄여 자동 재시도. 이전에 3분, 15개 아이템에서 실패한 동일한 장문이 이제 완전히 수집되어 같은 문서에서 수백 개의 엔티티와 컨셉을 추출합니다.
+- **🔍 Lint 태그 감사 + LLM 재태깅.** Lint가 활성 어휘를 벗어난 모든 페이지를 스캔. 새 "🏷️ LLM으로 N페이지 재태깅" 버튼.
 
-- **Mentions가 이제 출처 귀속 정보를 포함(학술 각주 스타일).** 엔티티 및 컨셉 페이지의 "Mentions in Source" 섹션은 이전에 추적 불가능한 자유 형식 인용 블록이었습니다. 이제 각 인용이 학술적 각주로 렌더링됩니다: `- "원문(선택적 번역)" — [[source-path|display-name]]`. 각 인용이 원본에 링크 가능하여, 향후 페이지 병합 시 다른 출처의 인용이 섞이지 않습니다.
+- **🧠 기본 어휘 업데이트.** 엔티티 location→place. 컨셉에 field, phenomenon, standard 추가; technology 제거. 소스에서 document 제거. 완전한 하위 호환성.
 
-- **사용자 정의 그래뉼러리티 상한을 300에서 500으로 상향** 조정하여 전문 영역(법의학, 의학, 심층 연구) 지식 베이스를 지원합니다.
+- **🛡️ reviewed-guard.** enforceFrontmatterConstraints가 fm.reviewed: true를 존중.
 
-**Other Fixes & Improvements:**
+- **🧠 disableThinking 기본 활성화(Issue #99 v2).** 22개 호출 사이트에 전파.
 
-- **Provider 설정이 전체 경로에 걸쳐 동기화됩니다.** 설정에서 Provider/API Key/Model을 전환해도 wiki engine에 전파되지 않아 후속 Ingest/Lint/Query가 이전 Provider를 조용히 사용했습니다. 새로운 `wikiEngine.updateSettings()`로 EngineContext를 live settings와 동기화. Test Connection 버튼은 실패 시 손상된 구성을 더 이상 저장하지 않습니다.
-- **날짜가 이제 LLM 생성이 아닌 프로그래매틱 생성입니다.** Source 페이지의 LLM 환각 생성 `created`/`updated` 날짜(예: 2026-06-08 수집에 2025 표시)는 제거되어 시스템이 덮어씁니다. 병합 시 `created` 유지, `updated`는 항상 오늘로 설정.
-- **Lint 보고서가 log.md에 영구 저장**되며, 분 단위 타임스탬프로 같은 날 여러 Lint 실행을 구별 가능. Lint Report Modal에 `📋 전체 보고서가 log.md에 저장됨` 힌트 표시.
-- **Source 페이지가 소스 노트 frontmatter의 tags를 상속(Issue #90).** 이전에는 LLM이 임의의 컨셉 이름(예: Alzheimer-Demenz, Neuroprotektion)을 주입하여 사용자 태그 어휘를 오염시켰습니다. 이제 `tags`는 소스 노트 frontmatter에서 프로그래매틱하게 상속됩니다.
-- **테스트 연결 실패 시 live settings 복원.** 이전에는 테스트 실패가 손상된 테스트 설정을 저장된 설정을 덮어쓰고 있었습니다. 이제 테스트 실패 시 원래 settings가 복원됩니다.
-- **Folder 수집 조기 반환 시 콜백 복원.** `setDoneCallback`이 새 파일이 없는 folder 수집 시 올바르게 복원되어 후속 수집이 올바른 콜백을 사용합니다.
+- **🔌 thinking 필수 모델용 AnthropicClient 폴백.** Claude Fable 5 / Mythos 5 오류 캐치 후 thinking 없이 재시도.
 
-**모든 사용자에게 본 버전으로의 업그레이드를 강력히 권장합니다.** 장문 문서 수집이 본 릴리스의 핵심 개선 — 큰 소스 파일에서 400 오류나 적은 수의 아이템만 추출되는 문제를 겪었다면 본 릴리스에서 완전히 해결됩니다. 출처 귀속 및 날짜 무결성 개선은 생성하는 모든 페이지에 적용됩니다.
+- **⬆️ minAppVersion이 1.6.6에서 1.11.0으로 상향.** Obsidian <1.11.0 사용자는 업데이트 필요.
+
+**모든 사용자께서 이 버전으로 업그레이드하실 것을 강력히 권장합니다. 참고: 본 버전은 최소 Obsidian 요구사항을 v1.6.6에서 v1.11.0으로 상향합니다——이전 버전 사용자는 플러그인 업데이트 전에 Obsidian을 업그레이드해야 합니다.**
+
+**종료:** #85, #99.
+
 ## ✨ 주요 기능
 
 ### 📊 지식 품질
@@ -287,7 +288,7 @@ ui/                 # 사용자 인터페이스
 노트를 넣으면 인물, 개념, 이론을 추출하여 `[[양방향 링크]]`가 있는 상호 연결된 Wiki를 생성합니다. *여러분의* 노트를 기반으로 답변을 얻습니다 — 인터넷 환각이 아닙니다.
 
 **최소 요구사항은?**
-Obsidian v1.6.6+, 데스크톱(Windows/macOS/Linux), LLM Provider API Key. Ollama는 로컬에서 작동하며 API Key가 필요 없습니다.
+Obsidian v1.11.0+, 데스크톱(Windows/macOS/Linux), LLM Provider API Key. Ollama는 로컬에서 작동하며 API Key가 필요 없습니다.
 
 **설치 후 기능을 사용할 수 없는 이유는?**
 플러그인은 핵심 기능을 사용하려면 먼저 연결 테스트를 성공적으로 완료해야 합니다. **설정 → Karpathy LLM Wiki** → 제공자 선택 → API 키 입력 → **Fetch Models** 클릭 → 모델 선택 → **Test Connection** 클릭. 녹색 "LLM Ready" 표시가 나타나면 모든 기능을 사용할 수 있습니다. 이는 잘못 구성된 제공자의 묵묵한 실패를 방지합니다.

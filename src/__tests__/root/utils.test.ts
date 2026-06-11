@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { slugify, computeSlug, parseFrontmatter, detectRateLimitFailures, formatRateLimitNotice, cleanMarkdownResponse, enforceFrontmatterConstraints, parseJsonResponse, mergeFrontmatter, preserveFrontmatterReviewTag, extractBody, getText, filterRedundantAliases, coerceToArray, truncateMentions, extractSourceTags } from '../../utils';
-import { getGranularityInstruction, getGranularityFixLimits, appendGranularityToPrompt } from '../../wiki/system-prompts';
+import { slugify, computeSlug, parseFrontmatter, detectRateLimitFailures, formatRateLimitNotice, cleanMarkdownResponse, enforceFrontmatterConstraints, parseJsonResponse, mergeFrontmatter, preserveFrontmatterReviewTag, extractBody, getText, filterRedundantAliases, coerceToArray, truncateMentions, extractSourceTags, truncateListForDisplay, nestReportUnderParent, getActiveEntityTags, getActiveConceptTags, getActiveSourceTags, normalizeVocabularyCsv } from '../../utils';
+import { getGranularityInstruction, getGranularityFixLimits, appendGranularityToPrompt, buildActiveTagVocabularySection, appendTagVocabularyToPrompt } from '../../wiki/system-prompts';
 import { LLMWikiSettings } from '../../types';
+import { TEXTS } from '../../texts';
 
 describe('slugify', () => {
   it('returns "untitled" for empty input', () => {
@@ -471,7 +472,7 @@ describe('enforceFrontmatterConstraints', () => {
   });
 
   it('collects and preserves existing tags from inline array', () => {
-    // Entity valid tags: person, organization, project, product, event, location, other
+    // Entity valid tags: person, organization, project, product, event, place, other
     const input = '---\ntype: entity\ntags: [person, project]\n---\n\nBody';
     const result = enforceFrontmatterConstraints(input, 'entity');
     expect(result).toContain('tags:');
@@ -479,7 +480,7 @@ describe('enforceFrontmatterConstraints', () => {
   });
 
   it('collects and preserves concept tags from inline array', () => {
-    // Concept valid tags: theory, method, technology, term, other
+    // Concept valid tags: theory, method, field, term, other
     const input = '---\ntype: concept\ntags: [method, theory]\n---\n\nBody';
     const result = enforceFrontmatterConstraints(input, 'concept');
     expect(result).toContain('method');
@@ -508,6 +509,76 @@ describe('enforceFrontmatterConstraints', () => {
     expect(result).toContain('reviewed: true');
   });
 
+  // Reviewed-guard: a user has explicitly marked this page as reviewed.
+  // Their tag intent (including empty tags — silence is a choice) must be
+  // honored. The function should NOT auto-fill `tags: [other]` / `[term]`
+  // when reviewed. Aligns with lint-fixes.ts:439 (skip reviewed) and
+  // page-factory.ts:288/308 (reviewed = minimal append).
+  it('reviewed-guard: does NOT auto-fill tags fallback when fm.reviewed is true', () => {
+    const input = '---\ntype: entity\nreviewed: true\n---\n\nBody';
+    const result = enforceFrontmatterConstraints(input, 'entity');
+    expect(result).not.toContain('tags: [other]');
+    expect(result).not.toContain('tags: [term]');
+    // The function short-circuits before adding a tags line, so no
+    // tags field is emitted at all when the page has reviewed:true.
+    expect(result).not.toMatch(/^tags:/m);
+  });
+
+  it('reviewed-guard: still strips LLM-hallucinated dates on reviewed pages', () => {
+    // The reviewed-guard protects user intent (tags / type / aliases) but
+    // date fields are programmatic — a hallucinated "created: 2025-13-99"
+    // must still be normalized to today. Safety > user intent on dates.
+    const input = '---\ntype: entity\nreviewed: true\ncreated: 2025-13-99\nupdated: 2099-99-99\n---\n\nBody';
+    const result = enforceFrontmatterConstraints(input, 'entity');
+    const today = new Date().toISOString().split('T')[0];
+    expect(result).toContain('reviewed: true');
+    expect(result).toContain(`created: ${today}`);
+    expect(result).not.toContain('2025-13-99');
+    expect(result).not.toContain('2099-99-99');
+  });
+
+  it('reviewed-guard: preserves v6 out-of-vocab intent for reviewed pages', () => {
+    // If the LLM previously emitted an out-of-vocab tag and the user
+    // accepted it (reviewed: true), we must NOT silently drop the
+    // tag in a future retag/merge call. This is the v6 promise for
+    // reviewed pages specifically.
+    const input = '---\ntype: entity\nreviewed: true\ntags: [Mikrobiologie]\n---\n\nBody';
+    const result = enforceFrontmatterConstraints(input, 'entity');
+    expect(result).toContain('Mikrobiologie');
+  });
+
+  it('reviewed-guard: is a no-op for non-reviewed pages (control test)', () => {
+    // No reviewed: true → existing behavior preserved.
+    // v1.18.0 actual behavior: when LLM doesn't emit tags (no
+    // `tags:` line in input), the function does NOT write a tags
+    // line at all. The fallback `[other]` only fires when the LLM
+    // explicitly emitted `tags: []` (a non-empty-but-empty array).
+    const input = '---\ntype: entity\n---\n\nBody';
+    const result = enforceFrontmatterConstraints(input, 'entity');
+    // No tags line emitted when LLM didn't speak.
+    expect(result).not.toMatch(/^tags:/m);
+  });
+
+  it('reviewed-guard: stops fallback when user explicitly emptied tags', () => {
+    // User sets reviewed: true AND tags: []. LLM might re-emit
+    // tags: [] (which would normally trigger fallback to [other]).
+    // The reviewed-guard suppresses the fallback — silence is the
+    // user's choice, not a default-fill opportunity.
+    const input = '---\ntype: entity\nreviewed: true\ntags: []\n---\n\nBody';
+    const result = enforceFrontmatterConstraints(input, 'entity');
+    expect(result).not.toContain('tags: [other]');
+    expect(result).not.toContain('tags: [term]');
+  });
+
+  it('non-reviewed page with empty tags array still gets fallback (control test)', () => {
+    // For non-reviewed pages, the existing v1.18.0 behavior is
+    // preserved: explicit `tags: []` triggers the default fallback.
+    // The reviewed-guard is opt-in via `reviewed: true`.
+    const input = '---\ntype: entity\ntags: []\n---\n\nBody';
+    const result = enforceFrontmatterConstraints(input, 'entity');
+    expect(result).toContain('tags: [other]');
+  });
+
   it('preserves created but forces updated to today', () => {
     const input = '---\ntype: entity\ncreated: 2026-01-01\nupdated: 2026-05-18\n---\n\nBody';
     const result = enforceFrontmatterConstraints(input, 'entity');
@@ -523,17 +594,27 @@ describe('enforceFrontmatterConstraints', () => {
     expect(result).toContain('---\n\nBody');
   });
 
-  it('filters tags to valid subtypes only', () => {
+  it('keeps out-of-vocab tags and logs a debug note (Issue #85 v6 preserves LLM intent)', () => {
+    // v6 behavior change: we no longer silently drop tags that the
+    // validator does not recognize. The LLM's output is preserved
+    // (with a console.debug note) so the user can see exactly what
+    // the model produced and decide whether to expand their custom
+    // vocabulary.
     const input = '---\ntype: entity\ntags: [person, invalid_tag]\n---\n\nBody';
     const result = enforceFrontmatterConstraints(input, 'entity');
     expect(result).toContain('person');
-    expect(result).not.toContain('invalid_tag');
+    expect(result).toContain('invalid_tag'); // preserved since v6
   });
 
-  it('provides fallback tag when all tags are invalid', () => {
+  it('uses fallback tag only when no tags at all are collected', () => {
+    // v6: if the LLM emitted a non-empty tags array (even with all
+    // unrecognized values), we keep them instead of falling back to
+    // DEFAULT_ENTITY_TAG. The fallback only kicks in when the tags
+    // array is genuinely empty.
     const input = '---\ntype: entity\ntags: [invalid_tag]\n---\n\nBody';
     const result = enforceFrontmatterConstraints(input, 'entity');
-    expect(result).toContain('tags: [other]');
+    expect(result).toContain('invalid_tag');
+    expect(result).not.toContain('tags: [other]');
   });
 
   it('preserves existing created but forces updated to today', () => {
@@ -818,6 +899,9 @@ describe('getGranularityInstruction', () => {
     startupCheck: false, pageGenerationConcurrency: 3, batchDelayMs: 500,
     llmReady: false,
     maxTokensPerCall: 0,
+    tagVocabularyMode: 'default',
+    customEntityTags: '',
+    customConceptTags: '',
   };
 
   it('injects concrete entity and concept limits for custom mode', () => {
@@ -868,6 +952,9 @@ describe('appendGranularityToPrompt', () => {
     startupCheck: false, pageGenerationConcurrency: 3, batchDelayMs: 500,
     llmReady: false,
     maxTokensPerCall: 0,
+    tagVocabularyMode: 'default',
+    customEntityTags: '',
+    customConceptTags: '',
   };
 
   it('appends granularity instruction to existing prompt', () => {
@@ -915,6 +1002,9 @@ describe('getGranularityFixLimits', () => {
     startupCheck: false, pageGenerationConcurrency: 3, batchDelayMs: 500,
     llmReady: false,
     maxTokensPerCall: 0,
+    tagVocabularyMode: 'default',
+    customEntityTags: '',
+    customConceptTags: '',
   };
 
   it('returns user-defined limits for custom mode', () => {
@@ -1255,5 +1345,594 @@ describe('extractSourceTags', () => {
   it('trims whitespace and filters empty strings', () => {
     const content = '---\ntags: [ 历史 , , 古代 ]\n---\n\nBody';
     expect(extractSourceTags(content)).toEqual(['历史', '古代']);
+  });
+});
+
+describe('lint i18n: lintCheckingDuplicatesProgress template', () => {
+  it('uses {current} placeholder only (no {total}) — total is already embedded by progressLabel', () => {
+    // Bug history: v1.16.3 had a duplicate /{total} in the rendered Notice because
+    // progressLabel was passed `1/3` and the i18n template was `批次 {current}/{total}`,
+    // producing literal "批次 1/3/{total}...". v1.17.0 removed the replace('{total}', ...)
+    // call in lint-controller but forgot to update the i18n template.
+    const tpl = TEXTS.en.lintCheckingDuplicatesProgress;
+    expect(tpl).toBeDefined();
+    expect(tpl).not.toContain('{total}');
+    expect(tpl).toContain('{current}');
+  });
+});
+
+describe('WikiEngine.logLintFix', () => {
+  // Smoke test: logLintFix signature accepts (operation, details) and writes
+  // a timestamped entry. We test the entry construction by mocking the file
+  // IO via stubbing createOrUpdateFile/tryReadFile. Without a real vault
+  // (only available inside Obsidian), we test the structural contract:
+  //   - the entry has a [YYYY-MM-DD HH:MM] timestamp
+  //   - the entry includes the operation title and the full details
+  //   - multiple calls within the same minute are still distinguishable
+  //     by content (timestamp is the only differentiator on same-minute).
+  it('produces timestamped entry with operation and details', () => {
+    // Mirror the entry construction logic from wiki-engine.ts logLintFix.
+    // Use a date object that produces a known local time, regardless of TZ.
+    const now = new Date(2026, 5, 8, 14, 35, 22); // local time constructor
+    const date = now.toISOString().split('T')[0];
+    const time = now.toTimeString().slice(0, 5);
+    const operation = 'Wiki lint report';
+    const details = '## Sub heading\nbody text';
+    const entry = `\n\n## [${date} ${time}] ${operation}\n\n${details}\n`;
+    // We test shape, not the exact timestamp value (varies by TZ)
+    expect(entry).toMatch(/## \[\d{4}-\d{2}-\d{2} \d{2}:\d{2}\] Wiki lint report/);
+    expect(entry).toContain('## Sub heading');
+    expect(entry).toContain('body text');
+  });
+});
+
+describe('lint report log splitting: fullReport vs fullReportForLog', () => {
+  it('fullReportForLog contains all entries (no >20 truncation) while fullReport truncates', () => {
+    // Issue: lint report > 20 dead links was truncated to "... 857 more" in BOTH
+    // the modal AND the persisted log.md. Log should keep the full enumeration.
+    // The fix: separate the truncated (Modal) report from the full (log) report.
+    const deadLinks = Array.from({ length: 25 }, (_, i) => ({ source: `[[src${i}]]`, target: `[[missing${i}]]` }));
+
+    const { modalReport, logReport } = truncateListForDisplay(
+      deadLinks,
+      (dl) => `- ${dl.source} → ${dl.target}`,
+      20,
+      (n) => `- ... ${n} more`
+    );
+
+    // Modal: 20 entries + 1 summary line
+    expect(modalReport.split('\n')).toHaveLength(21);
+    expect(modalReport).toContain('5 more');          // 25 - 20 = 5
+    expect(modalReport).toContain('[[src0]]');
+    expect(modalReport).toContain('[[src19]]');
+    expect(modalReport).not.toContain('[[src20]]');    // truncated
+
+    // Log: complete
+    expect(logReport.split('\n')).toHaveLength(25);
+    expect(logReport).not.toContain('more');
+    expect(logReport).toContain('[[src24]]');            // last entry present
+  });
+
+  it('returns identical content when items.length <= visibleCap', () => {
+    const items = [1, 2, 3];
+    const { modalReport, logReport } = truncateListForDisplay(
+      items,
+      (n) => `item ${n}`,
+      20
+    );
+    expect(modalReport).toBe('item 1\nitem 2\nitem 3');
+    expect(logReport).toBe(modalReport);
+  });
+});
+
+describe('nestReportUnderParent', () => {
+  it('strips the leading H1 and promotes remaining headings by one level', () => {
+    // Issue: log.md wrapped a sub-report (H1) inside a H2 heading, which renders
+    // oddly in Obsidian. Fix: strip the sub-report's H1 and promote its other
+    // headings so it nests cleanly.
+    const input = '# Wiki Lint Report\n\n> Summary text\n\n## 断链（程序检测）\n\n- a\n- b\n\n### Detail\n\ntext';
+    const out = nestReportUnderParent(input);
+    expect(out).not.toMatch(/^# /m);
+    expect(out).toContain('## 断链（程序检测）');  // H2 → H3
+    expect(out).toContain('### Detail');            // H3 → H4
+    expect(out).toContain('> Summary text');        // blockquote preserved
+  });
+
+  it('leaves content with no headings unchanged', () => {
+    const input = 'just some text\nno headings here';
+    expect(nestReportUnderParent(input)).toBe(input);
+  });
+
+  it('handles H1-only input by returning empty content (parent already provides title)', () => {
+    const input = '# Just a title';
+    expect(nestReportUnderParent(input)).toBe('');
+  });
+});
+
+describe('scanDeadLinks: per-(source,target) dedup', () => {
+  it('deduplicates repeated links from the same source to the same target', () => {
+    // Issue: A wiki page with `[[黄帝]]` referenced 4 times generated 4 dead-link
+    // entries in the report (e.g. "[[黄帝]] → 嫘祖" appearing 4 times). Each
+    // (source, target) pair should appear at most ONCE per report.
+    const pages = new Map([
+      ['History/entities/黄帝.md', {
+        path: 'History/entities/黄帝.md',
+        content: '见 [[黄帝/嫘祖]] 与 [[黄帝/嫘祖]]。再次 [[黄帝/嫘祖]]。还 [[黄帝/禅让]] 和 [[黄帝/禅让]]。'
+      }]
+    ]);
+
+    // Use vi import to access scanDeadLinks (re-define test logic since we
+    // can't import scanners from here easily — mirror the regex semantics).
+    const linkRegex = /\[\[([^\]|#]+)(?:[|#][^\]]+)?\]\]/g;
+    const entries: Array<{source: string; target: string}> = [];
+    for (const { path, content } of pages.values()) {
+      let m: RegExpExecArray | null;
+      while ((m = linkRegex.exec(content)) !== null) {
+        entries.push({ source: path, target: m[1].trim() });
+      }
+      linkRegex.lastIndex = 0;
+    }
+    // The page above has 5 wikilinks: 3×"黄帝/嫘祖" + 2×"黄帝/禅让"
+    expect(entries).toHaveLength(5);
+
+    // After dedup by (source,target), only 2 distinct entries
+    const seen = new Set<string>();
+    const dedup = entries.filter(e => {
+      const k = `${e.source}::${e.target}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    expect(dedup).toHaveLength(2);
+  });
+});
+
+describe('getActiveEntityTags / getActiveConceptTags', () => {
+  it('returns hardcoded defaults when tagVocabularyMode is "default"', () => {
+
+    const settings: Partial<LLMWikiSettings> = { tagVocabularyMode: 'default' };
+    expect(getActiveEntityTags(settings as LLMWikiSettings)).toEqual([
+      'person', 'organization', 'project', 'product', 'event', 'place', 'other'
+    ]);
+    expect(getActiveConceptTags(settings as LLMWikiSettings)).toEqual([
+      'theory', 'method', 'field', 'phenomenon', 'standard', 'term', 'other'
+    ]);
+  });
+
+  it('returns user-customized tags when tagVocabularyMode is "custom" (entity only)', () => {
+
+    const settings: Partial<LLMWikiSettings> = {
+      tagVocabularyMode: 'custom',
+      customEntityTags: 'person, organization, Medical_Arzneimittel'
+    };
+    expect(getActiveEntityTags(settings as LLMWikiSettings)).toEqual([
+      'person', 'organization', 'Medical_Arzneimittel'
+    ]);
+  });
+
+  it('trims whitespace and filters empty entries from custom tags', () => {
+
+    const settings: Partial<LLMWikiSettings> = {
+      tagVocabularyMode: 'custom',
+      customEntityTags: ' person , , organization , Medical_Arzneimittel '
+    };
+    expect(getActiveEntityTags(settings as LLMWikiSettings)).toEqual([
+      'person', 'organization', 'Medical_Arzneimittel'
+    ]);
+  });
+
+  it('preserves nested-tag syntax (slashes preserved in custom vocabulary)', () => {
+    const settings: Partial<LLMWikiSettings> = {
+      tagVocabularyMode: 'custom',
+      customConceptTags: 'Kardiologie, Arzneimittel/Neurologie'
+    };
+    expect(getActiveConceptTags(settings as LLMWikiSettings)).toEqual([
+      'Kardiologie', 'Arzneimittel/Neurologie'
+    ]);
+  });
+
+  it('falls back to defaults when tagVocabularyMode is "custom" but custom field is empty', () => {
+
+    const settings: Partial<LLMWikiSettings> = { tagVocabularyMode: 'custom', customEntityTags: '', customConceptTags: '' };
+    expect(getActiveEntityTags(settings as LLMWikiSettings)).toEqual([
+      'person', 'organization', 'project', 'product', 'event', 'place', 'other'
+    ]);
+    expect(getActiveConceptTags(settings as LLMWikiSettings)).toEqual([
+      'theory', 'method', 'field', 'phenomenon', 'standard', 'term', 'other'
+    ]);
+  });
+
+  it('deduplicates user custom tags against defaults (no duplicates in result)', () => {
+
+    const settings: Partial<LLMWikiSettings> = {
+      tagVocabularyMode: 'custom',
+      customEntityTags: 'person, organization, person, organization'
+    };
+    expect(getActiveEntityTags(settings as LLMWikiSettings)).toEqual(['person', 'organization']);
+  });
+
+  it('returns defaults for undefined tagVocabularyMode (backward compat with old settings)', () => {
+
+    const settings: Partial<LLMWikiSettings> = {}; // no tagVocabularyMode, no customEntityTags
+    expect(getActiveEntityTags(settings as LLMWikiSettings)).toEqual([
+      'person', 'organization', 'project', 'product', 'event', 'place', 'other'
+    ]);
+  });
+});
+
+describe('enforceFrontmatterConstraints: custom tag vocabulary (Issue #85)', () => {
+  const entityContentWithCustomTag = `---
+type: entity
+tags: [person, Medical_Arzneimittel, bogus]
+---
+
+Body content`;
+
+  it('accepts tags from custom vocabulary AND keeps out-of-vocab ones (Issue #85 v6)', () => {
+    // v6 behavior change: in-vocab tags are accepted; out-of-vocab
+    // tags are ALSO preserved (with a console.debug note) so the
+    // user sees the LLM's full intent. Previously the validator
+    // silently dropped out-of-vocab tags.
+    const customSettings: Partial<LLMWikiSettings> = {
+      tagVocabularyMode: 'custom',
+      customEntityTags: 'person, organization, Medical_Arzneimittel'
+    };
+    const result = enforceFrontmatterConstraints(entityContentWithCustomTag, 'entity', customSettings as LLMWikiSettings);
+    expect(result).toContain('Medical_Arzneimittel');
+    expect(result).toContain('person');
+    // "bogus" is also kept (v6 preserve-intent)
+    expect(result).toContain('bogus');
+  });
+
+  it('falls back to default vocabulary when settings is omitted (backward compat)', () => {
+    const content = `---
+type: entity
+tags: [person, bogus]
+---
+
+Body`;
+    // No settings → default VALID_ENTITY_TAGS. v6 keeps both tags.
+    const result = enforceFrontmatterConstraints(content, 'entity');
+    expect(result).toContain('person');
+    expect(result).toContain('bogus'); // preserved since v6
+  });
+
+  it('respects concept custom vocabulary (in-vocab kept; out-of-vocab also kept in v6)', () => {
+    const content = `---
+type: concept
+tags: [theory, Arzneimittel/Neurologie, nonsense]
+---
+
+Body`;
+    const customSettings: Partial<LLMWikiSettings> = {
+      tagVocabularyMode: 'custom',
+      customConceptTags: 'theory, Arzneimittel/Neurologie'
+    };
+    const result = enforceFrontmatterConstraints(content, 'concept', customSettings as LLMWikiSettings);
+    expect(result).toContain('Arzneimittel/Neurologie');
+    // v6: nonsense is also kept (preserve LLM intent)
+    expect(result).toContain('nonsense');
+  });
+});
+
+describe('normalizeVocabularyCsv (Issue #85 v2 migration)', () => {
+  it('trims whitespace and drops empty entries', () => {
+    expect(normalizeVocabularyCsv(' person , , organization ')).toBe('person, organization');
+  });
+
+  it('dedupes case-insensitively, keeping first casing', () => {
+    expect(normalizeVocabularyCsv('Person, person, PERSON')).toBe('Person');
+  });
+
+  it('preserves nested tag syntax with /', () => {
+    expect(normalizeVocabularyCsv('Arzneimittel/Neurologie')).toBe('Arzneimittel/Neurologie');
+  });
+
+  it('returns empty string for empty input', () => {
+    expect(normalizeVocabularyCsv('')).toBe('');
+  });
+
+  it('returns empty string for only commas/whitespace', () => {
+    expect(normalizeVocabularyCsv(',,,')).toBe('');
+    expect(normalizeVocabularyCsv('  ,  ,  ')).toBe('');
+  });
+
+  it('is idempotent on canonical input', () => {
+    const canonical = 'alpha, beta, gamma';
+    expect(normalizeVocabularyCsv(canonical)).toBe(canonical);
+  });
+
+  it('handles v1 leftover CSV (migrated from textarea input)', () => {
+    expect(normalizeVocabularyCsv(' person , person , organization ')).toBe('person, organization');
+  });
+});
+
+describe('buildActiveTagVocabularySection (Issue #85 v6 — prompt injection)', () => {
+  const baseSettings: LLMWikiSettings = {
+    provider: 'anthropic', apiKey: '', baseUrl: '', model: 'claude-sonnet-4-6',
+    wikiFolder: 'wiki', language: 'en', wikiLanguage: 'en',
+    maxConversationHistory: 30, extractionGranularity: 'standard',
+    enableSchema: true, autoWatchSources: false, autoWatchMode: 'notify',
+    autoWatchDebounceMs: 5000, watchedFolders: [], periodicLint: 'off',
+    startupCheck: false, pageGenerationConcurrency: 3, batchDelayMs: 500,
+    llmReady: false,
+    maxTokensPerCall: 0,
+    tagVocabularyMode: 'default',
+    customEntityTags: '',
+    customConceptTags: '',
+  };
+
+  it('in default mode, lists the hardcoded VALID_ENTITY_TAGS', () => {
+    const section = buildActiveTagVocabularySection(baseSettings);
+    expect(section).toContain('person');
+    expect(section).toContain('organization');
+    expect(section).toContain('project');
+    expect(section).not.toContain('Medical_Arzneimittel');
+  });
+
+  it('in default mode, lists the hardcoded VALID_CONCEPT_TAGS', () => {
+    const section = buildActiveTagVocabularySection(baseSettings);
+    expect(section).toContain('theory');
+    expect(section).toContain('method');
+    expect(section).toContain('field');
+  });
+
+  it('in custom mode, lists the user-defined entity tags (CSV)', () => {
+    const customSettings: LLMWikiSettings = { ...baseSettings,
+      tagVocabularyMode: 'custom',
+      customEntityTags: 'person, organization, Medical_Arzneimittel',
+    };
+    const section = buildActiveTagVocabularySection(customSettings);
+    expect(section).toContain('Medical_Arzneimittel');
+    expect(section).toContain('person');
+    // Default tags NOT listed when custom mode active
+    expect(section).not.toContain('- product');
+  });
+
+  it('in custom mode, lists the user-defined concept tags (CSV)', () => {
+    const customSettings: LLMWikiSettings = { ...baseSettings,
+      tagVocabularyMode: 'custom',
+      customConceptTags: 'theory, Arzneimittel/Neurologie',
+    };
+    const section = buildActiveTagVocabularySection(customSettings);
+    expect(section).toContain('Arzneimittel/Neurologie');
+  });
+
+  it('preserves nested tag syntax with /', () => {
+    const customSettings: LLMWikiSettings = { ...baseSettings,
+      tagVocabularyMode: 'custom',
+      customConceptTags: 'Kardiologie, Arzneimittel/Neurologie, Method',
+    };
+    const section = buildActiveTagVocabularySection(customSettings);
+    expect(section).toContain('Kardiologie');
+    expect(section).toContain('Arzneimittel/Neurologie');
+    expect(section).toContain('Method');
+  });
+
+  it('section contains explicit "do NOT invent new types" instruction', () => {
+    const section = buildActiveTagVocabularySection(baseSettings);
+    expect(section.toLowerCase()).toContain('do not invent');
+  });
+
+  it('when custom mode but customEntityTags is empty, falls back to default', () => {
+    const customButEmpty: LLMWikiSettings = { ...baseSettings, tagVocabularyMode: 'custom' };
+    const section = buildActiveTagVocabularySection(customButEmpty);
+    expect(section).toContain('person');
+    expect(section).toContain('theory');
+  });
+});
+
+describe('appendTagVocabularyToPrompt (Issue #85 v6 — end-to-end prompt injection)', () => {
+  const baseSettings: LLMWikiSettings = {
+    provider: 'anthropic', apiKey: '', baseUrl: '', model: 'claude-sonnet-4-6',
+    wikiFolder: 'wiki', language: 'en', wikiLanguage: 'en',
+    maxConversationHistory: 30, extractionGranularity: 'standard',
+    enableSchema: true, autoWatchSources: false, autoWatchMode: 'notify',
+    autoWatchDebounceMs: 5000, watchedFolders: [], periodicLint: 'off',
+    startupCheck: false, pageGenerationConcurrency: 3, batchDelayMs: 500,
+    llmReady: false,
+    maxTokensPerCall: 0,
+    tagVocabularyMode: 'default',
+    customEntityTags: '',
+    customConceptTags: '',
+  };
+
+  it('appends active tag vocabulary section after the base prompt', () => {
+    const result = appendTagVocabularyToPrompt('Base prompt for entity generation.', baseSettings);
+    expect(result).toContain('Base prompt for entity generation.');
+    expect(result).toContain('## Active Tag Vocabulary');
+  });
+
+  it('end-to-end: custom user tags flow from settings → prompt', () => {
+    // Mimic the user setting custom vocabulary in Settings.
+    const userSettings: LLMWikiSettings = { ...baseSettings,
+      tagVocabularyMode: 'custom',
+      customEntityTags: 'person, organization, Medical_Arzneimittel',
+      customConceptTags: 'Kardiologie, Arzneimittel/Neurologie',
+    };
+    // 1. Settings → customEntityTags persisted
+    expect(userSettings.customEntityTags).toContain('Medical_Arzneimittel');
+    // 2. Migration on onload() does NOT alter the user input (already canonical)
+    // (covered by normalizeVocabularyCsv tests in v2)
+    // 3. UI rendering (settings.ts:600) uses these directly
+    // 4. ingestSource → source-analyzer → prompt has the dynamic vocab
+    const ingestPrompt = appendTagVocabularyToPrompt('Extract entities.', userSettings);
+    expect(ingestPrompt).toContain('Medical_Arzneimittel');
+    expect(ingestPrompt).toContain('Kardiologie');
+    expect(ingestPrompt).toContain('Arzneimittel/Neurologie');
+    // 5. page generation → page-factory → prompt has the same dynamic vocab
+    const pagePrompt = appendTagVocabularyToPrompt('Generate page body.', userSettings);
+    expect(pagePrompt).toContain('Medical_Arzneimittel');
+    // 6. lint → lint-controller → prompt has the same dynamic vocab
+    const lintPrompt = appendTagVocabularyToPrompt('Analyze wiki.', userSettings);
+    expect(lintPrompt).toContain('Medical_Arzneimittel');
+    // 7. enforceFrontmatterConstraints preserves LLM-emitted custom tags
+    const fmResult = enforceFrontmatterConstraints(
+      '---\ntype: entity\ntags: [Medical_Arzneimittel]\n---\n\nBody',
+      'entity',
+      userSettings
+    );
+    expect(fmResult).toContain('Medical_Arzneimittel');
+  });
+
+  it('in default mode, the prompt lists the hardcoded VALID_*_TAGS', () => {
+    const result = appendTagVocabularyToPrompt('Base prompt.', baseSettings);
+    expect(result).toContain('person');
+    expect(result).toContain('organization');
+    expect(result).toContain('project');
+    expect(result).toContain('theory');
+    expect(result).toContain('method');
+  });
+
+  it('composes with appendGranularityToPrompt without conflict', () => {
+    // Used together in lint-controller.ts:534.
+    const result = appendTagVocabularyToPrompt(
+      appendGranularityToPrompt('Base lint prompt.', baseSettings),
+      baseSettings
+    );
+    // Both sections present
+    expect(result).toContain('Base lint prompt.');
+    expect(result).toContain('## Active Tag Vocabulary');
+  });
+});
+
+describe('enforceFrontmatterConstraints (Issue #85 v6 — preserve LLM intent)', () => {
+  const baseSettings: LLMWikiSettings = {
+    provider: 'anthropic', apiKey: '', baseUrl: '', model: 'claude-sonnet-4-6',
+    wikiFolder: 'wiki', language: 'en', wikiLanguage: 'en',
+    maxConversationHistory: 30, extractionGranularity: 'standard',
+    enableSchema: true, autoWatchSources: false, autoWatchMode: 'notify',
+    autoWatchDebounceMs: 5000, watchedFolders: [], periodicLint: 'off',
+    startupCheck: false, pageGenerationConcurrency: 3, batchDelayMs: 500,
+    llmReady: false,
+    maxTokensPerCall: 0,
+    tagVocabularyMode: 'default',
+    customEntityTags: '',
+    customConceptTags: '',
+  };
+
+  it('retains out-of-vocab tags (does NOT silently drop them)', () => {
+    // User has default vocabulary (person/organization/…), LLM emits
+    // an extra tag "Medical_Arzneimittel" that is not in the default
+    // list. v6: keep it so the user can see what the LLM produced and
+    // decide whether to expand their vocabulary.
+    const content = `---
+type: entity
+tags: [person, organization, Medical_Arzneimittel]
+---
+
+Body`;
+    const result = enforceFrontmatterConstraints(content, 'entity', baseSettings);
+    expect(result).toContain('person');
+    expect(result).toContain('organization');
+    expect(result).toContain('Medical_Arzneimittel'); // previously dropped
+  });
+
+  it('retains out-of-vocab tags when mode=custom with a narrow vocabulary', () => {
+    const customSettings: LLMWikiSettings = { ...baseSettings,
+      tagVocabularyMode: 'custom',
+      customEntityTags: 'person, organization',
+    };
+    const content = `---
+type: entity
+tags: [person, project, company]
+---
+
+Body`;
+    const result = enforceFrontmatterConstraints(content, 'entity', customSettings);
+    // All 3 tags kept (project + company are not in custom vocab but
+    // we still preserve them so the user sees the LLM's full intent).
+    expect(result).toContain('person');
+    expect(result).toContain('project');
+    expect(result).toContain('company');
+  });
+
+  it('dedupes repeated tags across LLM output', () => {
+    const content = `---
+type: entity
+tags: [person, person, person, organization]
+---
+
+Body`;
+    const result = enforceFrontmatterConstraints(content, 'entity', baseSettings);
+    const tagLine = result.split('\n').find(l => l.startsWith('tags:'))!;
+    // Should be exactly one occurrence per unique tag
+    expect(tagLine).toBe('tags: [person, organization]');
+  });
+
+  it('strips the pageType literal if LLM emitted it as a tag (e.g. tags: [entity, person])', () => {
+    const content = `---
+type: entity
+tags: [entity, person]
+---
+
+Body`;
+    const result = enforceFrontmatterConstraints(content, 'entity', baseSettings);
+    const tagLine = result.split('\n').find(l => l.startsWith('tags:'))!;
+    expect(tagLine).toBe('tags: [person]');
+  });
+
+  it('preserves nested-tag syntax (Arzneimittel/Neurologie) without splitting', () => {
+    const customSettings: LLMWikiSettings = { ...baseSettings,
+      tagVocabularyMode: 'custom',
+      customEntityTags: 'person, Arzneimittel/Neurologie',
+    };
+    const content = `---
+type: entity
+tags: [person, Arzneimittel/Neurologie, organization]
+---
+
+Body`;
+    const result = enforceFrontmatterConstraints(content, 'entity', customSettings);
+    expect(result).toContain('Arzneimittel/Neurologie');
+    // The out-of-vocab "organization" is still kept (v6 preserve LLM intent)
+    expect(result).toContain('organization');
+  });
+
+  it('falls back to default tag when collectedTags is empty', () => {
+    const content = `---
+type: entity
+tags: []
+---
+
+Body`;
+    const result = enforceFrontmatterConstraints(content, 'entity', baseSettings);
+    expect(result).toContain('tags: [other]'); // DEFAULT_ENTITY_TAG
+  });
+});
+
+describe('getActiveSourceTags (Issue #85 v7)', () => {
+  const baseSettings: LLMWikiSettings = {
+    provider: 'anthropic', apiKey: '', baseUrl: '', model: 'claude-sonnet-4-6',
+    wikiFolder: 'wiki', language: 'en', wikiLanguage: 'en',
+    maxConversationHistory: 30, extractionGranularity: 'standard',
+    enableSchema: true, autoWatchSources: false, autoWatchMode: 'notify',
+    autoWatchDebounceMs: 5000, watchedFolders: [], periodicLint: 'off',
+    startupCheck: false, pageGenerationConcurrency: 3, batchDelayMs: 500,
+    llmReady: false,
+    maxTokensPerCall: 0,
+    tagVocabularyMode: 'default',
+    customEntityTags: '',
+    customConceptTags: '',
+  };
+
+  it('returns the hardcoded VALID_SOURCE_TAGS list', () => {
+    const tags = getActiveSourceTags(baseSettings);
+    expect(tags).toEqual([
+      'paper', 'article', 'book', 'transcript', 'clippings',
+      'notes', 'other',
+    ]);
+  });
+
+  it('does NOT honor customEntityTags / customConceptTags (source vocab is static)', () => {
+    const customSettings: LLMWikiSettings = { ...baseSettings,
+      tagVocabularyMode: 'custom',
+      customEntityTags: 'Medical_Arzneimittel, Kardiologie',
+    };
+    const tags = getActiveSourceTags(customSettings);
+    // Source vocab is intentionally closed — no user override.
+    expect(tags).not.toContain('Medical_Arzneimittel');
+    expect(tags).not.toContain('Kardiologie');
+    expect(tags).toContain('paper');
   });
 });

@@ -6,7 +6,7 @@
 >
 > **Note officielle Obsidian 95/100** | Support natif de 8 langues | Maintenance active, évolution continue
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/green-dalii/obsidian-llm-wiki) [![Release Obsidian plugin](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml/badge.svg)](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml) ![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.6.6%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-12%2B-cyan?style=flat-square)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/green-dalii/obsidian-llm-wiki) [![Release Obsidian plugin](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml/badge.svg)](https://github.com/green-dalii/obsidian-llm-wiki/actions/workflows/release.yml) ![Version](https://img.shields.io/github/v/release/green-dalii/obsidian-llm-wiki?style=flat-square) ![Author](https://img.shields.io/badge/author-Greener--Dalii-blue?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Maintenance](https://img.shields.io/badge/maintenance-actively%20maintained-brightgreen?style=flat-square) ![Build Status](https://img.shields.io/github/actions/workflow/status/green-dalii/obsidian-llm-wiki/release.yml?style=flat-square) ![Obsidian Compatibility](https://img.shields.io/badge/obsidian-1.11.0%2B-purple?style=flat-square) ![GitHub Stars](https://img.shields.io/github/stars/green-dalii/obsidian-llm-wiki?style=flat-square) ![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=483699&label=downloads&query=$[karpathywiki].downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json&style=flat-square) ![Languages](https://img.shields.io/badge/languages-8-informational?style=flat-square) ![Providers](https://img.shields.io/badge/providers-12%2B-cyan?style=flat-square)
 
 [English](../README.md) | [中文文档](README_CN.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Deutsch](README_DE.md) | [Français](README_FR.md) | [Español](README_ES.md) | [Português](README_PT.md)
 
@@ -26,7 +26,7 @@
   - [🔑 Configuration d'un Provider LLM](#-configuration-dun-provider-llm)
   - [🎮 Utilisation](#-utilisation)
   - [⚠️ Mise à niveau depuis une version antérieure ?](#️-mise-à-niveau-depuis-une-version-antérieure-)
-- [⚡ Quoi de neuf dans la v1.17.0](#-quoi-de-neuf-dans-la-v1170)
+- [⚡ Quoi de neuf dans la v1.18.0](#-quoi-de-neuf-dans-la-v1180)
 - [✨ Fonctionnalités](#-fonctionnalités)
   - [📊 Qualité des connaissances](#-qualité-des-connaissances)
   - [🛠️ Maintenance](#️-maintenance)
@@ -61,28 +61,29 @@ Vous écrivez. L'IA organise. Vous interrogez. Rien de plus.
 
 ---
 
-## ⚡ Nouveautés de la v1.17.0
+## ⚡ Nouveautés de la v1.18.0
+v1.18.0 est une **version majeure** axée sur le vocabulaire de tags contrôlé par l'utilisateur — bouclant l'intégralité du cycle Issue #85 de l'interface utilisateur à l'injection d'invites, l'audit programmatique et la réparation assistée par LLM. Inclut également une correction complète de la régression des tokens de réflexion (Issue #99 v2), un garde-fou reviewed pour protéger les pages modifiées par l'utilisateur et une actualisation du vocabulaire de tags par défaut basée sur une analyse interdisciplinaire.
 
-Il s'agit d'une **version majeure axée sur la qualité** avec des améliorations significatives de l'ingestion. Ferme un problème suivi (#90). Le plus grand changement : les documents longs qui ne pouvaient pas du tout être ingérés fonctionnent maintenant, et le contenu ingéré porte une attribution de source beaucoup plus riche. **Aucun changement incompatible, aucune reconfiguration.**
+**Points clés :**
 
-**Highlights:**
+- **🎯 Vocabulaire de Tags Contrôlé par l'Utilisateur (Issue #85).** Définissez votre propre vocabulaire de tags dans Paramètres → Configuration Wiki → Vocabulaire de Tags. Deux modes : **Default** ou **Custom**.
 
-- **L'ingestion de documents longs fonctionne enfin.** Une source chinoise de 619KB comme le Shiji (史記) était jusqu'à présent impossible à traiter — la taille du lot en granularité personnalisée était codée en dur à un maximum de 15 éléments, quelle que soit la limite demandée, et le `max_tokens` du LLM était plafonné en dessous de la longueur de réponse nécessaire pour les grands lots. Désormais, `customEntityLimit` et `customConceptLimit` pilotent réellement le pipeline de lots (1-500, 5 par défaut), et `max_tokens` s'adapte dynamiquement à la taille du lot (20K-60K) avec réduction automatique de moitié de la taille du lot en cas de troncature. La même longue source qui échouait auparavant après 3 minutes et 15 éléments s'ingère maintenant complètement et extrait des centaines d'entités et de concepts du même document.
+- **🔍 Audit de Tags Lint + Réétiquetage LLM.** Lint analyse chaque page pour détecter les tags hors vocabulaire. Nouveau bouton "🏷️ Réétiqueter N page(s) avec LLM".
 
-- **Les mentions portent l'attribution de source (style note de bas de page).** La section « Mentions in Source » des pages d'entité et de concept était auparavant un bloc de citations non traçables. Maintenant, chaque citation est rendue comme une note académique : `- "citation verbatim dans la langue originale (traduction facultative)" — [[source-path|display-name]]`. Chaque citation est liée à son origine, de sorte que les futures fusions de pages ne mélangent jamais les citations de sources différentes.
+- **🧠 Vocabulaire par Défaut Actualisé.** Entité location→place. Concept ajoute field, phenomenon, standard ; supprime technology. Source supprime document.
 
-- **La limite supérieure de granularité personnalisée est passée de 300 à 500** pour prendre en charge les bases de connaissances professionnelles (juridique, médical, recherche approfondie).
+- **🛡️ Garde-fou reviewed.** enforceFrontmatterConstraints respecte désormais fm.reviewed: true.
 
-**Other Fixes & Improvements:**
+- **🧠 disableThinking activé par défaut (Issue #99 v2).** Propagé aux 22 sites d'appel.
 
-- **Les paramètres du Provider se synchronisent désormais partout.** Le changement de Provider/API Key/Model dans les Paramètres ne se propageait pas au moteur wiki, de sorte que votre prochain Ingest/Lint/Query utilisait silencieusement l'ancien provider. Corrigé via un nouveau `wikiEngine.updateSettings()` qui maintient EngineContext synchronisé avec les paramètres actifs. Le bouton Tester la connexion ne persiste plus non plus une configuration défaillante en cas d'échec.
-- **Les dates sont désormais programmatiques, pas générées par le LLM.** Les dates `created`/`updated` hallucinées par le LLM dans les pages source (par ex. une date 2025 lors d'une ingestion du 2026-06-08) sont supprimées et remplacées par le système. `created` est préservé lors de la fusion ; `updated` est toujours défini à aujourd'hui.
-- **Les rapports Lint sont désormais persistés dans log.md** avec des horodatages à la minute près, ce qui permet de distinguer plusieurs exécutions de Lint le même jour. La modale Rapport Lint affiche une indication `📋 Rapport complet enregistré dans log.md`.
-- **Les pages source héritent des tags du frontmatter de la note source (Issue #90).** Auparavant, le LLM injectait des noms de concepts arbitraires (par ex. Alzheimer-Demenz, Neuroprotektion), polluant le vocabulaire de tags de l'utilisateur. Désormais, `tags` est hérité par programme du frontmatter de la note source.
-- **La connexion de test restaure les paramètres actifs en cas d'échec.** Une connexion de test échouée écrasait auparavant votre configuration enregistrée avec les paramètres de test défaillants. Les paramètres précédents sont désormais restaurés en cas d'échec du test.
-- **Restauration du callback d'ingest de dossier en cas de retour anticipé.** Le `setDoneCallback` est désormais correctement restauré lorsque l'ingest de dossier se termine tôt sans nouveau fichier, de sorte que les ingests suivants utilisent le bon callback.
+- **🔌 Repli AnthropicClient pour modèles à réflexion obligatoire.** Claude Fable 5 / Mythos 5 : capture l'erreur et réessaie sans thinking.
 
-**Nous recommandons fortement à tous les utilisateurs de passer à cette version.** L'ingestion de documents longs est l'amélioration phare — si vous avez déjà vu un gros fichier source échouer avec une erreur 400 ou n'extraire qu'une poignée d'éléments, cette version le résout complètement. Les améliorations d'attribution de source et d'intégrité des dates s'appliquent à chaque page que vous générez.
+- **⬆️ minAppVersion passée de 1.6.6 à 1.11.0.** Les utilisateurs d'Obsidian <1.11.0 doivent mettre à jour.
+
+**Nous recommandons vivement à tous les utilisateurs de mettre à jour vers cette version. Note: Cette version fait passer la version minimale requise d'Obsidian de v1.6.6 à v1.11.0 — les utilisateurs de versions antérieures doivent mettre à jour Obsidian avant de mettre à jour le plugin.**
+
+**Ferme :** #85, #99.
+
 ## ✨ Fonctionnalités
 
 ### 📊 Qualité des connaissances
@@ -291,7 +292,7 @@ ui/                 # Interface utilisateur
 Déposez des notes, il extrait les personnes, concepts et théories, puis génère un Wiki interconnecté avec `[[Wiki-links]]`. Posez des questions et obtenez des réponses basées sur *vos* notes — pas des hallucinations d'internet.
 
 **Configuration minimale ?**
-Obsidian v1.6.6+, bureau (Windows/macOS/Linux), une clé API d'un provider LLM. Ollama fonctionne en local sans clé API.
+Obsidian v1.11.0+, bureau (Windows/macOS/Linux), une clé API d'un provider LLM. Ollama fonctionne en local sans clé API.
 
 **Pourquoi les fonctions ne sont-elles pas disponibles après installation ?**
 Paramètres → Karpathy LLM Wiki → choisir un fournisseur → entrer la clé API → Fetch Models → sélectionner un modèle → Test Connection. L'indicateur vert "LLM Ready" déverrouille toutes les fonctions.

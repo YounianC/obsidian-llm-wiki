@@ -2,13 +2,14 @@
 // Extracted from lint-controller.ts to keep the orchestrator focused on
 // detection, reporting, and callback wiring.
 
-import { Notice } from 'obsidian';
+import { Notice, TFile } from 'obsidian';
 import { LintContext } from '../lint-controller';
 import { TEXTS } from '../../texts';
 import { PROMPTS } from '../../prompts';
-import { parseJsonResponse, detectRateLimitFailures, formatRateLimitNotice } from '../../utils';
+import { parseJsonResponse, detectRateLimitFailures, formatRateLimitNotice, getActiveEntityTags, getActiveConceptTags, getActiveSourceTags, enforceFrontmatterConstraints } from '../../utils';
 import { TOKENS_LINT_ALIAS_BATCH, NOTICE_ERROR, NOTICE_RATE_LIMIT } from '../../constants';
-import { buildWikiLanguageDirective } from '../system-prompts';
+import { buildWikiLanguageDirective, appendTagVocabularyToPrompt } from '../system-prompts';
+import { TagViolation } from './scanners';
 
 // Issue #94: Status bar "click to cancel" already exists, but the fix-runner
 // functions in this module previously never received the AbortSignal. Each
@@ -285,4 +286,198 @@ export async function runDuplicateMerges(
     fixNotice.hide();
   }
   return { merged, results };
+}
+
+// ── runRetagViolations (Issue #85 v7) ────────────────────────────
+
+/**
+ * Issue #85 v7: LLM-assisted retag for pages whose frontmatter `tags`
+ * array contains values outside the active vocabulary. The LLM is
+ * given the page's name + first paragraph (summary) + the active
+ * vocabulary, and asked to return a new `tags: string[]` that
+ * best describes the page using ONLY values from the vocabulary.
+ * Body is never touched — only the `tags:` line in the frontmatter
+ * is rewritten via enforceFrontmatterConstraints.
+ *
+ * The LLM call uses appendTagVocabularyToPrompt() to inject the
+ * active vocabulary section (so the LLM knows what values are
+ * allowed), and the system prompt is the existing wiki language
+ * directive (no new schema task needed — retag is small-scope).
+ *
+ * Per-page loop (not batched). Each retag is a small, independent
+ * LLM call. Issue #94 cancel propagation: the runner checks
+ * `signal.aborted` before each iteration and at the top of every
+ * await.
+ */
+export async function runRetagViolations(
+  ctx: LintContext,
+  signal: AbortSignal | undefined,
+  violations: TagViolation[],
+): Promise<{ fixed: number; results: string[] }> {
+  if (signal?.aborted) {
+    throw new DOMException('Lint fix cancelled by user', 'AbortError');
+  }
+  if (!ctx.llmClient) {
+    return { fixed: 0, results: ['LLM client not initialized; retag skipped.'] };
+  }
+  const t = TEXTS[ctx.settings.language];
+  const fixNotice = new Notice(t.lintTagViolationFiring
+    .replace('{current}', '0')
+    .replace('{total}', String(violations.length))
+    .replace('{path}', ''), 0);
+
+  const results: string[] = [];
+  let fixed = 0;
+  try {
+    for (let i = 0; i < violations.length; i++) {
+      if (signal?.aborted) {
+        throw new DOMException('Lint fix cancelled by user', 'AbortError');
+      }
+      const v = violations[i];
+      fixNotice.setMessage(t.lintTagViolationFiring
+        .replace('{current}', String(i + 1))
+        .replace('{total}', String(violations.length))
+        .replace('{path}', v.path));
+
+      try {
+        // Read the current page content. The Obsidian API is
+        // `Vault.read(file: TFile)` — TFile itself does not have a
+        // `read()` method (this is a common mistake; TFile extends
+        // TAbstractFile which has only metadata, not content). The
+        // previous code called `tfile.read()` and produced
+        // "tfile.read is not a function" at runtime, which is what
+        // blew up the user's "Retag" button. The mock tests in
+        // fix-runners.test.ts passed because the mock provided its
+        // own `.read()` — a textbook shell test that did not
+        // exercise the real production code path. The fix is the
+        // correct call below; the new shell-test guard
+        // ("TFile.read mock does not match real Obsidian TFile") is
+        // added to fix-runners.test.ts to prevent regression.
+        const file = ctx.app.vault.getAbstractFileByPath(v.path);
+        if (!file) {
+          results.push(`${v.path}: file not found`);
+          continue;
+        }
+        // TFile is the concrete subclass of TAbstractFile that holds
+        // vault-readable content. Use instanceof TFile to distinguish
+        // TFile from TFolder — this satisfies the obsidianmd/
+        // no-tfile-tfolder-cast lint rule while being type-safe.
+        // Real Obsidian TFile passes this check in production;
+        // the test mock (new TFile() with Object.assign) also passes
+        // because vitest hoists TFile to the same class reference.
+        if (!(file instanceof TFile)) {
+          results.push(`${v.path}: not a regular file`);
+          continue;
+        }
+        // Read via ctx.app.vault.read(file) — the correct Obsidian API
+        // for reading a file by TFile. vault.cachedRead() is also
+        // available but we want fresh content (the LLM must see
+        // the current frontmatter, not a cached snapshot from a
+        // prior render).
+        const content = await ctx.app.vault.read(file);
+        // Body preview for the LLM: only the first ~400 chars of the
+        // post-frontmatter body, so we don't waste tokens on a long wiki
+        // page. The LLM just needs the gist to pick the right tags.
+        const fmEnd = content.indexOf('\n---\n', 3);
+        const body = fmEnd === -1 ? content : content.substring(fmEnd + 5);
+        const bodyPreview = body.slice(0, 400).replace(/\n+/g, ' ').trim();
+
+        // Active vocabulary for the page's type
+        const validVocab = v.pageType === 'entity'
+          ? getActiveEntityTags(ctx.settings)
+          : v.pageType === 'concept'
+            ? getActiveConceptTags(ctx.settings)
+            : getActiveSourceTags(ctx.settings);
+
+        // Build the prompt: introduce the page, list current tags,
+        // list allowed vocabulary, ask for new tags.
+        // Note: no LLM-side schema task is added — the retag is
+        // self-contained and does not need the full wiki schema.
+        const prompt = appendTagVocabularyToPrompt(
+          `You are retagging a wiki page whose current tags fall outside the active vocabulary.
+
+Page name: ${v.title}
+Page type: ${v.pageType}
+Current tags (some are invalid): [${v.currentTags.join(', ')}]
+Invalid tags: [${v.invalidTags.join(', ')}]
+
+Page summary (first 400 chars of body):
+${bodyPreview}
+
+Task: Return a JSON object with a single field "tags" that is an array of strings.
+- Each value MUST be one of the allowed values listed in the Active Tag Vocabulary section below.
+- The values should be the closest valid matches for what this page is actually about.
+- Do NOT include any other fields. Do NOT include any explanatory text.
+- If the page is genuinely about nothing in the vocabulary, return an empty array.
+`,
+          ctx.settings
+        );
+
+        const response = await ctx.llmClient.createMessage({
+          model: ctx.settings.model,
+          max_tokens: 256,
+          messages: [{ role: 'user', content: prompt }],
+        });
+        if (signal?.aborted) {
+          throw new DOMException('Lint fix cancelled by user', 'AbortError');
+        }
+        const parsed = await parseJsonResponse(response) as { tags?: string[] } | null;
+        const newTags = Array.isArray(parsed?.tags)
+          ? parsed.tags.map(t => String(t).trim()).filter(t => t.length > 0)
+          : [];
+        // Final safety: every returned tag MUST be in the active vocab.
+        // (LLM may occasionally slip a non-vocab value.)
+        const safeNewTags = newTags.filter(t => validVocab.includes(t));
+
+        if (safeNewTags.length === 0) {
+          results.push(`${v.path}: LLM kept no tags (no valid match)`);
+          continue;
+        }
+        if (safeNewTags.length === v.currentTags.length &&
+            safeNewTags.every(t => v.currentTags.includes(t))) {
+          // No-op: the LLM returned the same tags we already had.
+          results.push(`${v.path}: no change`);
+          continue;
+        }
+
+        // Rebuild the frontmatter with the new tags. We reuse
+        // enforceFrontmatterConstraints so date / aliases / created /
+        // updated are preserved. The body is byte-identical to the
+        // input we read.
+        const updated = enforceFrontmatterConstraints(
+          content,  // original content; only the tags: line will change
+          v.pageType,
+          ctx.settings,
+        );
+        // enforceFrontmatterConstraints preserves all LLM-emitted tags
+        // (v6 preserve-LLM-intent), so we still need to REWRITE the
+        // tags: line explicitly with the LLM's new tags.
+        const rewritten = updated.replace(
+          /tags:\s*\[[^\]]*\]/,
+          `tags: [${safeNewTags.join(', ')}]`
+        );
+        await ctx.app.vault.adapter.write(v.path, rewritten);
+        fixed++;
+        results.push(`${v.path}: [${v.currentTags.join(', ')}] → [${safeNewTags.join(', ')}]`);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') throw e;
+        const errMsg = e instanceof Error ? e.message : String(e);
+        // console.error so the user sees the full stack in DevTools
+        // (Ctrl+Shift+I). Notice alone truncates the error message
+        // and gives no recovery info — that was the bug reported
+        // when "Retag failed for X: tfile.read is not a function"
+        // appeared with no other diagnostic output. We include the
+        // page type + violation context for debugging.
+        console.error(
+          `[runRetagViolations] ${v.path} (${v.pageType}) failed:`,
+          e
+        );
+        results.push(`${v.path}: ${errMsg}`);
+        new Notice(t.lintTagViolationFailed.replace('{path}', v.path).replace('{error}', errMsg), NOTICE_ERROR);
+      }
+    }
+  } finally {
+    fixNotice.hide();
+  }
+  return { fixed, results };
 }

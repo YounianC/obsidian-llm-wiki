@@ -129,6 +129,7 @@ export class LintFixer {
       ),
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
+      disableThinking: this.ctx.settings.disableThinking,
     });
 
     // Retry without response_format on empty response
@@ -145,7 +146,8 @@ export class LintFixer {
           'lint'
         ),
         messages: [{ role: 'user', content: prompt }],
-      });
+      disableThinking: this.ctx.settings.disableThinking,
+    });
     }
 
     const result = (await parseJsonResponse(response)) as {
@@ -369,6 +371,7 @@ tags: [${stubType === 'entity' ? 'other' : 'term'}]
         'full'
       ),
       messages: [{ role: 'user', content: finalPrompt }],
+      disableThinking: this.ctx.settings.disableThinking,
     });
 
     const cleaned = cleanMarkdownResponse(filledContent);
@@ -402,7 +405,8 @@ tags: [${stubType === 'entity' ? 'other' : 'term'}]
     const dateStr = new Date().toISOString().split('T')[0];
     const withDates = normalizeFrontmatterDates(stubFree, dateStr);
     const pageTypeSingular = pageType === WIKI_SUBFOLDERS.entities ? 'entity' : pageType === WIKI_SUBFOLDERS.concepts ? 'concept' : 'source';
-    const enforced = enforceFrontmatterConstraints(withDates, pageTypeSingular);
+    // Issue #85: pass settings so custom tag vocabulary is honored
+    const enforced = enforceFrontmatterConstraints(withDates, pageTypeSingular, this.ctx.settings);
 
     await this.ctx.createOrUpdateFile(pagePath, enforced);
 
@@ -475,6 +479,7 @@ tags: [${stubType === 'entity' ? 'other' : 'term'}]
       ),
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
+      disableThinking: this.ctx.settings.disableThinking,
     });
 
     const result = (await parseJsonResponse(response)) as {
@@ -610,8 +615,9 @@ tags: [${stubType === 'entity' ? 'other' : 'term'}]
             this.ctx.getSchemaContext,
             'merge'
           ),
-          messages: [{ role: 'user', content: prompt }]
-        });
+          messages: [{ role: 'user', content: prompt }],
+      disableThinking: this.ctx.settings.disableThinking,
+    });
 
         const cleaned = cleanMarkdownResponse(mergedContent);
         if (cleaned && cleaned.length > 100) {
@@ -685,7 +691,8 @@ tags: [${stubType === 'entity' ? 'other' : 'term'}]
 
     // 4. Enforce frontmatter constraints (tag validation, etc.)
     const pageType = (targetFm?.type as 'entity' | 'concept' | 'source' | undefined) || 'entity';
-    const validated = enforceFrontmatterConstraints(finalContent, pageType);
+    // Issue #85: pass settings so custom tag vocabulary is honored
+    const validated = enforceFrontmatterConstraints(finalContent, pageType, this.ctx.settings);
 
     // 5. Write merged target
     await this.ctx.createOrUpdateFile(targetPath, validated);

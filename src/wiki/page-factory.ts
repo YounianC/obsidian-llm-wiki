@@ -24,7 +24,7 @@ import {
   filterRedundantAliases,
 } from '../utils';
 import { UNIVERSAL_LINK_CONSTRAINTS } from './prompts/constraints';
-import { applySectionLabels } from './system-prompts';
+import { applySectionLabels, appendTagVocabularyToPrompt } from './system-prompts';
 import { getExistingWikiPages } from './lint-fixes';
 
 // Wrap errors with entity/concept context for better diagnostics
@@ -176,8 +176,9 @@ export class PageFactory {
         max_tokens: TOKENS_DEDUP_RESOLUTION,
         system: await this.ctx.buildSystemPrompt('full'),
         messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' }
-      });
+        response_format: { type: 'json_object' },
+      disableThinking: this.ctx.settings.disableThinking,
+    });
 
       const result = await parseJsonResponse(response) as {
         match?: boolean;
@@ -348,17 +349,19 @@ export class PageFactory {
       .replace('{{date}}', new Date().toISOString().split('T')[0])
       .replace('{{source_file}}', sourceFile.path);
 
-    const finalPrompt = applySectionLabels(prompt, this.ctx.settings);
+    const finalPrompt = appendTagVocabularyToPrompt(applySectionLabels(prompt, this.ctx.settings), this.ctx.settings);
 
     const pageContent = await client.createMessage({
       model: this.ctx.settings.model,
       max_tokens: TOKENS_PAGE_GENERATION,
       system: await this.ctx.buildSystemPrompt(pageType),
-      messages: [{ role: 'user', content: finalPrompt }]
+      messages: [{ role: 'user', content: finalPrompt }],
+      disableThinking: this.ctx.settings.disableThinking,
     });
 
     const cleanedContent = cleanMarkdownResponse(pageContent);
-    const enforcedContent = enforceFrontmatterConstraints(cleanedContent, pageType);
+    // Issue #85: pass settings so custom tag vocabulary is honored
+    const enforcedContent = enforceFrontmatterConstraints(cleanedContent, pageType, this.ctx.settings);
     await this.ctx.createOrUpdateFile(path, enforcedContent);
     return path;
     } catch (error) {
@@ -395,13 +398,14 @@ export class PageFactory {
       .replace('{{key_details}}', info.mentions_in_source?.slice(0, 2).join('; ') || '')
       .replace('{{existing_pages}}', await this.buildPagesListForPrompt(extraPagePaths));
 
-    const finalPrompt = applySectionLabels(prompt, this.ctx.settings);
+    const finalPrompt = appendTagVocabularyToPrompt(applySectionLabels(prompt, this.ctx.settings), this.ctx.settings);
 
     const mergedBody = await client.createMessage({
       model: this.ctx.settings.model,
       max_tokens: TOKENS_PAGE_GENERATION,
       system: await this.ctx.buildSystemPrompt('merge'),
-      messages: [{ role: 'user', content: finalPrompt }]
+      messages: [{ role: 'user', content: finalPrompt }],
+      disableThinking: this.ctx.settings.disableThinking,
     });
 
     const cleanedBody = cleanMarkdownResponse(mergedBody);
@@ -442,13 +446,14 @@ export class PageFactory {
       .replace('{{key_details}}', info.mentions_in_source?.slice(0, 2).join('; ') || '')
       .replace('{{constraints}}', UNIVERSAL_LINK_CONSTRAINTS);
 
-    const finalPrompt = applySectionLabels(prompt, this.ctx.settings);
+    const finalPrompt = appendTagVocabularyToPrompt(applySectionLabels(prompt, this.ctx.settings), this.ctx.settings);
 
     const newContent = await client.createMessage({
       model: this.ctx.settings.model,
       max_tokens: TOKENS_APPEND_REVIEWED,
       system: await this.ctx.buildSystemPrompt('merge'),
-      messages: [{ role: 'user', content: finalPrompt }]
+      messages: [{ role: 'user', content: finalPrompt }],
+      disableThinking: this.ctx.settings.disableThinking,
     });
 
     const cleanedContent = cleanMarkdownResponse(newContent);
@@ -502,7 +507,8 @@ export class PageFactory {
       model: this.ctx.settings.model,
       max_tokens: TOKENS_PAGE_GENERATION,
       system: await this.ctx.buildSystemPrompt('related'),
-      messages: [{ role: 'user', content: prompt }]
+      messages: [{ role: 'user', content: prompt }],
+      disableThinking: this.ctx.settings.disableThinking,
     });
 
     const cleanedBody = cleanMarkdownResponse(updatedBody);
