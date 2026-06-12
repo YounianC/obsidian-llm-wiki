@@ -2,11 +2,17 @@
 
 > Feature planning and improvement proposals
 
-**Version:** 1.18.1 | **Updated:** 2026-06-11
+**Version:** 1.18.2 | **Updated:** 2026-06-12
 
 ---
 
 ## Current Status
+
+### Implemented (v1.18.2) — Custom Extraction Limits Hard-Enforced (Issue #120)
+
+Closes #120, a long-standing silent-overflow bug in custom extraction mode. Previously, when `extractionGranularity` was set to `custom`, the `customEntityLimit` and `customConceptLimit` settings were only enforced as soft prompt hints — the LLM routinely returned 12–25 items for a configured cap of 8, and every one of them was written to wiki pages. The existing convergence detector only stopped *further batches* once both types reached the cap, which never fired on the common single-batch case (most notes). Fix: after all batches are accumulated and immediately before `buildSourceAnalysis()`, the plugin slices both `accumulation.entities` and `accumulation.concepts` to the configured limits. The first N items in extraction order are preserved. The prompt instruction and convergence detector remain as complementary mechanisms (they guide the LLM and avoid unnecessary extra batches). No behavior change for `default` / `1-5` granularity modes. One new end-to-end test locks the behavior.
+
+This release also includes two community contributions that landed in the same window: configurable file-name casing (Issue #111) and tags-preservation on re-ingest (Issue #114).
 
 ### Implemented (v1.18.1) — Obsidian Review Compliance Hotfix
 
@@ -134,6 +140,8 @@ Design intent + specific code pointers documented inline in `src/wiki/lint-contr
 
 | Version | Date | Headline |
 |---------|------|----------|
+| **1.18.2** | 2026-06-12 | Custom extraction limits hard-enforced (Closes #120) + #114 tags preservation + #111 slug casing |
+| **1.18.1** | 2026-06-11 | Obsidian review compliance (document ban + prefer-active-doc) |
 | **1.18.0** | 2026-06-10 | Tag controlled vocabulary (Closes #85) |
 | 1.17.0 | 2026-06-08 | Long-document ingestion + source attribution (Closes #90) |
 | 1.16.3 | 2026-06-07 | v1.16.2 P0 hotfix completion |

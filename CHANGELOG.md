@@ -7,14 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **Configurable file name casing (Issue #111).** A new `File Name Casing` setting (`lower` / `preserve`) controls whether generated wiki filenames are lowercased. The default `lower` preserves backwards-compatible behaviour. `preserve` is recommended for languages where lowercase changes meaning — most notably German, where all nouns are capitalised (`Mitochondrien`, not `mitochondrien`). The setting applies consistently across all file-creation paths (ingest, lint stub creation, summary pages). Slug-based comparison for deduplication and conflict detection always uses lowercase internally, so matching remains correct regardless of the chosen casing mode. Available in all 8 interface languages.
+## [1.18.2] - 2026-06-12
 
 ### Fixed
-- **Tags silently lost on re-ingest and multi-source merge (Issue #114).** Two distinct failure modes caused manually-set `tags:` to be overwritten on every subsequent ingest:
-  - `createSummaryPage()` regenerated source pages from scratch on every re-ingest without checking for existing content. Manually corrected tags were discarded. Fix: read existing source page frontmatter before generation; if `tags:` is already populated, carry it forward as the `tagsValue` injected into the LLM prompt (existing tags > source-note tags > LLM concept name fallback).
-  - `mergeFrontmatter()` only emitted `tags:` when the field was a non-empty array. A page with `tags:` empty (common after first ingest) produced `fm.tags = undefined`, causing the field to be silently omitted from the merged output — permanently invisible to future merges. Fix: always emit `tags:` so the field is never dropped, even when empty.
-- **`enforceFrontmatterConstraints()` hardcodes fallback tag when deduped array is empty (Issue #114).** When the deduplication pass produced an empty tags array, the function silently replaced it with `[DEFAULT_ENTITY_TAG]` / `[DEFAULT_CONCEPT_TAG]`, overwriting the user's intent (e.g. intentionally empty `tags: []` on a reviewed page). Fix: preserve the empty array and only fall back to the default tag when `fm.reviewed` is not set.
+- **Custom extraction limits not hard-enforced (Issue #120).** When `extractionGranularity` was set to `custom`, the `customEntityLimit` / `customConceptLimit` settings were only enforced as soft prompt hints — the LLM routinely returned 12-25 items for a configured cap of 8, and all of them were written to wiki pages. Two existing mechanisms were insufficient: (1) the prompt instruction "Extract at most N…" was ignored on dense sources; (2) the convergence detector only stopped *further batches* once both types reached the cap, which never fired on the common single-batch case. Fix: after all batches are accumulated and immediately before `buildSourceAnalysis()`, slice both `accumulation.entities` and `accumulation.concepts` to the configured limits. The first N items in extraction order are preserved. The prompt instruction and convergence detector remain as complementary mechanisms (they guide the LLM and avoid unnecessary extra batches). No behavior change for `default` / `1-5` granularity modes. Closes #120.
 
 ## [1.18.1] - 2026-06-11
 

@@ -26,7 +26,7 @@
   - [🔑 Configuration d'un Provider LLM](#-configuration-dun-provider-llm)
   - [🎮 Utilisation](#-utilisation)
   - [⚠️ Mise à niveau depuis une version antérieure ?](#️-mise-à-niveau-depuis-une-version-antérieure-)
-- [⚡ Quoi de neuf dans la v1.18.1](#-quoi-de-neuf-dans-la-v1181)
+- [⚡ Quoi de neuf dans la v1.18.2](#-quoi-de-neuf-dans-la-v1182)
 - [✨ Fonctionnalités](#-fonctionnalités)
   - [📊 Qualité des connaissances](#-qualité-des-connaissances)
   - [🛠️ Maintenance](#️-maintenance)
@@ -61,37 +61,15 @@ Vous écrivez. L'IA organise. Vous interrogez. Rien de plus.
 
 ---
 
-## ⚡ Nouveautés de la v1.18.1
+## ⚡ Nouveautés de la v1.18.2
 
-v1.18.1 est un **hotfix de type PATCH** résolvant un problème de conformité avec la révision du code source du plugin de la communauté Obsidian. La version v1.18.0 a été rejetée lors de la révision car le code de production contenait `document` (la variable globale) ainsi que des commentaires `eslint-disable` ciblant `obsidianmd/prefer-active-doc` — les deux sont interdits dans le flux de révision Obsidian. Ce hotfix supprime le fallback vers `document` et tous les commentaires `eslint-disable` associés ; le stub `activeDocument` est centralisé dans la configuration des tests. Aucun changement visible pour l'utilisateur.
+v1.18.2 est une **correction de type PATCH** qui fait enfin respecter réellement les réglages `customEntityLimit` et `customConceptLimit`. Auparavant, lorsque `extractionGranularity` était défini sur `custom`, ces limites n'étaient imposées que comme de simples indications dans le prompt — le LLM renvoyait couramment 12 à 25 éléments pour une limite configurée à 8, et tous étaient écrits dans des pages du wiki. Le détecteur de convergence existant n'arrêtait les *lots supplémentaires* qu'une fois que les deux types atteignaient la limite, ce qui ne se déclenchait jamais dans le cas courant d'un seul lot (la plupart des notes). Ferme #120.
 
-- **🛡️ Conformité à la révision Obsidian.** Le code de production utilise désormais exclusivement `activeDocument` (la référence au document avec prise en compte des fenêtres flottantes d'Obsidian). L'environnement de test jsdom reçoit `activeDocument` via un stub centralisé dans `setup.ts`, maintenant clairement séparées les préoccupations de test et de production.
+- **🎯 Limite stricte des entités et concepts selon vos limites configurées.** Après accumulation de tous les lots et immédiatement avant la création des pages, le plugin tronque les deux listes à `customEntityLimit` / `customConceptLimit`. Les N premiers éléments dans l'ordre d'extraction sont conservés. L'instruction du prompt et le détecteur de convergence restent des mécanismes complémentaires (ils guident le LLM et évitent des lots supplémentaires inutiles). Aucun changement de comportement pour les modes de granularité `default` / `1-5`.
 
-**Toutes les fonctionnalités de la v1.18.0 restent inchangées.** Si vous utilisez déjà la v1.18.0, ce hotfix ne contient aucune nouvelle fonctionnalité à adopter.
+Cette version inclut également deux contributions de la communauté arrivées dans la même fenêtre : casse configurable des noms de fichiers (Issue #111) et préservation des tags lors de la ré-ingestion (Issue #114). Voir CHANGELOG.md pour tous les détails.
 
-**Nous recommandons vivement à tous les utilisateurs de passer à cette version.** Cette version garantit que le plugin passe la révision automatisée du code source d'Obsidian et soit disponible sur le Marché des Plugins Communautaires.
-
-v1.18.0 est une **version majeure** axée sur le vocabulaire de tags contrôlé par l'utilisateur — bouclant l'intégralité du cycle Issue #85 de l'interface utilisateur à l'injection d'invites, l'audit programmatique et la réparation assistée par LLM. Inclut également une correction complète de la régression des tokens de réflexion (Issue #99 v2), un garde-fou reviewed pour protéger les pages modifiées par l'utilisateur et une actualisation du vocabulaire de tags par défaut basée sur une analyse interdisciplinaire.
-
-**Points clés :**
-
-- **🎯 Vocabulaire de Tags Contrôlé par l'Utilisateur (Issue #85).** Définissez votre propre vocabulaire de tags dans Paramètres → Configuration Wiki → Vocabulaire de Tags. Deux modes : **Default** ou **Custom**.
-
-- **🔍 Audit de Tags Lint + Réétiquetage LLM.** Lint analyse chaque page pour détecter les tags hors vocabulaire. Nouveau bouton "🏷️ Réétiqueter N page(s) avec LLM".
-
-- **🧠 Vocabulaire par Défaut Actualisé.** Entité location→place. Concept ajoute field, phenomenon, standard ; supprime technology. Source supprime document.
-
-- **🛡️ Garde-fou reviewed.** enforceFrontmatterConstraints respecte désormais fm.reviewed: true.
-
-- **🧠 disableThinking activé par défaut (Issue #99 v2).** Propagé aux 22 sites d'appel.
-
-- **🔌 Repli AnthropicClient pour modèles à réflexion obligatoire.** Claude Fable 5 / Mythos 5 : capture l'erreur et réessaie sans thinking.
-
-- **⬆️ minAppVersion passée de 1.6.6 à 1.11.0.** Les utilisateurs d'Obsidian <1.11.0 doivent mettre à jour.
-
-**Nous recommandons vivement à tous les utilisateurs de mettre à jour vers cette version. Note: Cette version fait passer la version minimale requise d'Obsidian de v1.6.6 à v1.11.0 — les utilisateurs de versions antérieures doivent mettre à jour Obsidian avant de mettre à jour le plugin.**
-
-**Ferme :** #85, #99.
+**Nous recommandons vivement à tous les utilisateurs du mode d'extraction Custom de passer à cette version.** Sans elle, votre réglage `customEntityLimit` n'a aucun effet.
 
 ## ✨ Fonctionnalités
 

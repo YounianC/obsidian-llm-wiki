@@ -26,7 +26,7 @@
   - [🔑 LLM Provider konfigurieren](#-llm-provider-konfigurieren)
   - [🎮 Nutzung](#-nutzung)
   - [⚠️ Upgrade von einer älteren Version?](#️-upgrade-von-einer-älteren-version)
-- [⚡ Was ist neu in v1.18.1](#-was-ist-neu-in-v1181)
+- [⚡ Was ist neu in v1.18.2](#-was-ist-neu-in-v1182)
 - [✨ Funktionen](#-funktionen)
   - [📊 Knowledge Quality](#-knowledge-quality)
   - [🛠️ Maintenance](#️-maintenance)
@@ -68,37 +68,16 @@ Notizen schreiben. KI organisiert. Fragen stellen. Das ist alles.
 
 ---
 
-## ⚡ Was ist neu in v1.18.1
+## ⚡ Was ist neu in v1.18.2
 
-v1.18.1 ist ein **PATCH-Hotfix**, der ein Problem mit der Einhaltung der Obsidian Community Plugin Quellcode-Prüfung behebt. Die Version v1.18.0 wurde während der Prüfung abgelehnt, da der Produktionscode `document` (die globale Variable) zusammen mit `eslint-disable`-Kommentaren enthielt, die `obsidianmd/prefer-active-doc` betrafen — beides ist im Obsidian-Prüfprozess verboten. Dieser Hotfix entfernt den `document`-Fallback und alle zugehörigen `eslint-disable`-Kommentare; der `activeDocument`-Stub wird in die Testeinrichtung zentralisiert. Keine sichtbaren Verhaltensänderungen für den Benutzer.
+v1.18.2 ist ein **PATCH-Bugfix**, der die `customEntityLimit`- und `customConceptLimit`-Einstellungen endlich tatsächlich durchsetzt. Zuvor wurden diese Obergrenzen, wenn `extractionGranularity` auf `custom` gesetzt war, nur als weiche Prompt-Hinweise erzwungen — das LLM lieferte routinemäßig 12–25 Elemente für eine konfigurierte Obergrenze von 8, und alle wurden in Wiki-Seiten geschrieben. Der bestehende Convergence-Detector stoppte lediglich *weitere Batches*, sobald beide Typen die Obergrenze erreichten, was im häufigen Single-Batch-Fall (die meisten Notizen) nie auslöste. Schließt #120.
 
-- **🛡️ Einhaltung der Obsidian-Prüfung.** Der Produktionscode verwendet jetzt ausschließlich `activeDocument` (Obsidians popout-fensterbewusste Dokumentreferenz). Die jsdom-Testumgebung erhält `activeDocument` über einen zentralisierten Stub in `setup.ts`, wodurch Test- und Produktionsbelange sauber getrennt bleiben.
+- **🎯 Harte Obergrenze für Entitäten und Konzepte auf Ihre konfigurierten Limits.** Nachdem alle Batches akkumuliert sind und unmittelbar vor der Seitenerstellung schneidet das Plugin beide Listen auf `customEntityLimit` / `customConceptLimit`. Die ersten N Elemente in Extraktionsreihenfolge bleiben erhalten. Die Prompt-Anweisung und der Convergence-Detector bleiben als ergänzende Mechanismen erhalten (sie leiten das LLM und vermeiden unnötige zusätzliche Batches). Keine Verhaltensänderung für `default` / `1-5`-Granularitätsmodi.
 
-**Alle v1.18.0-Funktionen bleiben unverändert.** Wenn Sie bereits v1.18.0 verwenden, enthält dieser Hotfix keine neue Funktionalität.
+Diese Version enthält außerdem zwei Community-Beiträge, die im selben Zeitfenster eingegangen sind: konfigurierbare Dateinamen-Groß-/Kleinschreibung (Issue #111) und Tag-Erhaltung beim Re-Ingest (Issue #114). Vollständige Details im CHANGELOG.md.
 
-**Wir empfehlen allen Benutzern dringend, auf diese Version zu aktualisieren.** Diese Version stellt sicher, dass das Plugin die automatisierte Obsidian-Quellcode-Prüfung besteht und im Community Plugin Market verfügbar ist.
+**Wir empfehlen allen Benutzern des Custom-Extraktionsmodus dringend, auf diese Version zu aktualisieren.** Ohne sie hat Ihre `customEntityLimit`-Einstellung keine Wirkung.
 
-v1.18.0 ist ein **großes Funktionsrelease** mit Fokus auf benutzerdefinierte Tag-Vokabulare — schließt den gesamten Issue #85-Zyklus von der UI über die Prompt-Injektion bis zur programmatischen Prüfung und LLM-gestützten Reparatur. Enthält außerdem eine vollständige Behebung der Thinking-Token-Regression (Issue #99 v2), eine reviewed-Sicherung zum Schutz benutzerbearbeiteter Seiten und eine Aktualisierung des Standardvokabulars basierend auf interdisziplinärer Analyse.
-
-**Highlights:**
-
-- **🎯 Benutzerdefinierte Tag-Vokabulare (Issue #85).** Definieren Sie eigene Entity/Concept-Tag-Vokabulare in den Einstellungen → Wiki-Konfiguration → Tag-Vokabular. Zwei Modi: **Default** (eingebaut) oder **Custom** (Chip-Eingabe — Enter zum Hinzufügen, × zum Entfernen). Das Vokabular wird in jeden LLM-Prompt eingefügt, sodass das Modell passende Typen und keine erfundenen ausgibt.
-
-- **🔍 Lint-Tag-Prüfung + LLM-Neuvergabe.** Lint scannt jetzt jede Seite auf nicht im aktiven Vokabular enthaltene Tags. Ein neuer "🏷️ N Seite(n) mit LLM neu vergeben"-Button sendet verletzende Seiten zusammen mit Ihrem aktiven Vokabular an das LLM — keine manuelle Tag-Korrektur mehr nach jedem Ingest.
-
-- **🧠 Standardvokabular aktualisiert.** Entity `location` → `place`. Concept erhält `field` (Disziplin), `phenomenon` (beobachtbare Muster), `standard` (Konventionen); `technology` entfernt (typenübergreifende Mehrdeutigkeit). Source entfernt `document` (überlappt mit `article`). Vollständig abwärtskompatibel — entfernte Tags bleiben im bestehenden Frontmatter erhalten, vom Lint zur optionalen Neuvergabe markiert.
-
-- **🛡️ reviewed-Sicherung.** `enforceFrontmatterConstraints` respektiert jetzt `fm.reviewed: true` — von Benutzern bearbeitete Seiten behalten ihre Tags (auch absichtlich leeres `tags: []`). Nur LLM-halluzinierte Daten werden weiterhin entfernt.
-
-- **🧠 disableThinking standardmäßig aktiviert (Issue #99 v2).** Die v1.16.2 Anti-Thinking-Verteidigung war unvollständig — der Parameter `disableThinking` existierte, aber NULL produktive `createMessage`-Aufrufe übergaben ihn. v1.18.0 propagiert ihn an alle 22 Aufrufstellen. Standardmäßig aktiviert, in den Einstellungen konfigurierbar.
-
-- **🔌 AnthropicClient-Fallback für Thinking-verpflichtende Modelle.** Claude Fable 5 / Mythos 5 lehnen `thinking.type='disabled'` mit 400 ab. Beide Anthropic-Clients fangen den Fehler jetzt ab, cachen den Anbieter als nicht unterstützt und wiederholen ohne das thinking-Feld.
-
-- **⬆️ minAppVersion von 1.6.6 auf 1.11.0 erhöht.** Benutzer mit Obsidian <1.11.0 müssen aktualisieren, um diese Version weiter nutzen zu können. Grund: Die Chip-Eingabe benötigt die `Setting.addComponent()`-API.
-
-**Wir empfehlen allen Benutzern dringend ein Upgrade auf diese Version. Hinweis: Diese Version erhöht die Mindest-Obsidian-Anforderung von v1.6.6 auf v1.11.0 — Benutzer älterer Versionen müssen Obsidian vor dem Update aktualisieren.** Die Tag-Vokabular-Pipeline ist das Hauptmerkmal — wenn Sie nach jedem Ingest manuell LLM-generierte Tags korrigiert haben, eliminiert dieses Release diese Arbeit vollständig. Der `disableThinking`-Fix verhindert Mid-Response-Reasoning-Korruption für Gemma 4, DeepSeek-R1 und andere denkfähige Modelle.
-
-**Schließt:** #85 (Benutzerdefinierte Tag-Vokabulare), #99 (Thinking-Token-Bleeding — vollständige Behebung).
 ## ✨ Funktionen
 
 ### 📊 Knowledge Quality
