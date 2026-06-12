@@ -1,13 +1,14 @@
 # LLM Wiki Plugin Project Development Standards
 
-**Last Updated:** 2026-06-11
+**Last Updated:** 2026-06-12
 
 ---
 
-## Current Phase: v1.18.1 — Obsidian Review Compliance Hotfix — Released 2026-06-11
+## Current Phase: v1.18.2 — Custom Extraction Limits Hard-Enforced (Issue #120) — Released 2026-06-12
 
-### Completed (v1.18.1) — Released 2026-06-11
-- ✅ **Obsidian review compliance fix.** Removed `document` fallback and `eslint-disable` comments targeting `obsidianmd/prefer-active-doc` from production code. `activeDocument` stub centralized in test setup. Zero user-visible behavior change.
+### Completed (v1.18.2) — Released 2026-06-12
+- ✅ **Issue #120 (customEntityLimit/customConceptLimit hard-enforced).** Single 11-line slice in `src/wiki/source-analyzer.ts` (pre-`buildSourceAnalysis`) closes the silent-overflow bug in custom extraction mode. The LLM's "extract at most N" prompt hint is now actually enforced — 685 tests passing (684 → 685, +1 new end-to-end test for the cap).
+- ✅ **Issue #114 (tags preservation on re-ingest) and Issue #111 (configurable slug casing)** community contributions from @DocTpoint shipped in the same window.
 
 ## Completed (v1.18.0) — Released 2026-06-11
 

@@ -25,7 +25,7 @@
   - [🔑 Configure an LLM Provider](#-configure-an-llm-provider)
   - [🎮 Usage](#-usage)
   - [⚠️ Upgrading from an Older Version?](#️-upgrading-from-an-older-version)
-- [⚡ What's New in v1.18.1](#-whats-new-in-v1181)
+- [⚡ What's New in v1.18.2](#-whats-new-in-v1182)
 - [✨ Features](#-features)
   - [📊 Knowledge Quality](#-knowledge-quality)
   - [🛠️ Maintenance](#️-maintenance)
@@ -186,39 +186,16 @@ Settings → **LLM Configuration**:
 
 ---
 
-## ⚡ What's New in v1.18.1
+## ⚡ What's New in v1.18.2
 
-v1.18.1 is a **PATCH hotfix** resolving an Obsidian Community Plugin review compliance issue. The v1.18.0 release was rejected during source-code review because production code contained `document` (the bare global) alongside `eslint-disable` comments targeting `obsidianmd/prefer-active-doc` — both are forbidden in the Obsidian review pipeline. This hotfix removes the `document` fallback and all related eslint-disable comments; the `activeDocument` stub is centralized in the test setup. No user-visible behavior change.
+v1.18.2 is a **PATCH bug fix** that finally makes the `customEntityLimit` and `customConceptLimit` settings actually hold. Previously, when `extractionGranularity` was set to `custom`, these caps were enforced only as soft prompt hints — the LLM routinely returned 12–25 items for a configured cap of 8, and every one of them was written to a wiki page. The existing convergence detector only stopped *further batches* once both types reached the cap, which never fired on the common single-batch case (most notes). Closes #120.
 
-- **🛡️ Obsidian review compliance.** Production code now exclusively uses `activeDocument` (Obsidian's popout-window-aware document reference). The jsdom test environment receives `activeDocument` via a centralized stub in `setup.ts`, keeping test and production concerns cleanly separated.
+- **🎯 Hard-cap entities and concepts to your configured limits.** After all batches are accumulated and immediately before page creation, the plugin slices both lists to `customEntityLimit` / `customConceptLimit`. The first N items in extraction order are preserved. The prompt instruction and convergence detector remain as complementary mechanisms (they guide the LLM and avoid unnecessary extra batches). No behavior change for `default` / `1-5` granularity modes.
 
-**All v1.18.0 features remain unchanged.** If you are already on v1.18.0, this hotfix contains no new functionality for you to adopt.
+This release also includes two community contributions that landed in the same window: configurable file-name casing (Issue #111) and tags-preservation on re-ingest (Issue #114). See CHANGELOG.md for full details.
 
-**We strongly recommend all users upgrade to this version.** This release ensures the plugin passes Obsidian's automated source-code review and is available on the Community Plugin Market.
+**We strongly recommend all users on the Custom extraction mode upgrade to this version.** Without it, your `customEntityLimit` setting has no effect.
 
-## ⚡ What's New in v1.18.0
-
-v1.18.0 is a **major feature release** focused on user-controlled tag vocabulary — closing the entire Issue #85 cycle from UI to prompt injection to programmatic audit and LLM-assisted repair. Also includes a complete fix for the thinking-token bleeding regression (Issue #99 v2), a reviewed-guard to protect user-edited pages, and a default tag vocabulary refresh based on cross-discipline analysis.
-
-**Highlights:**
-
-- **🎯 User-Controlled Tag Vocabulary (Issue #85).** You can now define a custom entity/concept tag vocabulary in Settings → Wiki Configuration → Tag Vocabulary. Two modes: **Default** (built-in) or **Custom** (chip input — add tags via Enter, remove via ×). The vocabulary is injected into every LLM prompt so the model emits matching types, not invented ones.
-
-- **🔍 Lint Tag Audit + LLM Retag.** Lint now scans every page for out-of-vocabulary tags. A new "🏷️ Retag N page(s) with LLM" button sends violating pages to the LLM with your active vocabulary — no more manually fixing tags after every ingest.
-
-- **🧠 Default Vocabulary Refresh.** Entity `location` → `place`. Concept gains `field` (discipline), `phenomenon` (observable patterns), `standard` (conventions); `technology` removed (cross-type ambiguity). Source drops `document` (overlaps with `article`). Full backward compatibility — removed tags survive in existing frontmatter, flagged by Lint for optional retag.
-
-- **🛡️ reviewed-guard.** `enforceFrontmatterConstraints` now respects `fm.reviewed: true` — user-edited pages keep their tags (even intentionally empty `tags: []`). Only LLM-hallucinated dates are still stripped.
-
-- **🧠 disableThinking ON by default (Issue #99 v2).** The v1.16.2 anti-thinking defense was incomplete — the `disableThinking` parameter existed but ZERO production `createMessage` calls passed it. v1.18.0 propagates it to all 22 call sites. Default ON, user-configurable in Settings.
-
-- **🔌 AnthropicClient fallback for thinking-mandatory models.** Claude Fable 5 / Mythos 5 reject `thinking.type='disabled'` with 400. Both Anthropic clients now catch the error, cache the provider as unsupported, and retry without the thinking field.
-
-- **⬆️ minAppVersion bumped 1.6.6 → 1.11.0.** Users on Obsidian <1.11.0 must upgrade to continue using this version. Reason: `Setting.addComponent()` API requirement for the chip input UI.
-
-**We strongly recommend all users upgrade to this version.** The tag vocabulary pipeline is the headline feature — if you've been manually correcting LLM-generated tags after every ingest, this release eliminates that work entirely. The `disableThinking` fix prevents mid-response reasoning corruption for Gemma 4, DeepSeek-R1, and other thinking-capable models. **Note:** this version bumps the minimum Obsidian requirement from v1.6.6 to v1.11.0 — users on older versions must upgrade Obsidian before updating.
-
-**Closes:** #85 (User-controlled tag vocabulary), #99 (Thinking-token bleeding — complete fix).
 ## ⌨️ Commands
 
 | Command | Description |
