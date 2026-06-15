@@ -270,8 +270,8 @@ export async function runLintWiki(ctx: LintContext, signal?: AbortSignal): Promi
                   max_tokens: TOKENS_LINT_DEDUP_LLM,
                   messages: [{ role: 'user', content: dedupPrompt }],
                   response_format: { type: 'json_object' },
-      disableThinking: ctx.settings.disableThinking,
-    });
+                  enableThinking: !ctx.settings.disableThinking,
+                });
 
                 const dedupResult = await parseJsonResponse(dedupResponse) as {
                   duplicates?: Array<{target: string, source: string, reason: string}>
@@ -575,7 +575,7 @@ export async function runLintWiki(ctx: LintContext, signal?: AbortSignal): Promi
       model: ctx.settings.model,
       max_tokens: TOKENS_LINT_DEDUP_LLM,
       messages: [{ role: 'user', content: prompt }],
-      disableThinking: ctx.settings.disableThinking,
+      enableThinking: !ctx.settings.disableThinking,
     });
 
     const cleanedLLM = cleanMarkdownResponse(llmReport);

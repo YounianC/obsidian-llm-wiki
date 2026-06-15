@@ -129,7 +129,7 @@ export class LintFixer {
       ),
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
-      disableThinking: this.ctx.settings.disableThinking,
+      enableThinking: !this.ctx.settings.disableThinking,
     });
 
     // Retry without response_format on empty response
@@ -146,7 +146,7 @@ export class LintFixer {
           'lint'
         ),
         messages: [{ role: 'user', content: prompt }],
-      disableThinking: this.ctx.settings.disableThinking,
+      enableThinking: !this.ctx.settings.disableThinking,
     });
     }
 
@@ -371,7 +371,7 @@ tags: [${stubType === 'entity' ? 'other' : 'term'}]
         'full'
       ),
       messages: [{ role: 'user', content: finalPrompt }],
-      disableThinking: this.ctx.settings.disableThinking,
+      enableThinking: !this.ctx.settings.disableThinking,
     });
 
     const cleaned = cleanMarkdownResponse(filledContent);
@@ -479,7 +479,7 @@ tags: [${stubType === 'entity' ? 'other' : 'term'}]
       ),
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
-      disableThinking: this.ctx.settings.disableThinking,
+      enableThinking: !this.ctx.settings.disableThinking,
     });
 
     const result = (await parseJsonResponse(response)) as {
@@ -616,7 +616,7 @@ tags: [${stubType === 'entity' ? 'other' : 'term'}]
             'merge'
           ),
           messages: [{ role: 'user', content: prompt }],
-      disableThinking: this.ctx.settings.disableThinking,
+      enableThinking: !this.ctx.settings.disableThinking,
     });
 
         const cleaned = cleanMarkdownResponse(mergedContent);

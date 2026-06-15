@@ -16,14 +16,14 @@ export const DE_TEXTS = {
     // Language Switcher
     languageTitle: 'Oberflächensprache',
     languageDesc: 'Wähle deine bevorzugte Sprache für das Einstellungsfenster. Starte das Plugin neu, um die Sprachänderungen auf die Befehlspalette anzuwenden.',
-    languageEn: 'Englisch',
-    languageZh: 'Chinesisch (中文)',
-    languageJa: 'Japanese (日本語)',
-    languageKo: 'Korean (한국어)',
+    languageEn: 'English',
+    languageZh: '中文',
+    languageJa: '日本語',
+    languageKo: '한국어',
     languageDe: 'Deutsch',
-    languageFr: 'French (Français)',
-    languageEs: 'Spanish (Español)',
-    languagePt: 'Portuguese (Português)',
+    languageFr: 'Français',
+    languageEs: 'Español',
+    languagePt: 'Português',
 
     // Status
     statusTitle: 'LLM-Client-Status',
@@ -398,6 +398,21 @@ export const DE_TEXTS = {
     // Lint Report
     lintReportTitle: 'Wiki-Prüfbericht',
     lintReportSummary: 'Wiki-Statusübersicht: {total} Seiten gesamt, {aliasesMissing} Seiten ohne Aliase, {duplicates} Duplikate, {deadLinks} defekte Links ({deadLinkFromDup} betreffen Duplikate), {orphans} verwaiste Seiten ({orphanFromDup} sind Duplikate), {emptyPages} leere Seiten. Lint-Dauer: {elapsedSeconds}s',
+
+    // Advanced LLM Settings (Issues #99 / #128)
+    advancedSettingsModeName: 'Erweiterte Parametereinstellungen',
+    advancedSettingsModeDesc: 'Im Standardmodus bleiben alle erweiterten Parameter ausgeblendet und „Thinking deaktivieren” ist eingeschaltet — das ist für die meisten Nutzer die richtige Wahl. Benutzerdefiniert zeigt den Schalter für den Denkmodus, Extraktions- und Abfragetemperatur sowie die Wiederholungsstrafe. Wechseln Sie nur dann zu Benutzerdefiniert, wenn Sie das Modellverhalten feinsteuern oder Ausgabeprobleme untersuchen müssen.',
+    advancedSettingsDefault: 'Standard',
+    advancedSettingsCustom: 'Benutzerdefiniert',
+    disableThinkingName: 'Thinking deaktivieren',
+    disableThinkingDesc: 'Standardmäßig eingeschaltet. Nur ausschalten, wenn Ihr Modell saubere Ausgaben liefert und Sie die Extraktionsqualität verbessern möchten. Das Ausschalten erhöht die Kosten und kann bei manchen Modellen zu verstümmelten Ausgaben führen.',
+    extractionTemperatureName: 'Extraktionstemperatur',
+    extractionTemperatureDesc: 'Bereich 0–2. Niedrigere Werte machen die LLM-Ausgabe deterministischer und originalgetreuer. Höhere Werte machen sie kreativer. Leer lassen = Provider-Standard.',
+    chatTemperatureName: 'Abfragetemperatur',
+    chatTemperatureDesc: 'Bereich 0–2. Wie Extraktionstemperatur, betrifft aber nur Chat-/Query-Antworten. Leer lassen = Provider-Standard.',
+    repetitionPenaltyName: 'Wiederholungsstrafe',
+    repetitionPenaltyDesc: 'Bereich 0–2. Höhere Werte reduzieren Wiederholungen. Leer lassen = Provider-Standard.',
+    temperaturePlaceholder: 'leer = Provider-Standard',
     lintDeadLinkSection: 'Defekte Links (erkannt) [{count}]',
     lintEmptyPageSection: 'Leere Seiten (erkannt) [{count}]',
     lintOrphanSection: 'Verwaiste Seiten (erkannt) [{count}]',

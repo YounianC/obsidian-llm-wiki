@@ -177,7 +177,7 @@ export class PageFactory {
         system: await this.ctx.buildSystemPrompt('full'),
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' },
-      disableThinking: this.ctx.settings.disableThinking,
+      enableThinking: !this.ctx.settings.disableThinking,
     });
 
       const result = await parseJsonResponse(response) as {
@@ -356,7 +356,7 @@ export class PageFactory {
       max_tokens: TOKENS_PAGE_GENERATION,
       system: await this.ctx.buildSystemPrompt(pageType),
       messages: [{ role: 'user', content: finalPrompt }],
-      disableThinking: this.ctx.settings.disableThinking,
+      enableThinking: !this.ctx.settings.disableThinking,
     });
 
     const cleanedContent = cleanMarkdownResponse(pageContent);
@@ -405,7 +405,7 @@ export class PageFactory {
       max_tokens: TOKENS_PAGE_GENERATION,
       system: await this.ctx.buildSystemPrompt('merge'),
       messages: [{ role: 'user', content: finalPrompt }],
-      disableThinking: this.ctx.settings.disableThinking,
+      enableThinking: !this.ctx.settings.disableThinking,
     });
 
     const cleanedBody = cleanMarkdownResponse(mergedBody);
@@ -453,7 +453,7 @@ export class PageFactory {
       max_tokens: TOKENS_APPEND_REVIEWED,
       system: await this.ctx.buildSystemPrompt('merge'),
       messages: [{ role: 'user', content: finalPrompt }],
-      disableThinking: this.ctx.settings.disableThinking,
+      enableThinking: !this.ctx.settings.disableThinking,
     });
 
     const cleanedContent = cleanMarkdownResponse(newContent);
@@ -521,7 +521,7 @@ export class PageFactory {
       max_tokens: TOKENS_PAGE_GENERATION,
       system: await this.ctx.buildSystemPrompt('related'),
       messages: [{ role: 'user', content: prompt }],
-      disableThinking: this.ctx.settings.disableThinking,
+      enableThinking: !this.ctx.settings.disableThinking,
     });
 
     const cleanedBody = cleanMarkdownResponse(updatedBody);
