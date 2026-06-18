@@ -7,6 +7,7 @@ import { WIKI_LANGUAGES } from '../types';
 import { PROMPTS } from '../prompts';
 import { parseJsonResponse } from '../core/json';
 import { parseIndexForPages, localKeywordMatch } from '../core/index-search';
+import { normalizeWikiLinkContent } from '../core/prompt-builders';
 import { MAX_PAGE_CONTENT_CHARS, TOKENS_QUERY_PAGE_SELECT, TOKENS_QUERY_LLM_SELECT, TOKENS_QUERY_SAVE_DEDUP, NOTICE_BRIEF, NOTICE_NORMAL, NOTICE_ERROR } from '../constants';
 
 // ---- Suggest Save Modal (post-query feedback) ----
@@ -166,6 +167,9 @@ export class QueryModal extends Modal {
     this.history.messages.forEach(msg => {
       this.renderHistoryMessage(msg.role, msg.content);
     });
+
+    // 自动滚动到最新的消息底部
+    this.scrollToBottom();
 
     const inputContainer = container.createDiv({
       cls: 'llm-wiki-query-input-container'
@@ -532,6 +536,9 @@ export class QueryModal extends Modal {
   renderMarkdownContent(content: string, container: HTMLElement) {
     container.empty();
 
+    // 防御: 替换 LLM 回答中硬编码的 [[wiki/...]] → [[{wikiFolder}/...]]
+    const normalizedContent = normalizeWikiLinkContent(content, this.plugin.settings.wikiFolder);
+
     // Dispose previous render component to avoid stale/orphaned components
     if (this.activeRenderComponent) {
       this.activeRenderComponent.unload();
@@ -545,7 +552,7 @@ export class QueryModal extends Modal {
 
     void MarkdownRenderer.render(
       this.app,
-      content,
+      normalizedContent,
       container,
       sourcePath,
       this.activeRenderComponent

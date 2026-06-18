@@ -18,6 +18,7 @@ import { parseJsonResponse } from '../core/json';
 import { parseFrontmatter, mergeFrontmatter, enforceFrontmatterConstraints } from '../core/frontmatter';
 import { truncateMentions } from '../core/report';
 import { cleanMarkdownResponse } from '../core/markdown';
+import { normalizeLLMPath } from '../core/prompt-builders';
 import { UNIVERSAL_LINK_CONSTRAINTS } from './prompts/constraints';
 import { applySectionLabels, appendTagVocabularyToPrompt } from './system-prompts';
 import { getExistingWikiPages } from './lint/get-existing-pages';
@@ -160,6 +161,7 @@ export class PageFactory {
       if (!client) return { path: slugPath };
 
       const prompt = PROMPTS.resolveEntityDedup
+        .replace('{{wikiFolder}}', this.ctx.settings.wikiFolder)
         .replace('{{entity_name}}', name)
         .replace('{{entity_type}}', pageType)
         .replace('{{entity_summary}}', summary.substring(0, 300))
@@ -181,6 +183,7 @@ export class PageFactory {
       } | null;
 
       if (result?.match && result?.path) {
+        result.path = normalizeLLMPath(result.path, this.ctx.settings.wikiFolder);
         console.debug(`Entity resolution: "${name}" matched existing page "${result.path}"`);
         // Append the new name as an alias to the existing page to prevent future duplicates
         await this.appendAliases(result.path, [name]);

@@ -5,6 +5,7 @@
 export interface OrphanContext {
   orphanContent: string;
   wikiIndex: string;
+  wikiFolder: string;
 }
 
 export interface OrphanLinkSuggestion {
@@ -29,6 +30,7 @@ export function buildOrphanLinkPrompt(
   const truncatedIndex = context.wikiIndex.substring(0, 3000);
 
   return template
+    .replace(/\{\{wikiFolder\}\}/g, context.wikiFolder)
     .replace(/\{\{orphan_content\}\}/g, truncatedContent)
     .replace(/\{\{wiki_index\}\}/g, truncatedIndex);
 }

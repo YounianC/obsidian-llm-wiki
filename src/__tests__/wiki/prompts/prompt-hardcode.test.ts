@@ -1,0 +1,33 @@
+import { describe, it, expect } from 'vitest';
+import { INGESTION_PROMPTS } from '../../../wiki/prompts/ingestion';
+import { LINT_PROMPTS } from '../../../wiki/prompts/lint';
+import { FIX_PROMPTS } from '../../../wiki/prompts/fixes';
+
+describe('Prompt templates — no hardcoded wiki/ paths', () => {
+  it('resolveEntityDedup uses {{wikiFolder}} placeholder for example path', () => {
+    const tpl = INGESTION_PROMPTS.resolveEntityDedup;
+    // The response format example should not have hardcoded wiki/ prefix
+    expect(tpl).not.toContain('"wiki/');
+    // Must contain the dynamic placeholder instead
+    expect(tpl).toContain('{{wikiFolder}}/entities/');
+  });
+
+  it('lintTitleScanCandidates uses {{wikiFolder}} placeholder for example path', () => {
+    const tpl = LINT_PROMPTS.lintTitleScanCandidates;
+    expect(tpl).not.toContain('"wiki/concepts/');
+    expect(tpl).toContain('{{wikiFolder}}/concepts/');
+  });
+
+  it('lintDuplicateDetection uses {{wikiFolder}} placeholder for example path', () => {
+    const tpl = LINT_PROMPTS.lintDuplicateDetection;
+    // The output format example inside the template
+    expect(tpl).not.toContain('"wiki/entities/');
+    expect(tpl).toContain('{{wikiFolder}}/entities/');
+  });
+
+  it('linkOrphanPage uses {{wikiFolder}} placeholder for example path', () => {
+    const tpl = FIX_PROMPTS.linkOrphanPage;
+    expect(tpl).not.toContain('"wiki/entities/');
+    expect(tpl).toContain('{{wikiFolder}}/entities/');
+  });
+});

@@ -13,6 +13,7 @@ describe('Orphan Matcher — Pure Functions', () => {
     const mockContext: OrphanContext = {
       orphanContent: '# Orphan Page\n\nThis page needs links.',
       wikiIndex: '- [[entities/test|Test]]\n- [[concepts/example|Example]]',
+      wikiFolder: 'wiki',
     };
 
     it('replaces all placeholders', () => {
@@ -30,7 +31,7 @@ describe('Orphan Matcher — Pure Functions', () => {
 
     it('truncates orphan content to 2000 chars', () => {
       const longContent = 'x'.repeat(3000);
-      const context = { ...mockContext, orphanContent: longContent };
+      const context: OrphanContext = { ...mockContext, orphanContent: longContent };
       const result = buildOrphanLinkPrompt('{{orphan_content}}', context);
 
       expect(result.length).toBeLessThan(2100);
@@ -38,7 +39,7 @@ describe('Orphan Matcher — Pure Functions', () => {
 
     it('truncates wiki index to 3000 chars', () => {
       const longIndex = 'y'.repeat(4000);
-      const context = { ...mockContext, wikiIndex: longIndex };
+      const context: OrphanContext = { ...mockContext, wikiIndex: longIndex };
       const result = buildOrphanLinkPrompt('{{wiki_index}}', context);
 
       expect(result.length).toBeLessThan(3100);
@@ -48,22 +49,42 @@ describe('Orphan Matcher — Pure Functions', () => {
       const shortContext: OrphanContext = {
         orphanContent: 'Short',
         wikiIndex: 'Brief',
+        wikiFolder: 'wiki',
       };
       const result = buildOrphanLinkPrompt('{{orphan_content}} {{wiki_index}}', shortContext);
       expect(result).toBe('Short Brief');
     });
 
-    it('handles multiple occurrences of same placeholder', () => {
-      const template = '{{orphan_content}} and {{orphan_content}}';
+    it('replaces {{wikiFolder}} placeholder in template', () => {
+      const template = 'Path: {{wikiFolder}}/entities/test.md';
+      const context: OrphanContext = {
+        orphanContent: 'content',
+        wikiIndex: 'index',
+        wikiFolder: 'mywiki',
+      };
+      const result = buildOrphanLinkPrompt(template, context);
+      expect(result).toBe('Path: mywiki/entities/test.md');
+    });
+
+    it('replaces {{wikiFolder}} with default wiki value', () => {
+      const template = 'Path: {{wikiFolder}}/entities/test.md';
+      const result = buildOrphanLinkPrompt(template, mockContext);
+      expect(result).toBe('Path: wiki/entities/test.md');
+    });
+
+    it('handles multiple occurrences of different placeholders', () => {
+      const template = '{{orphan_content}} | {{wikiFolder}}/test | {{wiki_index}}';
       const result = buildOrphanLinkPrompt(template, mockContext);
       expect(result).toContain('# Orphan Page');
-      expect(result.split('# Orphan Page').length).toBe(3); // 2 occurrences + 1
+      expect(result).toContain('wiki/test');
+      expect(result).toContain('- [[entities/test|Test]]');
     });
 
     it('handles special characters in content', () => {
       const specialContext: OrphanContext = {
         orphanContent: 'Special <>&"\' chars',
         wikiIndex: 'Index with [brackets]',
+        wikiFolder: 'wiki',
       };
       const result = buildOrphanLinkPrompt('{{orphan_content}} {{wiki_index}}', specialContext);
       expect(result).toContain('Special <>&"\' chars');
@@ -74,6 +95,7 @@ describe('Orphan Matcher — Pure Functions', () => {
       const multiLineContext: OrphanContext = {
         orphanContent: 'Line 1\nLine 2\nLine 3',
         wikiIndex: 'Index line',
+        wikiFolder: 'wiki',
       };
       const result = buildOrphanLinkPrompt('{{orphan_content}}', multiLineContext);
       expect(result).toContain('Line 1\nLine 2\nLine 3');
