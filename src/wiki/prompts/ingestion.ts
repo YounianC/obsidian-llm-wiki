@@ -119,7 +119,7 @@ export const INGESTION_PROMPTS = {
 - Spelling variations
 
 **Output JSON:**
-- If it matches an existing page, output: {"match": true, "path": "wiki/entities/existing-slug.md"}
+- If it matches an existing page, output: {"match": true, "path": "{{wikiFolder}}/entities/existing-slug.md"}
 - If no match exists, output: {"match": false, "path": null}
 
 Do NOT create a new name — only match against the existing pages listed above.`,

@@ -20,7 +20,7 @@ export const LINT_PROMPTS = {
 - Prefer the page with the MORE descriptive/specific title as "target" (keep)
 
 **You MUST output ONLY a valid JSON object, no other text:**
-{"candidates": [["wiki/concepts/target-page.md", "wiki/concepts/source-page.md"], ...]}
+{"candidates": [["{{wikiFolder}}/concepts/target-page.md", "{{wikiFolder}}/concepts/source-page.md"], ...]}
 
 If no candidates found: {"candidates": []}`,
 
@@ -40,7 +40,7 @@ If no candidates found: {"candidates": []}`,
 - Keep the candidate's target/source assignment (target = keep, source = merge into target)
 
 **You MUST output ONLY a valid JSON object, no other text:**
-{"duplicates": [{"target": "wiki/entities/page1.md", "source": "wiki/entities/page2.md", "reason": "Same concept: both refer to X because..."}]}
+{"duplicates": [{"target": "{{wikiFolder}}/entities/page1.md", "source": "{{wikiFolder}}/entities/page2.md", "reason": "Same concept: both refer to X because..."}]}
 
 If none of the candidates are true duplicates: {"duplicates": []}`,
 

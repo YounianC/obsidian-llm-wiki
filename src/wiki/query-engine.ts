@@ -7,7 +7,57 @@ import { WIKI_LANGUAGES } from '../types';
 import { PROMPTS } from '../prompts';
 import { parseJsonResponse } from '../core/json';
 import { parseIndexForPages, localKeywordMatch } from '../core/index-search';
+import { normalizeWikiLinkContent } from '../core/prompt-builders';
+import { extractThinkingBlocks } from '../core/markdown';
 import { MAX_PAGE_CONTENT_CHARS, TOKENS_QUERY_PAGE_SELECT, TOKENS_QUERY_LLM_SELECT, TOKENS_QUERY_SAVE_DEDUP, NOTICE_BRIEF, NOTICE_NORMAL, NOTICE_ERROR } from '../constants';
+
+/**
+ * v1.20.0: Render extracted thinking blocks as a <details> collapsible
+ * panel, ChatGPT/Claude.ai style. The summary line is localized via the
+ * TEXTS table (with English fallback). Returns null when there are no
+ * blocks so the caller can skip the wrapper entirely.
+ *
+ * Pure DOM construction — no Obsidian API dependency, fully testable
+ * under jsdom. Tested by src/__tests__/wiki/query-thinking-ui.test.ts.
+ */
+export function renderThinkingBlocksUI(
+  thinkingBlocks: string[],
+  language: string
+): HTMLElement | null {
+  if (!thinkingBlocks || thinkingBlocks.length === 0) return null;
+
+  const langTexts = (TEXTS as unknown as Record<string, Record<string, string>>)[language]
+    ?? (TEXTS as unknown as Record<string, Record<string, string>>).en;
+  const summaryLabel = langTexts?.queryThinkingSummary
+    ?? (language === 'zh' || language === 'ja' || language === 'ko'
+      ? '思考过程'
+      : 'Thinking process');
+  const stepsLabel = langTexts?.queryThinkingSteps
+    ?? (language === 'zh' ? '步' : language === 'ja' ? 'ステップ' : 'steps');
+
+  // v1.20.0: use activeDocument for popout-window compatibility.
+  // Test environment stubs activeDocument on globalThis (see setup.ts).
+  const doc = activeDocument;
+  if (!doc) return null;
+  const details = doc.createElement('details');
+  details.className = 'llm-wiki-query-thinking-block';
+
+  const summary = doc.createElement('summary');
+  const count = thinkingBlocks.length;
+  summary.textContent = count > 1
+    ? `💭 ${summaryLabel} (${count} ${stepsLabel})`
+    : `💭 ${summaryLabel}`;
+  details.appendChild(summary);
+
+  for (const block of thinkingBlocks) {
+    const pre = doc.createElement('pre');
+    pre.className = 'llm-wiki-query-thinking-content';
+    pre.textContent = block;
+    details.appendChild(pre);
+  }
+
+  return details;
+}
 
 // ---- Suggest Save Modal (post-query feedback) ----
 
@@ -167,6 +217,9 @@ export class QueryModal extends Modal {
       this.renderHistoryMessage(msg.role, msg.content);
     });
 
+    // 自动滚动到最新的消息底部
+    this.scrollToBottom();
+
     const inputContainer = container.createDiv({
       cls: 'llm-wiki-query-input-container'
     });
@@ -279,8 +332,8 @@ export class QueryModal extends Modal {
         max_tokens: TOKENS_QUERY_SAVE_DEDUP,
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' },
-      enableThinking: !this.plugin.settings.disableThinking,
-    });
+        ...(this.plugin.settings.disableThinking ? { enableThinking: false } : {}),
+      });
 
       const parsed = await parseJsonResponse(response) as { valuable?: boolean; reason?: string } | null;
       if (parsed?.valuable) {
@@ -391,8 +444,8 @@ export class QueryModal extends Modal {
               this.renderMarkdownContent(this.accumulatedResponse, contentDiv);
               this.scrollToBottom();
             },
-            enableThinking: !this.plugin.settings.disableThinking,
-            temperature: this.plugin.settings.chatTemperature,
+            ...(this.plugin.settings.disableThinking ? { enableThinking: false } : {}),
+            ...(this.plugin.settings.chatTemperature !== undefined ? { temperature: this.plugin.settings.chatTemperature } : {}),
           });
           cleanupTimer();
         } catch (streamErr) {
@@ -412,7 +465,9 @@ export class QueryModal extends Modal {
                 model: this.plugin.settings.model,
                 max_tokens: TOKENS_QUERY_LLM_SELECT,
                 system: wikiContext,
-                messages: conversationMessages
+                messages: conversationMessages,
+                ...(this.plugin.settings.disableThinking ? { enableThinking: false } : {}),
+                ...(this.plugin.settings.chatTemperature !== undefined ? { temperature: this.plugin.settings.chatTemperature } : {}),
               });
               if (this.aborted) {
                 cleanupTimer();
@@ -445,6 +500,15 @@ export class QueryModal extends Modal {
           cleanupTimer();
         }
 
+        // v1.20.0: Final render with fullResponse (includes <think> blocks
+        // from reasoning_content). During streaming, onChunk only received
+        // delta.text — the thinking content was accumulated separately by
+        // createMessageStream and prepended as <think> tags in the return value.
+        if (fullResponse !== undefined && fullResponse !== null) {
+          this.renderMarkdownContent(fullResponse, contentDiv);
+          this.scrollToBottom();
+        }
+
         if (!this.aborted) {
           this.history.messages.push({
             role: 'assistant',
@@ -461,8 +525,8 @@ export class QueryModal extends Modal {
           max_tokens: TOKENS_QUERY_LLM_SELECT,
           system: wikiContext,
           messages: conversationMessages,
-          enableThinking: !this.plugin.settings.disableThinking,
-          temperature: this.plugin.settings.chatTemperature,
+          ...(this.plugin.settings.disableThinking ? { enableThinking: false } : {}),
+          ...(this.plugin.settings.chatTemperature !== undefined ? { temperature: this.plugin.settings.chatTemperature } : {}),
         });
 
         if (this.aborted) {
@@ -532,6 +596,31 @@ export class QueryModal extends Modal {
   renderMarkdownContent(content: string, container: HTMLElement) {
     container.empty();
 
+    // v1.20.0: extract thinking blocks BEFORE rendering so the visible
+    // markdown goes to MarkdownRenderer and the reasoning goes into a
+    // collapsible <details> panel above it (default collapsed, ChatGPT-style).
+    // Fast guard: skip regex during streaming (onChunk only receives text deltas,
+    // never <think> tags). Only run the full extraction when delimiters are present.
+    const lower = content.toLowerCase();
+    const hasThinkTags = lower.includes('<think');
+    const { thinkingBlocks, visibleContent } = hasThinkTags
+      ? extractThinkingBlocks(content)
+      : { thinkingBlocks: [] as string[], visibleContent: content };
+    const normalizedContent = normalizeWikiLinkContent(
+      visibleContent,
+      this.plugin.settings.wikiFolder
+    );
+
+    // If reasoning is present, render the collapsible panel first so it
+    // appears above the visible answer.
+    if (thinkingBlocks.length > 0) {
+      const thinkingEl = renderThinkingBlocksUI(
+        thinkingBlocks,
+        this.plugin.settings.language
+      );
+      if (thinkingEl) container.appendChild(thinkingEl);
+    }
+
     // Dispose previous render component to avoid stale/orphaned components
     if (this.activeRenderComponent) {
       this.activeRenderComponent.unload();
@@ -545,7 +634,7 @@ export class QueryModal extends Modal {
 
     void MarkdownRenderer.render(
       this.app,
-      content,
+      normalizedContent,
       container,
       sourcePath,
       this.activeRenderComponent
@@ -837,7 +926,7 @@ Important:
         max_tokens: TOKENS_QUERY_PAGE_SELECT,
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' },
-        enableThinking: !this.plugin.settings.disableThinking,
+        ...(this.plugin.settings.disableThinking ? { enableThinking: false } : {}),
       });
 
       console.debug('[LLM] Raw response:', response);

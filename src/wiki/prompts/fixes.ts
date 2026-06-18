@@ -62,7 +62,7 @@ Task:
 3. For each relevant page, generate a suggested link text (one sentence description + wiki-link)
 
 Output JSON format:
-{"related_pages": [{"page_path": "wiki/entities/xxx.md", "link_text": "One sentence describing this connection", "link_target": "[[entities/orphan-name]]"}], "reason": "Connection rationale"}`,
+{"related_pages": [{"page_path": "{{wikiFolder}}/entities/xxx.md", "link_text": "One sentence describing this connection", "link_target": "[[entities/orphan-name]]"}], "reason": "Connection rationale"}`,
 
   resolveContradiction: `You are a Wiki contradiction resolution assistant. Generate a repaired page based on the contradiction record and affected page content.
 

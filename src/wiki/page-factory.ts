@@ -18,6 +18,7 @@ import { parseJsonResponse } from '../core/json';
 import { parseFrontmatter, mergeFrontmatter, enforceFrontmatterConstraints } from '../core/frontmatter';
 import { truncateMentions } from '../core/report';
 import { cleanMarkdownResponse } from '../core/markdown';
+import { normalizeLLMPath } from '../core/prompt-builders';
 import { UNIVERSAL_LINK_CONSTRAINTS } from './prompts/constraints';
 import { applySectionLabels, appendTagVocabularyToPrompt } from './system-prompts';
 import { getExistingWikiPages } from './lint/get-existing-pages';
@@ -160,6 +161,7 @@ export class PageFactory {
       if (!client) return { path: slugPath };
 
       const prompt = PROMPTS.resolveEntityDedup
+        .replace('{{wikiFolder}}', this.ctx.settings.wikiFolder)
         .replace('{{entity_name}}', name)
         .replace('{{entity_type}}', pageType)
         .replace('{{entity_summary}}', summary.substring(0, 300))
@@ -172,7 +174,7 @@ export class PageFactory {
         system: await this.ctx.buildSystemPrompt('full'),
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' },
-      enableThinking: !this.ctx.settings.disableThinking,
+      ...(this.ctx.settings.disableThinking ? { enableThinking: false } : {}),
     });
 
       const result = await parseJsonResponse(response) as {
@@ -181,6 +183,7 @@ export class PageFactory {
       } | null;
 
       if (result?.match && result?.path) {
+        result.path = normalizeLLMPath(result.path, this.ctx.settings.wikiFolder);
         console.debug(`Entity resolution: "${name}" matched existing page "${result.path}"`);
         // Append the new name as an alias to the existing page to prevent future duplicates
         await this.appendAliases(result.path, [name]);
@@ -351,7 +354,7 @@ export class PageFactory {
       max_tokens: TOKENS_PAGE_GENERATION,
       system: await this.ctx.buildSystemPrompt(pageType),
       messages: [{ role: 'user', content: finalPrompt }],
-      enableThinking: !this.ctx.settings.disableThinking,
+      ...(this.ctx.settings.disableThinking ? { enableThinking: false } : {}),
     });
 
     const cleanedContent = cleanMarkdownResponse(pageContent);
@@ -400,7 +403,7 @@ export class PageFactory {
       max_tokens: TOKENS_PAGE_GENERATION,
       system: await this.ctx.buildSystemPrompt('merge'),
       messages: [{ role: 'user', content: finalPrompt }],
-      enableThinking: !this.ctx.settings.disableThinking,
+      ...(this.ctx.settings.disableThinking ? { enableThinking: false } : {}),
     });
 
     const cleanedBody = cleanMarkdownResponse(mergedBody);
@@ -448,7 +451,7 @@ export class PageFactory {
       max_tokens: TOKENS_APPEND_REVIEWED,
       system: await this.ctx.buildSystemPrompt('merge'),
       messages: [{ role: 'user', content: finalPrompt }],
-      enableThinking: !this.ctx.settings.disableThinking,
+      ...(this.ctx.settings.disableThinking ? { enableThinking: false } : {}),
     });
 
     const cleanedContent = cleanMarkdownResponse(newContent);
@@ -516,7 +519,7 @@ export class PageFactory {
       max_tokens: TOKENS_PAGE_GENERATION,
       system: await this.ctx.buildSystemPrompt('related'),
       messages: [{ role: 'user', content: prompt }],
-      enableThinking: !this.ctx.settings.disableThinking,
+      ...(this.ctx.settings.disableThinking ? { enableThinking: false } : {}),
     });
 
     const cleanedBody = cleanMarkdownResponse(updatedBody);

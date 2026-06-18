@@ -102,3 +102,59 @@ export function correctLinkPollution(content: string): string {
 
   return cleaned;
 }
+
+/**
+ * Normalize a file path returned by the LLM to use the user's configured wikiFolder.
+ * LLMs may return paths with the hardcoded "wiki/" prefix even when the prompt
+ * template uses {{wikiFolder}}. This function provides a defense-in-depth layer.
+ *
+ * @param path - File path from LLM response (e.g. "wiki/entities/llm.md")
+ * @param wikiFolder - User's configured wiki folder (e.g. "mywiki")
+ * @returns Path with wikiFolder correctly applied
+ *
+ * @example
+ * normalizeLLMPath('wiki/entities/llm.md', 'mywiki')
+ * // => 'mywiki/entities/llm.md'
+ *
+ * normalizeLLMPath('mywiki/entities/llm.md', 'mywiki')
+ * // => 'mywiki/entities/llm.md'
+ */
+export function normalizeLLMPath(path: string, wikiFolder: string): string {
+  if (!path) return path;
+
+  // If path already has the correct prefix, return unchanged
+  if (path.startsWith(wikiFolder + '/') || path === wikiFolder) {
+    return path;
+  }
+
+  // If path starts with "wiki/", replace with user's wikiFolder
+  if (path.startsWith('wiki/')) {
+    return wikiFolder + '/' + path.slice(5);
+  }
+
+  // Otherwise, prepend wikiFolder
+  return wikiFolder + '/' + path;
+}
+
+/**
+ * Normalize wiki-link syntax in LLM-generated content to use the user's
+ * configured wikiFolder. LLMs may still output [[wiki/entities/foo|Foo]]
+ * even when the prompt uses {{wikiFolder}}. This handles both structured
+ * paths and rendered content.
+ *
+ * @param content - Markdown content with potential [[wiki/...]] links
+ * @param wikiFolder - User's configured wiki folder
+ * @returns Content with wiki-links updated to use the correct wikiFolder
+ *
+ * @example
+ * normalizeWikiLinkContent('See [[wiki/entities/llm|LLM]]', 'mywiki')
+ * // => 'See [[mywiki/entities/llm|LLM]]'
+ */
+export function normalizeWikiLinkContent(content: string, wikiFolder: string): string {
+  if (!content || wikiFolder === 'wiki') return content;
+
+  // Replace [[wiki/path|display]] with [[{wikiFolder}/path|display]]
+  return content.replace(/\[\[wiki\/([^\]]+)\]\]/g, (_match, rest) => {
+    return `[[${wikiFolder}/${rest}]]`;
+  });
+}

@@ -189,7 +189,7 @@ ${contradiction.source_page}
         'full'
       ),
       messages: [{ role: 'user', content: finalPrompt }],
-      enableThinking: !this.ctx.settings.disableThinking,
+      ...(this.ctx.settings.disableThinking ? { enableThinking: false } : {}),
     });
 
     const cleaned = cleanMarkdownResponse(fixedContent);

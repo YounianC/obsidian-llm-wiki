@@ -25,7 +25,7 @@
   - [🔑 LLM Provider konfigurieren](#-llm-provider-konfigurieren)
   - [🎮 Nutzung](#-nutzung)
   - [⚠️ Upgrade von einer älteren Version?](#️-upgrade-von-einer-älteren-version)
-- [⚡ Was ist neu in v1.19.1](#-was-ist-neu-in-v1191)
+- [⚡ Was ist neu in v1.20.0](#-was-ist-neu-in-v1200)
 - [✨ Funktionen](#-funktionen)
   - [📊 Knowledge Quality](#-knowledge-quality)
   - [🛠️ Maintenance](#️-maintenance)
@@ -67,17 +67,21 @@ Notizen schreiben. KI organisiert. Fragen stellen. Das ist alles.
 
 ---
 
-## ⚡ Was ist neu in v1.19.1
+## ⚡ Was ist neu in v1.20.0
 
-v1.19.1 ist ein **PATCH-Hotfix**, der Gemini HTTP 400-Fehler bei der Ingestion (Issue #137) durch eine 3-stufige Thinking-Control-Dialect-Fallback-Kette behebt. Der OpenAI-kompatible Client erkennt nun automatisch den korrekten Feldnamen zum Deaktivieren des Denkens pro baseUrl (thinking.type='disabled' → reasoning_effort='none' → none) und speichert das Ergebnis zwischen, sodass nachfolgende Anfragen die Suche überspringen. Der Einstellungs-Tab löscht das frisch zwischengespeicherte Suchergebnis beim Schließen nicht mehr. Allgemeine Feld-Strip-Wiederholungen (Temperatur, Wiederholungsstrafe usw.) und Stream-Path-Feld-Strip-Korrekturen runden das Release ab. Gemini-Benutzer sollten nach dem Test Connection eine voll funktionsfähige Ingestion haben.
+v1.20.0 ist ein **Minor-Release**, das die Verarbeitung von LLM-Denken/Reasoning grundlegend überarbeitet. Das Plugin sendet standardmäßig keine provider-spezifischen Thinking-Control-Felder — der Provider entscheidet selbst.
 
-- 🤖 **Gemini HTTP 400-Fix (Issue #137).** Neue 3-stufige Thinking-Control-Dialect-Fallback-Kette (anthropic → openai → none) ermittelt das korrekte Feldname beim Test Connection und speichert es zwischen. Die erweiterten Einstellungen wurden über die Test Connection verschoben, um den Workflow zu verbessern.
-- 🛡️ **Generischer 400-Feld-Strip-Retry.** Ein unsupportedFields-Set extrahiert die abgelehnten Feldnamen aus Fehlerantworten; bei nachfolgenden Anfragen werden diese vorab entfernt. Funktioniert auch bei createMessageStream (zuvor toter Code).
-- 🔊 **Fallback-Hinweise jetzt lokalisiert.** queueFallbackNotice() respektiert die Spracheinstellung des Benutzers – die 3 i18n-Schlüssel (fallbackThinkingDialect, fallbackThinkingNone, fallbackParamStripped) sind nun tatsächlich in allen 7 nicht-englischen Locales sichtbar.
-- 🧹 **Mehrere Code-Vereinfachungen.** IS_400-Regex optimiert, retryBodyWithStrippedFields-Helfer extrahiert, commitTempSettings() dedupliziert Settings-Merge, applyThinkingDialectFallback verwendet buildRequestBody (behebt ein latentes unsupportedFields-Pre-Strip-Leak).
-- 📊 **Konsolen-Diagnose-Rauschen reduziert.** [OpenAICompat Debug] 400-Körper von console.error auf console.debug herabgestuft; [DEBUG-400] erneuter Abruf auf 400er-Fehler beschränkt (feuerte zuvor bei 429-Kontingentfehlern).
+- **🧠 Provider-first Thinking-Control.** Standardmodus sendet keine Thinking-Control-Felder. "Denken deaktivieren" aktiviert 3-Stufen-Dialekt-Fallback.
+- **💭 Ausklappbare Thinking-UI.** Reasoning-Inhalt in ausklappbarem Panel. 8 Sprachen unterstützt.
+- **🔧 Anthropic baseUrl-Fix (#141, #134).** `/v1`-Normalisierung verhindert 404-Fehler.
+- **🔧 gpt-5 max_completion_tokens (#143).** Korrekte Token-Parameter für GPT-5-Serie.
+- **💬 Query Wiki UX.** Respektiert `wikiFolder`, Auto-Scroll, Benutzer-Nachrichten rechtsbündig.
+- **🛡️ 10 Code-Review-Fixes.** Truncation-Retry bewahrt Reasoning, `enableThinking`-Konsistenz usw.
+- **🔄 Automatische Migration.** `disableThinking` wird automatisch auf `false` zurückgesetzt.
 
-Details im CHANGELOG.md.
+Wir empfehlen allen Nutzern dringend ein Upgrade auf diese Version.
+
+Details unter [CHANGELOG.md](../CHANGELOG.md).
 
 ## ✨ Funktionen
 

@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.0] - 2026-06-18
+
+### Added
+- **Collapsible thinking UI in Query Wiki.** When thinking-capable models (DeepSeek, etc.) return reasoning content, it's displayed in a collapsed `💭 Thinking process` panel above the answer (ChatGPT/Claude.ai style). Fully localized in 8 languages.
+- **`extractThinkingBlocks()`** pure function in `core/markdown.ts` — extracts `<think>` and `<thinking>` blocks from LLM responses.
+- **`wrapReasoningContent()`** pure function — encodes reasoning_content into `<think>` tags with escaping for nested closing tags.
+- **`renderThinkingBlocksUI()`** — DOM construction for collapsible thinking panel with localized labels.
+- **DeepSeek `reasoning_content` extraction.** SSE parser extracts `reasoning_content` from OpenAI-format deltas. Both streaming and non-streaming paths prepend reasoning as `<think>` tags for the thinking UI.
+- **`PROTECTED_FIELDS` whitelist** in `OpenAICompatibleClient` — prevents `model`, `messages`, `stream` from being stripped by `unsupportedFields` even if a 400 error mentions them.
+
+### Changed
+- **Provider-first thinking control (default `disableThinking: false`).** The plugin no longer sends any thinking-control field by default — the provider decides its own reasoning behavior. Old default was `true` (sent `thinking.type='disabled'`). Users who explicitly want to suppress thinking can enable "Disable thinking" in Custom Advanced Settings, which triggers the 3-tier dialect fallback.
+- **`enableThinking` spread consistency.** All 22 LLM call sites now use `...(ctx.settings.disableThinking ? { enableThinking: false } : {})` — page-factory, contradictions, conversation-ingest were missing the spread (had comment-only placeholders).
+- **`AnthropicClient` baseUrl normalization.** Constructor now strips trailing `/v1` and re-appends it, preventing double-path `/v1/v1` (fixes #141, #134).
+- **`listModels()` uses `this.baseUrl`.** Anthropic `listModels()` no longer hardcodes `https://api.anthropic.com/v1/models`.
+- **`isGpt5` prefix check tightened.** `startsWith('gpt-5')` → `=== 'gpt-5' || startsWith('gpt-5-')` to avoid matching future unrelated models.
+- **`.includes('<think')` guard is now case-insensitive.** Uses `.toLowerCase()` to catch `<Thinking>` variants.
+- **v1.20.0 migration in `loadSettings()`.** Resets `disableThinking` from `true` to `false` and `advancedSettingsMode` to `'default'` for existing users.
+
+### Fixed
+- **gpt-5 `max_completion_tokens` (Issue #143).** GPT-5 series models now use `max_completion_tokens` instead of `max_tokens`. Truncation retry also preserves the correct token key.
+- **Truncation retry loses reasoning_content.** `extractText` callback now wraps retry response's `reasoning_content` via `wrapReasoningContent`.
+- **Streaming path missing final render.** After `createMessageStream` returns, the full response (including `<think>` tags) is now rendered via `renderMarkdownContent` — thinking content was previously only available during non-streaming path.
+- **Non-streaming fallback missing `chatTemperature`.** The fallback path when streaming fails now includes the user's configured temperature.
+- **`if (fullResponse)` dropped empty responses.** Changed to `!== undefined/null` guard to handle empty-string responses.
+- **Query Wiki respects `wikiFolder`.** Prompt templates and defense-in-depth normalization replace hardcoded `wiki/` paths.
+- **Query Wiki auto-scroll.** Chat scrolls to bottom on open.
+- **User message right-align.** User bubbles use `flex-end` alignment with accent background.
+
 ## [1.19.1] - 2026-06-17
 
 ### Fixed

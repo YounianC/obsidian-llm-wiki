@@ -3,7 +3,7 @@ import { PROMPTS } from '../../prompts';
 import { TOKENS_LINT_ORPHAN_FIX } from '../../constants';
 import { buildSystemPrompt, getSectionLabels } from '../system-prompts';
 import { parseJsonResponse } from '../../core/json';
-import { cleanWikiIndex } from '../../core/prompt-builders';
+import { cleanWikiIndex, normalizeLLMPath } from '../../core/prompt-builders';
 import {
   buildOrphanLinkPrompt,
   validateOrphanLinkTarget,
@@ -25,6 +25,7 @@ export async function linkOrphanPage(
   const prompt = buildOrphanLinkPrompt(PROMPTS.linkOrphanPage, {
     orphanContent,
     wikiIndex,
+    wikiFolder: ctx.settings.wikiFolder,
   });
 
   const client = ctx.getClient();
@@ -40,7 +41,7 @@ export async function linkOrphanPage(
     ),
     messages: [{ role: 'user', content: prompt }],
     response_format: { type: 'json_object' },
-    enableThinking: !ctx.settings.disableThinking,
+    ...(ctx.settings.disableThinking ? { enableThinking: false } : {}),
   });
 
   const result = (await parseJsonResponse(response)) as {
@@ -57,6 +58,8 @@ export async function linkOrphanPage(
   const labels = getSectionLabels(ctx.settings);
 
   for (const related of result.related_pages) {
+    // Defense: normalize any hardcoded "wiki/" prefix from LLM response
+    related.page_path = normalizeLLMPath(related.page_path, ctx.settings.wikiFolder);
     const fullPath = normalizeOrphanPagePath(
       related.page_path,
       ctx.settings.wikiFolder

@@ -4,6 +4,7 @@ import { MAX_RETRIES, RETRY_BASE_DELAY_MS, MAX_TOKENS_BATCH } from './constants'
 import { getText } from './core/i18n';
 import { parseSSEEvents, SSEDelta } from './core/sse-parser';
 import { withTruncationRetry } from './core/truncation-retry';
+import { wrapReasoningContent } from './core/markdown';
 
 // Issue #137: thinking-control dialect state. Each OpenAI-compatible
 // backend uses a different field name for the same "disable thinking"
@@ -381,7 +382,14 @@ export class AnthropicClient implements LLMClient {
 
   constructor(apiKey: string, baseUrl?: string) {
     this.apiKey = apiKey;
-    this.baseUrl = baseUrl || 'https://api.anthropic.com';
+    // Issue #141 / #134: normalize baseUrl to include /v1 suffix. The official
+    // Anthropic API path is /v1/messages (not /messages), and AnthropicCompatibleClient
+    // (line ~150) already does this. Without this normalization, requests hit a 404.
+    const normalized = (baseUrl || 'https://api.anthropic.com')
+      .replace(/\/v1\/?$/, '')
+      .replace(/\/+$/, '');
+    this.baseUrl = normalized + '/v1';
+    this.apiVersion = '2023-06-01';
   }
 
   async createMessage(params: {
@@ -567,7 +575,7 @@ export class AnthropicClient implements LLMClient {
 
   async listModels(): Promise<string[]> {
     const response = await requestUrl({
-      url: 'https://api.anthropic.com/v1/models',
+      url: `${this.baseUrl}/models`,
       headers: {
         'x-api-key': this.apiKey,
         'Anthropic-Version': '2023-06-01'
@@ -599,6 +607,11 @@ export class OpenAICompatibleClient implements LLMClient {
   // so we don't pay the probe round-trip again. Replaces ad-hoc
   // chat_template_kwargs injection for the OpenAI dialect fallback.
   unsupportedFields: Set<string> = new Set();
+
+  // v1.20.0: fields that must never be stripped even if a 400 error
+  // mentions them (e.g., "Unknown name 'model'"). Stripping these
+  // would break all subsequent requests.
+  private static PROTECTED_FIELDS = new Set(['model', 'messages', 'stream']);
 
   // #137: language tag for localized fallback notices. Wired by
   // createLLMClient so that queueFallbackNotice can resolve templates via
@@ -728,7 +741,9 @@ export class OpenAICompatibleClient implements LLMClient {
             // caller's catch can strip them and retry.
             const unknown = parseUnknownFields(err);
             if (unknown.length > 0) {
-              for (const f of unknown) this.unsupportedFields.add(f);
+              for (const f of unknown) {
+                if (!OpenAICompatibleClient.PROTECTED_FIELDS.has(f)) this.unsupportedFields.add(f);
+              }
               logFallback('field-strip', `fields rejected by ${this.baseUrl}: ${unknown.join(', ')}`);
             }
             console.debug('[OpenAICompat Debug] 400 error body:', JSON.stringify(json) || text || 'no body');
@@ -740,7 +755,7 @@ export class OpenAICompatibleClient implements LLMClient {
 
       const data = response.json as {
         choices?: Array<{
-          message?: { content?: string };
+          message?: { content?: string; reasoning_content?: string };
           finish_reason?: string;
         }>;
         error?: { message: string };
@@ -753,7 +768,11 @@ export class OpenAICompatibleClient implements LLMClient {
       if (data.error) throw new Error(`status ${response.status}: ${data.error.message}`);
 
       const initialChoices = data.choices;
-      const initialText = data.choices?.[0]?.message?.content || '';
+      // v1.20.0: extract reasoning_content (DeepSeek thinking) from non-stream
+      // response and prepend as <think> block so extractThinkingBlocks can find it.
+      const reasoning = data.choices?.[0]?.message?.reasoning_content || '';
+      const content = data.choices?.[0]?.message?.content || '';
+      const initialText = wrapReasoningContent(reasoning, content);
 
       return withTruncationRetry<{ choices: NonNullable<typeof data.choices>; initialText: string; usage?: typeof data.usage }>({
         initialFn: async () => {
@@ -763,18 +782,29 @@ export class OpenAICompatibleClient implements LLMClient {
           return { choices: initialChoices ?? [], initialText, usage: data.usage };
         },
         retryFn: async (retryTokens) => {
+          // v1.20.0: preserve the token key that buildRequestBody() chose
+          // (max_completion_tokens for gpt-5, max_tokens otherwise).
+          // Hardcoding 'max_tokens' would break GPT-5 truncation retries.
+          const retryTokenKey = 'max_completion_tokens' in bodyToUse
+            ? 'max_completion_tokens' : 'max_tokens';
           const retryResponse = await requestUrl({
             url: this.baseUrl + '/chat/completions',
             method: 'POST',
             headers: this.getHeaders(),
-            body: JSON.stringify({ ...bodyToUse, max_tokens: retryTokens })
+            body: JSON.stringify({ ...bodyToUse, [retryTokenKey]: retryTokens }),
           });
           const retryData = retryResponse.json as typeof data;
           if (retryData.error) throw new Error(`status ${retryResponse.status}: ${retryData.error.message}`);
-          return { choices: retryData.choices ?? [], initialText, usage: retryData.usage };
+          return { choices: retryData.choices ?? [], initialText, usage: retryData.usage, retryReasoning: retryData.choices?.[0]?.message?.reasoning_content || '' };
         },
         isTruncated: (r) => r.choices[0]?.finish_reason === 'length',
-        extractText: (r) => r.choices[0]?.message?.content || r.initialText,
+        extractText: (r) => {
+          const content = r.choices[0]?.message?.content || '';
+          const retryReasoning = (r as { retryReasoning?: string }).retryReasoning || '';
+          return retryReasoning
+            ? wrapReasoningContent(retryReasoning, content)
+            : (content || r.initialText);
+        },
         getMaxTokens: () => params.max_tokens,
         getStopReason: (r) => r.choices[0]?.finish_reason,
         maxCap: params.maxTokensPerCall || MAX_TOKENS_BATCH,
@@ -829,14 +859,24 @@ export class OpenAICompatibleClient implements LLMClient {
     messages: Array<{role: 'system' | 'user' | 'assistant'; content: string}>,
     streaming: boolean,
   ): Record<string, unknown> {
+    // v1.20.0: gpt-5-* models require max_completion_tokens instead of max_tokens.
+    // OpenAI changed the parameter name for the gpt-5 series to disambiguate
+    // it from the legacy max_tokens that some endpoints no longer recognize.
+    // Issue #143.
+    const isGpt5 = params.model === 'gpt-5' || params.model.startsWith('gpt-5-');
+    const tokenKey = isGpt5 ? 'max_completion_tokens' : 'max_tokens';
+
     const body: Record<string, unknown> = {
       model: params.model,
-      max_tokens: params.max_tokens,
+      [tokenKey]: params.max_tokens,
       messages,
     };
     if (streaming) body.stream = true;
 
-    // #137: pre-strip fields this baseUrl has already rejected.
+    // v1.20.0: by default (caller does not pass these), do not inject
+    // temperature / repetition_penalty / chat_template_kwargs. Each field is
+    // only sent when the caller explicitly provides it (Custom Advanced mode)
+    // AND this baseUrl has not previously rejected it.
     if (params.temperature !== undefined && !this.unsupportedFields.has('temperature')) {
       body.temperature = params.temperature;
     }
@@ -999,7 +1039,9 @@ export class OpenAICompatibleClient implements LLMClient {
           if (is400) {
             const unknown = parseUnknownFields(err);
             if (unknown.length > 0) {
-              for (const f of unknown) this.unsupportedFields.add(f);
+              for (const f of unknown) {
+                if (!OpenAICompatibleClient.PROTECTED_FIELDS.has(f)) this.unsupportedFields.add(f);
+              }
               logFallback('field-strip', `fields rejected by ${this.baseUrl}: ${unknown.join(', ')}`);
             }
           }
@@ -1011,11 +1053,25 @@ export class OpenAICompatibleClient implements LLMClient {
         // Parse SSE events using shared parser
         const deltas = parseSSEEvents(responseText, 'openai');
         let fullText = '';
+        let reasoningContent = '';
         for (const delta of deltas) {
+          // v1.20.0: accumulate reasoning_content from DeepSeek-style providers
+          // that return thinking in a separate delta field (not <think> tags).
+          // Prepend as <think>...</think> so extractThinkingBlocks() can find it.
+          if (delta.reasoning) {
+            reasoningContent += delta.reasoning;
+          }
           if (delta.text) {
             fullText += delta.text;
             params.onChunk(delta.text);
           }
+        }
+
+        // Prepend accumulated reasoning as <think> block (never sent to onChunk
+        // to avoid double-render; only included in the returned string so the
+        // Query Wiki's extractThinkingBlocks can find it).
+        if (reasoningContent) {
+          fullText = wrapReasoningContent(reasoningContent, fullText);
         }
 
         // Fallback: if SSE parsing yielded nothing, try non-streaming JSON format.
@@ -1023,15 +1079,16 @@ export class OpenAICompatibleClient implements LLMClient {
           console.debug('[OpenAICompat SSE] SSE parsing empty, trying non-streaming JSON fallback');
           try {
             const data = JSON.parse(responseText) as {
-              choices?: Array<{ message?: { content?: string } }>;
+              choices?: Array<{ message?: { content?: string; reasoning_content?: string } }>;
               error?: { message: string };
             };
             if (data.error) throw new Error(data.error.message);
             const text = data.choices?.[0]?.message?.content || '';
-            if (text) {
+            const reasoning = data.choices?.[0]?.message?.reasoning_content || '';
+            if (text || reasoning) {
               console.debug('[OpenAICompat SSE] Non-streaming fallback successful, length:', text.length);
-              fullText = text;
-              params.onChunk(text);
+              fullText = wrapReasoningContent(reasoning, text);
+              if (text) params.onChunk(text);
             }
           } catch (parseErr) {
             console.debug('[OpenAICompat SSE] Non-streaming JSON parse also failed:', parseErr);

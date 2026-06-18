@@ -21,6 +21,7 @@ import { parseJsonResponse } from '../../core/json';
 import { detectRateLimitFailures, formatRateLimitNotice } from '../../core/rate-limit';
 import { nestReportUnderParent } from '../../core/report';
 import { cleanMarkdownResponse } from '../../core/markdown';
+import { normalizeLLMPath } from '../../core/prompt-builders';
 import { appendGranularityToPrompt, appendTagVocabularyToPrompt } from '../system-prompts';
 import { TOKENS_LINT_DEDUP_LLM, NOTICE_NORMAL, NOTICE_RATE_LIMIT } from '../../constants';
 import { isPageEmpty } from './utils';
@@ -231,6 +232,7 @@ export async function runLintWiki(ctx: LintContext, signal?: AbortSignal): Promi
                 ).join('\n');
 
                 const dedupPrompt = PROMPTS.lintDuplicateDetection
+                  .replace('{{wikiFolder}}', ctx.settings.wikiFolder)
                   .replace('{{candidates}}', candidateList)
                   .replace('{{total}}', String(pagesForDedup.length));
 
@@ -240,7 +242,7 @@ export async function runLintWiki(ctx: LintContext, signal?: AbortSignal): Promi
                   max_tokens: TOKENS_LINT_DEDUP_LLM,
                   messages: [{ role: 'user', content: dedupPrompt }],
                   response_format: { type: 'json_object' },
-                  enableThinking: !ctx.settings.disableThinking,
+                  ...(ctx.settings.disableThinking ? { enableThinking: false } : {}),
                 });
 
                 const dedupResult = await parseJsonResponse(dedupResponse) as {
@@ -260,7 +262,11 @@ export async function runLintWiki(ctx: LintContext, signal?: AbortSignal): Promi
                 const validDups = rawDups.filter(
                   d => typeof d.target === 'string' && d.target.length > 0 &&
                        typeof d.source === 'string' && d.source.length > 0
-                );
+                ).map(d => ({
+                  target: normalizeLLMPath(d.target, ctx.settings.wikiFolder),
+                  source: normalizeLLMPath(d.source, ctx.settings.wikiFolder),
+                  reason: d.reason,
+                }));
                 allDuplicates.push(...validDups);
               } else {
                 const reason = result.reason instanceof Error ? result.reason.message : String(result.reason || 'unknown');
@@ -434,7 +440,7 @@ export async function runLintWiki(ctx: LintContext, signal?: AbortSignal): Promi
       model: ctx.settings.model,
       max_tokens: TOKENS_LINT_DEDUP_LLM,
       messages: [{ role: 'user', content: prompt }],
-      enableThinking: !ctx.settings.disableThinking,
+      ...(ctx.settings.disableThinking ? { enableThinking: false } : {}),
     });
 
     const cleanedLLM = cleanMarkdownResponse(llmReport);
