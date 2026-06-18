@@ -25,7 +25,7 @@
   - [🔑 Configuration d'un Provider LLM](#-configuration-dun-provider-llm)
   - [🎮 Utilisation](#-utilisation)
   - [⚠️ Mise à niveau depuis une version antérieure ?](#️-mise-à-niveau-depuis-une-version-antérieure-)
-- [⚡ Nouveautés de la v1.19.1](#-nouveautés-de-la-v1191)
+- [⚡ Nouveautés de la v1.20.0](#-nouveautés-de-la-v1200)
 - [✨ Fonctionnalités](#-fonctionnalités)
   - [📊 Qualité des connaissances](#-qualité-des-connaissances)
   - [🛠️ Maintenance](#️-maintenance)
@@ -60,17 +60,21 @@ Vous écrivez. L'IA organise. Vous interrogez. Rien de plus.
 
 ---
 
-## ⚡ Nouveautés de la v1.19.1
+## ⚡ Nouveautés de la v1.20.0
 
-v1.19.1 est un **correctif PATCH** qui résout les erreurs HTTP 400 de Gemini lors de l'ingestion (Issue #137) via une chaîne de repli à 3 niveaux du dialecte de contrôle de la réflexion. Le client compatible OpenAI découvre désormais automatiquement le nom de champ correct pour désactiver la réflexion par baseUrl (thinking.type='disabled' → reasoning_effort='none' → none) et met en cache le résultat afin que les requêtes suivantes sautent la sonde. L'onglet des paramètres n'efface plus le résultat de sonde fraîchement mis en cache lors de la fermeture. Les tentatives génériques de suppression de champ (température, pénalité de répétition, etc.) et les corrections de suppression de champ sur le chemin de stream complètent la version. Les utilisateurs de Gemini devraient avoir une ingestion pleinement fonctionnelle après Test Connection.
+v1.20.0 est une **version mineure** qui repense la gestion du raisonnement LLM. Le plugin n'envoie plus de champ de contrôle de réflexion par défaut — le fournisseur décide.
 
-- 🤖 **Correction HTTP 400 Gemini (Issue #137).** Nouvelle chaîne de repli à 3 niveaux du dialecte de contrôle de la réflexion (anthropic → openai → none) qui teste le nom de champ correct au moment de Test Connection et le met en cache. Les paramètres avancés ont été déplacés au-dessus de Test Connection pour un meilleur flux de travail.
-- 🛡️ **Nouvelle tentative générique de suppression de champ 400.** Un ensemble unsupportedFields extrait les noms de champs rejetés des corps d'erreur ; ils sont pré-supprimés lors des requêtes suivantes. Fonctionne également sur createMessageStream (était du code mort).
-- 🔊 **Messages de repli désormais localisés.** queueFallbackNotice() respecte la langue de l'utilisateur – les 3 clés i18n (fallbackThinkingDialect, fallbackThinkingNone, fallbackParamStripped) sont désormais réellement visibles dans les 7 locales non anglaises.
-- 🧹 **Plusieurs simplifications de code.** IS_400 regex optimisé, helper retryBodyWithStrippedFields extrait, commitTempSettings() déduplique la fusion des paramètres, applyThinkingDialectFallback réutilise buildRequestBody (corrigeant une fuite latente de unsupportedFields pre-strip).
-- 📊 **Bruit de diagnostic console réduit.** [OpenAICompat Debug] corps 400 rétrogradé de console.error à console.debug ; [DEBUG-400] re- fetch limité aux erreurs de classe 400 (se déclenchait sur les erreurs de quota 429).
+- **🧠 Contrôle de réflexion par fournisseur.** Par défaut, aucun champ de contrôle envoyé. "Désactiver la réflexion" active un fallback à 3 niveaux.
+- **💭 UI de réflexion pliable.** Contenu de raisonnement dans un panneau pliable. 8 langues supportées.
+- **🔧 Correction baseUrl Anthropic (#141, #134).** Normalisation `/v1` empêche les erreurs 404.
+- **🔧 gpt-5 max_completion_tokens (#143).** Paramètres de token corrects pour GPT-5.
+- **💬 Query Wiki UX.** Respecte `wikiFolder`, défilement automatique, bulles utilisateur à droite.
+- **🛡️ 10 corrections de revue de code.** Retry de troncature préserve le raisonnement, cohérence `enableThinking`, etc.
+- **🔄 Migration automatique.** `disableThinking` réinitialisé automatiquement à `false`.
 
-Voir CHANGELOG.md pour les détails complets.
+Nous recommandons vivement la mise à jour vers cette version.
+
+Détails dans [CHANGELOG.md](../CHANGELOG.md).
 
 ## ✨ Fonctionnalités
 

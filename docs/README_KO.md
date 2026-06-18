@@ -25,7 +25,7 @@
   - [🔑 LLM Provider 설정](#-llm-provider-설정)
   - [🎮 사용법](#-사용법)
   - [⚠️ 이전 버전에서 업그레이드하시나요?](#️-이전-버전에서-업그레이드하시나요)
-- [⚡ v1.19.1 업데이트 하이라이트](#-v1191-업데이트-하이라이트)
+- [⚡ v1.20.0 업데이트 하이라이트](#-v1200-업데이트-하이라이트)
 - [✨ 주요 기능](#-주요-기능)
   - [📊 지식 품질](#-지식-품질)
   - [🛠️ 유지 관리](#️-유지-관리)
@@ -60,17 +60,21 @@
 
 ---
 
-## ⚡ v1.19.1 업데이트 하이라이트
+## ⚡ v1.20.0 업데이트 하이라이트
 
-v1.19.1는 인제스트 시 Gemini HTTP 400 오류(Issue #137)를 3단계 사고 제어 방언 폴백 체인을 통해 해결하는 **PATCH 핫픽스**입니다. OpenAI 호환 클라이언트는 이제 baseUrl별로 사고를 비활성화하는 올바른 필드 이름을 자동으로 발견하고(thinking.type='disabled' → reasoning_effort='none' → none), 결과를 캐시하여 이후 요청이 프로브를 건너뜁니다. 설정 탭을 닫아도 새로 캐시된 프로브 결과가 지워지지 않습니다. 일반 필드 제거 재시도(온도, 반복 패널티 등) 및 스트림 경로 필드 제거 수정이 릴리스를 마무리합니다. Gemini 사용자는 Test Connection 후 완전히 작동하는 인제스트를 사용할 수 있습니다.
+v1.20.0은 LLM 사고/추론 처리 방식을 재설계한 **마이너 릴리스**입니다. 플러그인은 기본값으로 프로바이더 고유의 사고 제어 필드를 전송하지 않으며, 프로바이더가 자체 동작을 결정합니다. 사고 콘텐츠가 나타나면 ChatGPT/Claude.ai 스타일의 접을 수 있는 패널로 표시됩니다.
 
-- 🤖 **Gemini HTTP 400 수정 (Issue #137).** 새로운 3단계 사고 제어 방언 폴백 체인(anthropic → openai → none)이 Test Connection 시 올바른 필드 이름을 프로브하고 캐시합니다. 고급 설정이 Test Connection 위로 이동하여 워크플로가 개선되었습니다.
-- 🛡️ **일반 400 필드 제거 재시도.** unsupportedFields 세트가 오류 본문에서 거부된 필드 이름을 추출하고, 이후 요청에서 사전 제거합니다. createMessageStream에서도 작동합니다(이전에는 데드 코드였습니다).
-- 🔊 **폴백 알림이 이제 현지화되었습니다.** queueFallbackNotice()가 사용자의 언어 설정을 존중하여 3개의 i18n 키(fallbackThinkingDialect, fallbackThinkingNone, fallbackParamStripped)가 이제 실제로 7개의 비영어 로케일 모두에서 표시됩니다.
-- 🧹 **여러 코드 단순화.** IS_400 정규식 최적화, retryBodyWithStrippedFields 헬퍼 추출, commitTempSettings()가 설정 병합 중복 제거, applyThinkingDialectFallback이 buildRequestBody를 재사용(잠재적 unsupportedFields 사전 제거 누출 수정).
-- 📊 **콘솔 진단 노이즈 감소.** [OpenAICompat Debug] 400 본문이 console.error에서 console.debug로 낮춰짐. [DEBUG-400] 재요청이 400클래스 오류로 제한됨(이전에는 429 할당량 오류에서도 발생).
+- **🧠 프로바이더 우선 사고 제어.** 기본 모드는 사고 제어 필드를 전송하지 않습니다. 사용자 지정 고급 설정에서 "사고 비활성화"를 활성화하면 3단계 방언 폴백이 작동합니다.
+- **💭 접을 수 있는 사고 UI.** 사고 지원 모델의 추론 콘텐츠를 접을 수 있는 패널로 표시. 8개 언어 지원.
+- **🔧 Anthropic baseUrl 수정 (#141, #134).** `/v1` 정규화로 404 오류 방지.
+- **🔧 gpt-5 max_completion_tokens (#143).** GPT-5 시리즈 올바른 토큰 파라미터 사용.
+- **💬 Query Wiki UX.** 사용자 `wikiFolder` 존중, 자동 스크롤, 사용자 메시지 우측 정렬.
+- **🛡️ 10개 코드 리뷰 수정.** 잘라내기 재시도 추론 보존, `enableThinking` 일관성 등.
+- **🔄 자동 마이그레이션.** 이전 사용자의 `disableThinking`이 자동으로 `false`로 재설정.
 
-자세한 내용은 CHANGELOG.md를 참조하세요.
+모든 사용자에게 이 버전으로의 업그레이드를 강력히 권장합니다.
+
+자세한 내용은 [CHANGELOG.md](../CHANGELOG.md)를 참조하세요.
 
 ## ✨ 주요 기능
 

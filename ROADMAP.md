@@ -2,11 +2,21 @@
 
 > Feature planning and improvement proposals
 
-**Version:** 1.19.1 | **Updated:** 2026-06-17
+**Version:** 1.20.0 | **Updated:** 2026-06-18
 
 ---
 
 ## Current Status
+
+### Implemented (v1.20.0) — Provider-First Thinking Control & Reasoning UI (2026-06-18)
+
+- ✅ **Provider-first thinking control.** Default `disableThinking: false` — plugin sends no thinking-control field. Provider decides reasoning behavior. 3-tier dialect fallback when user explicitly enables "Disable thinking".
+- ✅ **Collapsible thinking UI.** DeepSeek `reasoning_content` extraction → `<think>` tags → collapsible `<details>` panel in Query Wiki. Fully localized in 8 languages.
+- ✅ **Anthropic baseUrl normalization (#141, #134).** Prevents `/v1/v1` double-path.
+- ✅ **gpt-5 max_completion_tokens (#143).** Correct token parameter for GPT-5 series + truncation retry fix.
+- ✅ **Query Wiki UX.** wikiFolder respect, auto-scroll, user message right-align.
+- ✅ **10 code-review fixes.** Reasoning preservation in retry, enableThinking consistency, activeDocument guard, PROTECTED_FIELDS whitelist, wrapReasoningContent escaping, case-insensitive guard, gpt-5 prefix tightening.
+- ✅ **v1.20.0 migration.** Old users automatically get `disableThinking=false` and `advancedSettingsMode='default'`.
 
 ### Implemented (v1.19.1) — Gemini HTTP 400 Hotfix (Issue #137, 2026-06-17)
 

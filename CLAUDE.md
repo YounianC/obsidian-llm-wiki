@@ -1,10 +1,20 @@
 # LLM Wiki Plugin Project Development Standards
 
-**Last Updated:** 2026-06-17
+**Last Updated:** 2026-06-18
 
 ---
 
-## Current Phase: v1.20.0 — Post-Refactor Cleanup & Schema Coherence (Planned)
+## Current Phase: v1.20.1 — Post-v1.20.0 Feedback (Planned)
+
+### Completed (v1.20.0) — Released 2026-06-18
+- ✅ **Provider-first thinking control.** Default `disableThinking: false` — no thinking-control field sent. 3-tier dialect fallback when user explicitly enables "Disable thinking". Collapsible thinking UI in Query Wiki.
+- ✅ **Anthropic baseUrl normalization (#141, #134).** Prevents `/v1/v1` double-path.
+- ✅ **gpt-5 max_completion_tokens (#143).** Correct token parameter + truncation retry fix.
+- ✅ **DeepSeek reasoning_content extraction.** SSE parser + non-stream + collapsible UI.
+- ✅ **Query Wiki UX.** wikiFolder respect, auto-scroll, user message right-align.
+- ✅ **10 code-review fixes.** Reasoning preservation, enableThinking consistency, activeDocument guard, PROTECTED_FIELDS, wrapReasoningContent escaping.
+- ✅ **v1.20.0 migration.** Old users auto-migrated to new defaults.
+- ✅ **Tests: 771 passing.** 51 test files, 0 regressions.
 
 ### Completed (v1.19.1) — Hotfix 2026-06-17
 - ✅ **Issue #137: Gemini HTTP 400.** 3-tier thinking-control dialect fallback chain (anthropic → openai → none). Settings tab no longer wipes `thinkingControlCache` on close. Generic field-strip retry for temperature/repetition_penalty. Stream path field-strip fix (was dead code). Fallback notices now localized (was hard-coded EN). Console noise reduced.

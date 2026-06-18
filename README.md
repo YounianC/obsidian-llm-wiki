@@ -25,7 +25,7 @@
   - [🔑 Configure an LLM Provider](#-configure-an-llm-provider)
   - [🎮 Usage](#-usage)
   - [⚠️ Upgrading from an Older Version?](#️-upgrading-from-an-older-version)
-- [⚡ What's New in v1.19.1](#-whats-new-in-v1191)
+- [⚡ What's New in v1.20.0](#-whats-new-in-v1200)
 
   - [📊 Knowledge Quality](#-knowledge-quality)
   - [🛠️ Maintenance](#️-maintenance)
@@ -186,15 +186,19 @@ Settings → **LLM Configuration**:
 
 ---
 
-## ⚡ What's New in v1.19.1
+## ⚡ What's New in v1.20.0
 
-v1.19.1 is a **PATCH hotfix** that resolves **Gemini HTTP 400 errors on ingestion (Issue #137)** via a 3-tier thinking-control dialect fallback chain. The OpenAI-compatible client now auto-discovers the correct field name for disabling thinking per baseUrl (`thinking.type='disabled'` → `reasoning_effort='none'` → none) and caches the result so subsequent requests skip the probe. The settings tab no longer wipes the freshly-cached probe result on close. Generic field-strip retry (temperature, repetition_penalty, etc.) and stream-path field-strip fixes round out the release. Gemini users should see fully working ingestion after Test Connection.
+v1.20.0 is a **MINOR release** that rethinks how the plugin handles LLM thinking/reasoning. The plugin no longer sends provider-specific thinking-control fields by default — the provider decides its own behavior. When thinking content does appear (e.g. DeepSeek reasoning), it's displayed in a collapsible panel above the answer, ChatGPT/Claude.ai style. Multiple provider compatibility fixes and UX improvements round out the release.
 
-- **🤖 Gemini HTTP 400 fix (Issue #137).** New 3-tier thinking-control dialect fallback chain (anthropic → openai → none) probes the correct field name at Test Connection time and caches it. Settings panel Advanced Settings moved above Test Connection for better workflow.
-- **🛡️ Generic 400 field-strip retry.** `unsupportedFields` Set extracts rejected field names from error bodies; pre-stripped on subsequent requests. Also works on `createMessageStream` (was dead code).
-- **🔊 Fallback notices now localized.** `queueFallbackNotice()` respects the user's language setting — the 3 i18n keys (`fallbackThinkingDialect`, `fallbackThinkingNone`, `fallbackParamStripped`) are now actually visible in all 7 non-English locales.
-- **🧹 Multiple code simplifications.** `IS_400` regex hoisted, `retryBodyWithStrippedFields` helper extracted, `commitTempSettings()` deduplicated settings merge, `applyThinkingDialectFallback` reuses `buildRequestBody` (fixing a latent unsupportedFields pre-strip leak).
-- **📊 Console diagnostic noise reduced.** `[OpenAICompat Debug] 400 body` demoted from `console.error` to `console.debug`; `[DEBUG-400]` re-fetch limited to 400-class errors (was firing on 429 quota errors).
+- **🧠 Provider-first thinking control.** Default mode sends NO thinking-control field — the provider decides whether to reason. Users who explicitly want to suppress thinking can enable "Disable thinking" in Custom Advanced Settings, which triggers a 3-tier dialect fallback (thinking.type → reasoning_effort → none).
+- **💭 Collapsible thinking UI.** When a thinking-capable model (DeepSeek, etc.) returns reasoning content, it appears in a collapsed `💭 Thinking process` panel above the answer. Users can expand to inspect the reasoning steps. Fully localized in 8 languages.
+- **🔧 Anthropic baseUrl fix (Issues #141, #134).** `AnthropicClient` now normalizes `/v1` in the base URL, preventing 404 errors on Test Connection. Custom Anthropic-compatible endpoints work correctly.
+- **🔧 gpt-5 max_completion_tokens (Issue #143).** GPT-5 series models now use `max_completion_tokens` instead of `max_tokens`. Truncation retry also preserves the correct token key.
+- **💬 Query Wiki UX.** Respects user's configured `wikiFolder` (not hardcoded `wiki/`). Chat auto-scrolls to bottom on open. User message bubbles are right-aligned.
+- **🛡️ 10 code-review fixes.** Truncation retry preserves reasoning content, `enableThinking` spread consistency across all call sites, `activeDocument` null guard, `unsupportedFields` whitelist for core fields, `wrapReasoningContent` escaping, and more.
+- **🔄 Automatic migration.** Old users upgrading from v1.19.x get `disableThinking` automatically reset to `false` — no manual reconfiguration needed. Custom Advanced Settings also reset to Default mode.
+
+We strongly recommend all users upgrade to this version for better provider compatibility and the new thinking UI.
 
 See [CHANGELOG.md](CHANGELOG.md) for full details.
 

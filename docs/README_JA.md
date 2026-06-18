@@ -25,7 +25,7 @@
   - [🔑 LLM Providerを設定](#-llm-providerを設定)
   - [🎮 使用方法](#-使用方法)
   - [⚠️ 旧バージョンからアップグレードする場合](#️-旧バージョンからアップグレードする場合)
-- [⚡ v1.19.1 更新のポイント](#-v1191-更新のポイント)
+- [⚡ What's New in v1.20.0](#-whats-new-in-v1200)
 - [✨ 特徴](#-特徴)
   - [📊 Knowledge Quality](#-knowledge-quality)
   - [🛠️ Maintenance](#️-maintenance)
@@ -60,17 +60,21 @@
 
 ---
 
-## ⚡ v1.19.1 更新のポイント
+## ⚡ What's New in v1.20.0
 
-v1.19.1 は、3層の思考制御ダイアレクトフォールバックチェーンにより、インジェスト時の Gemini HTTP 400 エラー（Issue #137）を解決する **PATCH ホットフィックス**です。OpenAI 互換クライアントは、baseUrl ごとに思考を無効化する正しいフィールド名を自動的に発見し（thinking.type='disabled' → reasoning_effort='none' → none）、結果をキャッシュするため、後続のリクエストはプローブをスキップします。設定タブを閉じても、新たにキャッシュされたプローブ結果が消去されなくなりました。一般的なフィールド削除リトライ（温度、繰り返しペナルティなど）とストリームパスのフィールド削除修正がリリースを締めくくります。Gemini ユーザーは Test Connection 後に完全に機能するインジェストを利用できるはずです。
+v1.20.0は、LLMの思考/推論処理方法を再設計した**マイナーリリース**です。プラグインはデフォルトでプロバイダー固有の思考制御フィールドを送信しません——プロバイダーが独自の動作を決定します。思考コンテンツが表示された場合（DeepSeekのreasoningなど）、回答の上にChatGPT/Claude.aiスタイルの折りたたみ可能なパネルで表示されます。
 
-- 🤖 **Gemini HTTP 400 修正（Issue #137）。** 新しい3層思考制御ダイアレクトフォールバックチェーン（anthropic → openai → none）が Test Connection 時に正しいフィールド名をプローブし、キャッシュします。詳細設定が Test Connection の上に移動し、ワークフローが改善されました。
-- 🛡️ **汎用400フィールド削除リトライ。** unsupportedFields セットがエラー本文から拒否されたフィールド名を抽出し、後続リクエストで事前に削除します。createMessageStream でも機能します（以前はデッドコードでした）。
-- 🔊 **フォールバック通知がローカライズされました。** queueFallbackNotice() がユーザーの言語設定を尊重するようになり、3つの i18n キー（fallbackThinkingDialect、fallbackThinkingNone、fallbackParamStripped）が実際に7つの非英語ロケールすべてで表示されるようになりました。
-- 🧹 **複数のコード簡素化。** IS_400 正規表現の最適化、retryBodyWithStrippedFields ヘルパーの抽出、commitTempSettings() による設定マージの重複排除、applyThinkingDialectFallback が buildRequestBody を再利用（潜在的な unsupportedFields 事前削除リークを修正）。
-- 📊 **コンソール診断ノイズの低減。** [OpenAICompat Debug] 400 ボディを console.error から console.debug に格下げ。[DEBUG-400] の再取得を 400 系エラーに制限（以前は 429 クォータエラーでも発動していました）。
+- **🧠 プロバイダー優先の思考制御。** デフォルトモードでは思考制御フィールドを送信しません。カスタム詳細設定で「思考を無効にする」を有効にすると、3層ダイアレクトフォールバックが発動します。
+- **💭 折りたたみ可能な思考UI。** 思考対応モデル（DeepSeekなど）が推論コンテンツを返すと、回答の上の折りたたみパネル `💭 思考プロセス` に表示されます。8言語に対応。
+- **🔧 Anthropic baseUrl修正（Issue #141、#134）。** `AnthropicClient`がベースURLの`/v1`を正規化し、テスト接続時の404エラーを防止。
+- **🔧 gpt-5 max_completion_tokens（Issue #143）。** GPT-5シリーズが`max_tokens`の代わりに`max_completion_tokens`を使用。
+- **💬 Query Wiki UX。** ユーザー設定の`wikiFolder`を尊重。チャット開始時に自動スクロール。ユーザーメッセージの気泡を右寄せ。
+- **🛡️ 10件のコードレビュー修正。** 切り捨てリトライ時の推論内容保持、`enableThinking` spreadの一貫性、`activeDocument` null guard等。
+- **🔄 自動マイグレーション。** v1.19.xからのアップグレード時、`disableThinking`が自動的に`false`にリセット。
 
-詳細は CHANGELOG.md をご覧ください。
+すべてのユーザーにこのバージョンへのアップグレードを強くお勧めします。
+
+詳細は [CHANGELOG.md](../CHANGELOG.md) を参照。
 
 ## ✨ 特徴
 
