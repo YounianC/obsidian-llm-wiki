@@ -13,11 +13,28 @@ import { AnthropicClient } from '../../llm-client';
 
 const mockRequestUrl = vi.mocked(requestUrl);
 
-function makePrefillError(): Error {
-  // Obsidian's requestUrl throws on 4xx — the actual error message is generic,
-  // not the Anthropic-specific "Prefilling assistant messages..." text.
-  // Our fix detects "400 + was using prefill" (no specific message needed).
-  return new Error('Request failed, status 400');
+function makePrefillErrorResponse(): Awaited<ReturnType<typeof requestUrl>> {
+  // With throw:false, requestUrl returns a response object even on 400.
+  // The Anthropic error body contains the specific "Prefilling" message.
+  return {
+    status: 400,
+    text: JSON.stringify({
+      type: 'error',
+      error: {
+        type: 'invalid_request_error',
+        message: 'Prefilling assistant messages is not supported for this model.',
+      },
+    }),
+    json: {
+      type: 'error',
+      error: {
+        type: 'invalid_request_error',
+        message: 'Prefilling assistant messages is not supported for this model.',
+      },
+    },
+    headers: {},
+    arrayBuffer: async () => new ArrayBuffer(0),
+  } as unknown as Awaited<ReturnType<typeof requestUrl>>;
 }
 
 function makeSuccessResponse(text: string): Awaited<ReturnType<typeof requestUrl>> {
@@ -42,7 +59,7 @@ describe('AnthropicClient prefill-not-supported fallback (#141, #147)', () => {
 
   it('retries without prefill when 400 "Prefilling not supported" is returned', async () => {
     mockRequestUrl
-      .mockRejectedValueOnce(makePrefillError())
+      .mockResolvedValueOnce(makePrefillErrorResponse())
       .mockResolvedValueOnce(makeSuccessResponse('{"result": "ok"}'));
 
     const client = new AnthropicClient('test-key', 'https://api.anthropic.com');
@@ -64,7 +81,7 @@ describe('AnthropicClient prefill-not-supported fallback (#141, #147)', () => {
 
   it('preserves response_format hint after prefill fallback', async () => {
     mockRequestUrl
-      .mockRejectedValueOnce(makePrefillError())
+      .mockResolvedValueOnce(makePrefillErrorResponse())
       .mockResolvedValueOnce(makeSuccessResponse('{"ok": true}'));
 
     const client = new AnthropicClient('test-key', 'https://api.anthropic.com');
@@ -82,7 +99,7 @@ describe('AnthropicClient prefill-not-supported fallback (#141, #147)', () => {
 
   it('caches prefill-not-supported to avoid future 400s', async () => {
     mockRequestUrl
-      .mockRejectedValueOnce(makePrefillError())
+      .mockResolvedValueOnce(makePrefillErrorResponse())
       .mockResolvedValueOnce(makeSuccessResponse('{"first": true}'));
 
     const client = new AnthropicClient('test-key', 'https://api.anthropic.com');
