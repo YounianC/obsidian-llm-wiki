@@ -155,6 +155,7 @@ export const KO_TEXTS = {
     errorLLMClientNotInit: 'LLM 클라이언트가 초기화되지 않았습니다. 설정을 저장하세요.',
     errorIngestFailed: '수집 실패: ',
     errorQueryFailed: '질의 실패: ',
+    fileWriteFailed: '파일을 만들거나 업데이트할 수 없습니다: {path}',
 
     // Success Messages
     ingestSuccess: '수집 완료: {} 페이지 생성, {} 페이지 업데이트',
@@ -349,6 +350,8 @@ export const KO_TEXTS = {
     startupCheckSourcesLabel: 'Sources 정규화',
     startupCheckSourcesClean: '이미 정규화됨',
     startupCheckSourcesCleaned: '{files}개 파일, {entries}개 항목 정리',
+    startupCheckIncompleteClean: '미완성 페이지: 없음',
+    startupCheckIncompleteArchived: '미완성 페이지: {count}개 아카이브 (.trash에서 복원 가능)',
     startupCheckDisableHint: '비활성화하려면 설정 → 자동 유지보수 → 시작 시 빠른 수정 실행',
     lintWikiStart: '위키 린트 시작 중...',
     lintWikiComplete: '위키 린트 완료',

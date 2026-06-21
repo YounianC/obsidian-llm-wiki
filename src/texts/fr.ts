@@ -154,6 +154,7 @@ export const FR_TEXTS = {
     errorLLMClientNotInit: 'Client LLM non initialisé. Veuillez enregistrer les paramètres.',
     errorIngestFailed: "Échec de l'import : ",
     errorQueryFailed: 'Échec de la requête : ',
+    fileWriteFailed: "Impossible de créer ou de mettre à jour le fichier : {path}",
 
     // Success Messages
     ingestSuccess: 'Import réussi : {} pages créées, {} pages mises à jour',
@@ -348,6 +349,8 @@ export const FR_TEXTS = {
     startupCheckSourcesLabel: 'Sources normalisés',
     startupCheckSourcesClean: 'déjà propre',
     startupCheckSourcesCleaned: '{files} fichier(s), {entries} entrée(s) nettoyée(s)',
+    startupCheckIncompleteClean: 'pages incomplètes : aucune',
+    startupCheckIncompleteArchived: 'pages incomplètes : {count} archivée(s) (récupérable depuis .trash)',
     startupCheckDisableHint: 'Pour désactiver : Paramètres → Maintenance automatique → Exécuter les corrections rapides au démarrage',
     lintWikiStart: 'Démarrage de la vérification du wiki...',
     lintWikiComplete: 'Vérification du wiki terminée',

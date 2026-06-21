@@ -166,6 +166,7 @@ export const EN_TEXTS = {
     errorLLMClientNotInit: 'LLM Client not initialized. Please save settings.',
     errorIngestFailed: 'Ingest failed: ',
     errorQueryFailed: 'Query failed: ',
+    fileWriteFailed: 'Could not create or update file: {path}',
 
     // Success Messages
     ingestSuccess: 'Ingest successful: {} pages created, {} pages updated',
@@ -352,6 +353,8 @@ export const EN_TEXTS = {
     startupCheckSourcesLabel: 'Sources normalized',
     startupCheckSourcesClean: 'already clean',
     startupCheckSourcesCleaned: 'cleaned {files} file(s), {entries} entry(ies)',
+    startupCheckIncompleteClean: 'incomplete pages: none',
+    startupCheckIncompleteArchived: 'incomplete pages: archived {count} (recoverable from .trash)',
     startupCheckDisableHint: 'To disable, go to Settings → Auto Maintenance → Run quick fixes on startup',
     autoIngestRunning: 'Auto-ingesting {count} changed file(s)...',
     autoIngestComplete: 'Auto-ingest complete: {success} succeeded, {fail} failed',

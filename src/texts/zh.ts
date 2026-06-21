@@ -155,6 +155,7 @@ export const ZH_TEXTS = {
     errorLLMClientNotInit: 'LLM Client 未初始化。请保存设置。',
     errorIngestFailed: '摄入失败：',
     errorQueryFailed: '查询失败：',
+    fileWriteFailed: '无法创建或更新文件：{path}',
 
     // 成功消息
     ingestSuccess: '摄入成功：创建{}页，更新{}页',
@@ -349,6 +350,8 @@ export const ZH_TEXTS = {
     startupCheckSourcesLabel: 'Sources 归一化',
     startupCheckSourcesClean: '已规范',
     startupCheckSourcesCleaned: '清理了 {files} 个文件，{entries} 处条目',
+    startupCheckIncompleteClean: '未完成页面：无',
+    startupCheckIncompleteArchived: '未完成页面：归档了 {count} 个（可从 .trash 恢复）',
     startupCheckDisableHint: '如需关闭，前往 设置 → 自动维护 → 启动时执行快速修复',
     lintWikiStart: '开始维护 wiki...',
     lintWikiComplete: '维护完成',

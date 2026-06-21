@@ -154,6 +154,7 @@ export const PT_TEXTS = {
     errorLLMClientNotInit: 'LLM Client não inicializado. Salve as configurações.',
     errorIngestFailed: 'Falha na ingestão: ',
     errorQueryFailed: 'Falha na consulta: ',
+    fileWriteFailed: 'Não foi possível criar ou atualizar o ficheiro: {path}',
 
     // Success Messages
     ingestSuccess: 'Ingestão bem-sucedida: {} páginas criadas, {} páginas atualizadas',
@@ -348,6 +349,8 @@ export const PT_TEXTS = {
     startupCheckSourcesLabel: 'Sources normalizados',
     startupCheckSourcesClean: 'já limpo',
     startupCheckSourcesCleaned: '{files} arquivo(s), {entries} entrada(s) limpa(s)',
+    startupCheckIncompleteClean: 'páginas incompletas: nenhuma',
+    startupCheckIncompleteArchived: 'páginas incompletas: {count} arquivada(s) (recuperável de .trash)',
     startupCheckDisableHint: 'Para desativar: Configurações → Manutenção automática → Executar correções rápidas na inicialização',
     lintWikiStart: 'Iniciando verificação da Wiki...',
     lintWikiComplete: 'Verificação da Wiki concluída',

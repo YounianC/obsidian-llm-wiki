@@ -18,9 +18,8 @@ import { TEXTS } from '../texts';
 import { getText } from '../core/i18n';
 import { slugify } from '../core/slug';
 import { resolveSourceSlug } from '../core/source-slug';
-import { parseFrontmatter, extractBody, upsertFrontmatterField } from '../core/frontmatter';
-import { checkContentRequirements, hashBody } from '../core/source-requirements';
-import type { SourceRejection } from '../core/source-requirements';
+import { parseFrontmatter } from '../core/frontmatter';
+import { setGenerationComplete } from '../core/incomplete-page-cleaner';
 import { detectRateLimitFailures, formatRateLimitNotice } from '../core/rate-limit';
 import { extractSourceTags } from '../core/arrays';
 import { cleanMarkdownResponse } from '../core/markdown';
@@ -44,6 +43,24 @@ import { SourceAnalyzer } from './source-analyzer';
 import { TOKENS_PAGE_GENERATION, NOTICE_ABORT, NOTICE_RATE_LIMIT, NOTICE_NORMAL, PAGES_CACHE_TTL_MS, COMPATIBLE_SOURCE_EXTENSIONS } from '../constants';
 import { PageFactory } from './page-factory';
 import { ConversationIngestor, ConversationOrchestration, formatConversation, ConversationHistory } from './conversation-ingest';
+
+/**
+ * Issue #173 Symptom B: drop exact-string duplicates from a page-path list
+ * while preserving first-occurrence order. Used to dedup `analysis.created_pages`
+ * before assembling the IngestReport so a duplicate surface-form (e.g. two
+ * "intelligent-xtraction-and-processing" entries from one batch) does not
+ * inflate the report count or the "Created" listing.
+ */
+export function dedupPages(paths: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const p of paths) {
+    if (seen.has(p)) continue;
+    seen.add(p);
+    out.push(p);
+  }
+  return out;
+}
 
 export class WikiEngine {
   private app: App;
@@ -156,6 +173,30 @@ export class WikiEngine {
   private notifyProgress(msg: string): void {
     this.onProgress?.(msg);
     this.updateStatusBar(msg);
+  }
+
+  /**
+   * Issue #170: stamp `generation_complete: true` on a wiki page after a
+   * successful write. The pre-ingest requirement that pages carry this flag
+   * is implicit — if it's missing, the page is treated as legacy (preserved).
+   * This is best-effort: if re-read fails we just leave the file as-is; the
+   * startup self-scan will catch any incomplete pages.
+   */
+  private markPageComplete(path: string): void {
+    void (async () => {
+      try {
+        const current = await this.tryReadFile(path);
+        if (!current) return;
+        const flipped = setGenerationComplete(current, true);
+        if (flipped === current) return;
+        const file = this.app.vault.getAbstractFileByPath(path);
+        if (file instanceof TFile) {
+          await this.app.vault.process(file, () => flipped);
+        }
+      } catch (e) {
+        console.warn(`[wiki-engine] markPageComplete failed for ${path}:`, e);
+      }
+    })();
   }
 
   setDoneCallback(cb: ((report: IngestReport) => void) | null): void {
@@ -683,15 +724,18 @@ export class WikiEngine {
       const indexTime = Date.now() - indexStart;
       console.debug(`[Time] Index Index & log update: ${indexTime}ms`);
 
-      const created = analysis.created_pages.length;
       const updated = analysis.updated_pages.length;
-      const entitiesCreated = analysis.created_pages.filter(p => p.includes('/entities/')).length;
-      const conceptsCreated = analysis.created_pages.filter(p => p.includes('/concepts/')).length;
+      // Issue #173 Symptom B: dedup before counting/listing — a duplicated
+      // surface-form (e.g. the LLM emitting the same path twice) must not
+      // inflate the report count or the "Created" listing.
+      const dedupedCreatedPages = dedupPages(analysis.created_pages);
+      const entitiesCreated = dedupedCreatedPages.filter(p => p.includes('/entities/')).length;
+      const conceptsCreated = dedupedCreatedPages.filter(p => p.includes('/concepts/')).length;
       const modeLabel = (this.settings.pageGenerationConcurrency ?? 1) > 1 ? `parallel(concurrency:${this.settings.pageGenerationConcurrency})` : 'serial';
       // totalTime was computed above; do not redeclare here.
 
       console.debug('=== Ingestion complete ===');
-      console.debug(`Ingestion complete [${modeLabel}]: Created ${created} pages (${entitiesCreated} entities + ${conceptsCreated} concepts), Updated ${updated} pages, ${collisions.length} cross-type collisions`);
+      console.debug(`Ingestion complete [${modeLabel}]: Created ${dedupedCreatedPages.length} pages (${entitiesCreated} entities + ${conceptsCreated} concepts), Updated ${updated} pages, ${collisions.length} cross-type collisions`);
       console.debug(`[Total time] ${totalTime}ms (${Math.round(totalTime/1000)}s)`);
       console.debug('[Phase breakdown]:');
       console.debug(`  - Source analysis: ${analysisTime}ms`);
@@ -709,7 +753,7 @@ export class WikiEngine {
 
       this.onDone?.({
         sourceFile: file.path,
-        createdPages: analysis.created_pages,
+        createdPages: dedupedCreatedPages,
         updatedPages: analysis.updated_pages,
         entitiesCreated,
         conceptsCreated,
@@ -721,7 +765,7 @@ export class WikiEngine {
       });
 
     } catch (error) {
-      const createdPages = analysis?.created_pages || [];
+      const createdPages = dedupPages(analysis?.created_pages || []);
 
       if (error instanceof DOMException && error.name === 'AbortError') {
         this.wasCancelled = true;
@@ -917,6 +961,7 @@ export class WikiEngine {
           console.debug(`Attempt ${attempt + 1}: File exists, updating:`, path);
           await this.app.vault.process(file, () => content);
           console.debug('Update success:', path);
+          this.markPageComplete(path);
           this.onFileWrite?.(path);
           this.invalidatePageCaches();
           return;
@@ -924,6 +969,7 @@ export class WikiEngine {
           console.debug(`Attempt ${attempt + 1}: File not found, creating:`, path);
           await this.app.vault.create(path, content);
           console.debug('Create success:', path);
+          this.markPageComplete(path);
           this.onFileWrite?.(path);
           this.invalidatePageCaches();
           return;
@@ -976,7 +1022,10 @@ export class WikiEngine {
       this.onFileWrite?.(path);
       this.invalidatePageCaches();
     } else {
-      throw new Error(`无法创建或更新文件: ${path}`);
+      // Issue #172: localize via getText, never hardcode CJK in source.
+      throw new Error(
+        getText(this.settings.language, 'fileWriteFailed').replace('{path}', path)
+      );
     }
   }
 
@@ -1210,7 +1259,7 @@ export class WikiEngine {
       ? this.formatIngestMetricsSuffix(metrics)
       : '';
     let entry = `\n\n## [${date} ${time}] ${operation} | ${analysis.source_title}${h2Suffix}\n\n`;
-    entry += `**${labels.createdPages}**：${analysis.created_pages.map(p => `[[${p.replace(this.settings.wikiFolder + '/', '')}]]`).join(', ')}\n\n`;
+    entry += `**${labels.createdPages}**：${dedupPages(analysis.created_pages).map(p => `[[${p.replace(this.settings.wikiFolder + '/', '')}]]`).join(', ')}\n\n`;
     entry += `**${labels.updatedPages}**：${analysis.updated_pages.map(p => `[[${p}]]`).join(', ')}\n\n`;
 
     if (analysis.contradictions.length > 0) {
