@@ -9,6 +9,8 @@ import {
   SourceAnalysis,
   ContradictionInfo,
   IngestReport,
+  IngestOptions,
+  BatchRequirementsContext,
   EngineContext,
 } from '../types';
 import { PROMPTS } from '../prompts';
@@ -38,7 +40,7 @@ import { ContradictionManager } from './contradictions';
 import { fixPollutedSources } from '../core/sources-normalizer';
 import { UNIVERSAL_LINK_CONSTRAINTS } from './prompts/constraints';
 import { SourceAnalyzer } from './source-analyzer';
-import { TOKENS_PAGE_GENERATION, NOTICE_ABORT, NOTICE_RATE_LIMIT, NOTICE_NORMAL, PAGES_CACHE_TTL_MS } from '../constants';
+import { TOKENS_PAGE_GENERATION, NOTICE_ABORT, NOTICE_RATE_LIMIT, NOTICE_NORMAL, PAGES_CACHE_TTL_MS, COMPATIBLE_SOURCE_EXTENSIONS } from '../constants';
 import { PageFactory } from './page-factory';
 import { ConversationIngestor, ConversationOrchestration, formatConversation, ConversationHistory } from './conversation-ingest';
 
@@ -69,6 +71,12 @@ export class WikiEngine {
   private onFileWrite: ((path: string) => void) | null;
   private onProgress: ((message: string) => void) | null;
   private onDone: ((report: IngestReport) => void) | null;
+  /**
+   * #164: invoked when an interactive ingest hits a duplicate. Returns true to
+   * re-ingest anyway, false to skip. Wired by main.ts to a confirmation modal;
+   * left null for non-interactive (folder/watcher) ingest, which auto-skips.
+   */
+  onConfirmReingest: ((file: TFile, rejection: SourceRejection) => Promise<boolean>) | null = null;
 
   private contradictionManager: ContradictionManager;
   private sourceAnalyzer: SourceAnalyzer;
@@ -85,6 +93,10 @@ export class WikiEngine {
   private pagesCache: Array<{path: string; title: string; wikiLink: string; aliases?: string[]}> | null = null;
   private pagesCacheTime = 0;
   private readonly PAGES_CACHE_TTL_MS = PAGES_CACHE_TTL_MS;
+  // #164: ingested content-hash snapshot, cached on the same TTL/lifecycle as
+  // pagesCache so back-to-back single-file ingests don't re-walk the vault.
+  private ingestedHashesCache: Set<string> | null = null;
+  private ingestedHashesCacheTime = 0;
   private ctx: EngineContext;
 
   constructor(
@@ -274,9 +286,123 @@ export class WikiEngine {
     this.ctx.settings = settings;
   }
 
-  async ingestSource(file: TFile) {
+  /**
+   * Build a shared dedup context for a folder/batch ingest run (#164). The
+   * `ingested` snapshot reads content hashes from source-page frontmatter via the
+   * (cached) metadata cache — no disk reads. Pass the same context to every
+   * ingestSource call in the batch so within-batch duplicates are caught too.
+   */
+  createBatchContext(): BatchRequirementsContext {
+    return { seen: new Set<string>(), ingested: this.buildIngestedHashes() };
+  }
+
+  /**
+   * Content hashes already present in the wiki, read from source-page
+   * frontmatter. Cached on the same TTL as pagesCache and invalidated on every
+   * file write (via invalidatePageCaches), so a fresh ingest is always seen on
+   * the next call while back-to-back rejected/skip checks reuse one snapshot.
+   * The returned set is read-only to callers (only `seen` is mutated per batch).
+   */
+  private buildIngestedHashes(): Set<string> {
+    const now = Date.now();
+    if (this.ingestedHashesCache && (now - this.ingestedHashesCacheTime) < this.PAGES_CACHE_TTL_MS) {
+      return this.ingestedHashesCache;
+    }
+    const hashes = new Set<string>();
+    const prefix = normalizePath(`${this.settings.wikiFolder}/sources`) + '/';
+    for (const f of this.app.vault.getMarkdownFiles()) {
+      if (!f.path.startsWith(prefix)) continue;
+      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter as { contentHash?: unknown } | undefined;
+      if (typeof fm?.contentHash === 'string' && fm.contentHash) hashes.add(fm.contentHash);
+    }
+    this.ingestedHashesCache = hashes;
+    this.ingestedHashesCacheTime = Date.now();
+    return hashes;
+  }
+
+  /** Invalidate both write-dependent caches. Called after every vault write/delete. */
+  private invalidatePageCaches(): void {
+    this.pagesCache = null;
+    this.ingestedHashesCache = null;
+  }
+
+  /**
+   * Pre-ingest requirements gate (#164). Hard rejects: empty/whitespace/
+   * frontmatter-only body, and incompatible file type. Uniqueness: content-hash
+   * duplicates (within the batch and already in the wiki). Returns the first
+   * failing reason, or null to proceed. On proceed, records the hash in the batch
+   * so a later identical file in the same run is caught.
+   */
+  async checkRequirements(file: TFile, content: string, batch?: BatchRequirementsContext): Promise<SourceRejection | null> {
+    const contentRejection = checkContentRequirements({
+      extension: file.extension,
+      content,
+      allowedExtensions: COMPATIBLE_SOURCE_EXTENSIONS,
+    });
+    if (contentRejection) return contentRejection;
+
+    const hash = hashBody(extractBody(content));
+    if (batch?.seen.has(hash)) return { reason: 'duplicate', detail: 'duplicate of another file in this batch' };
+    const ingested = batch?.ingested ?? this.buildIngestedHashes();
+    if (ingested.has(hash)) return { reason: 'duplicate', detail: 'content already ingested' };
+
+    batch?.seen.add(hash);
+    return null;
+  }
+
+  /** Map a rejection reason to its localized Notice key. */
+  private rejectionNoticeKey(reason: SourceRejection['reason']): 'sourceRejectedEmpty' | 'sourceRejectedType' | 'sourceRejectedDuplicate' {
+    if (reason === 'incompatible-type') return 'sourceRejectedType';
+    if (reason === 'duplicate') return 'sourceRejectedDuplicate';
+    return 'sourceRejectedEmpty';
+  }
+
+  /** Log + (interactive only) notify + report a gate skip without creating any pages. */
+  private reportSkip(file: TFile, rejection: SourceRejection, opts?: IngestOptions): void {
+    console.warn(`[Ingest skipped] ${file.path}: ${rejection.reason}${rejection.detail ? ` — ${rejection.detail}` : ''}`);
+    // Interactive (single-file) ingest shows a Notice; folder/watcher stay quiet
+    // (the batch summary / console covers them) to avoid Notice spam.
+    if (opts?.interactive) {
+      new Notice(
+        getText(this.settings.language, this.rejectionNoticeKey(rejection.reason)).replace('{filename}', file.basename),
+        NOTICE_NORMAL
+      );
+    }
+    this.onDone?.({
+      sourceFile: file.path,
+      createdPages: [],
+      updatedPages: [],
+      entitiesCreated: 0,
+      conceptsCreated: 0,
+      failedItems: [],
+      collisions: [],
+      contradictionsFound: 0,
+      success: true,
+      skipped: true,
+      rejectedFiles: [{ path: file.path, reason: rejection.reason, detail: rejection.detail }],
+      elapsedSeconds: 0,
+    });
+  }
+
+  async ingestSource(file: TFile, opts?: IngestOptions) {
     console.debug('=== Ingestion started ===');
     console.debug('Source file:', file.path);
+
+    // #164 pre-ingest requirements gate — runs BEFORE any cancellation/UI setup so
+    // a rejected file returns cleanly with nothing to tear down. Empty/type are
+    // hard skips; a duplicate auto-skips, except interactive ingest prompts first.
+    const fileContent = await this.app.vault.read(file);
+    const rejection = opts?.forceReingest ? null : await this.checkRequirements(file, fileContent, opts?.batchCtx);
+    if (rejection) {
+      const confirmed = rejection.reason === 'duplicate' && opts?.interactive && this.onConfirmReingest
+        ? await this.onConfirmReingest(file, rejection)
+        : false;
+      if (!confirmed) {
+        this.reportSkip(file, rejection, opts);
+        return;
+      }
+    }
+
     const totalStartTime = Date.now();
 
     // Setup cancellation support
@@ -284,11 +410,9 @@ export class WikiEngine {
     this.abortController = new AbortController();
     this.onIngestionStart?.();
 
-    // Long-source warning: read file early to estimate processing time.
-    // Large files trigger iterative batch extraction (multiple LLM passes),
-    // which takes significantly longer than single-pass small files.
+    // Long-source warning: large files trigger iterative batch extraction
+    // (multiple LLM passes), which takes significantly longer than small files.
     const LONG_SOURCE_LINE_THRESHOLD = 1000;
-    const fileContent = await this.app.vault.read(file);
     const lineCount = fileContent.split('\n').length;
     if (lineCount > LONG_SOURCE_LINE_THRESHOLD) {
       const sizeKB = Math.round(fileContent.length / 1024);
@@ -768,7 +892,10 @@ export class WikiEngine {
     });
 
     const cleanedContent = cleanMarkdownResponse(pageContent);
-    await this.createOrUpdateFile(path, cleanedContent);
+    // #164: stamp a content fingerprint so future ingests can detect duplicates.
+    // Injected programmatically — the LLM can't be trusted to emit it.
+    const stampedContent = upsertFrontmatterField(cleanedContent, 'contentHash', hashBody(extractBody(content)));
+    await this.createOrUpdateFile(path, stampedContent);
     return path;
   }
 
@@ -836,7 +963,7 @@ export class WikiEngine {
           console.debug('Update success:', path);
           this.markPageComplete(path);
           this.onFileWrite?.(path);
-          this.pagesCache = null;
+          this.invalidatePageCaches();
           return;
         } else {
           console.debug(`Attempt ${attempt + 1}: File not found, creating:`, path);
@@ -844,7 +971,7 @@ export class WikiEngine {
           console.debug('Create success:', path);
           this.markPageComplete(path);
           this.onFileWrite?.(path);
-          this.pagesCache = null;
+          this.invalidatePageCaches();
           return;
         }
       } catch (error) {
@@ -866,7 +993,7 @@ export class WikiEngine {
             await this.app.vault.process(resolved, () => content);
             console.debug('Update succeeded after file resolution:', path);
             this.onFileWrite?.(path);
-            this.pagesCache = null;
+            this.invalidatePageCaches();
             return;
           }
           console.debug('File exists anomaly, retrying after 100ms:', path);
@@ -893,7 +1020,7 @@ export class WikiEngine {
       await this.app.vault.process(file, () => content);
       console.debug('Final update succeeded:', path);
       this.onFileWrite?.(path);
-      this.pagesCache = null;
+      this.invalidatePageCaches();
     } else {
       // Issue #172: localize via getText, never hardcode CJK in source.
       throw new Error(
@@ -906,7 +1033,7 @@ export class WikiEngine {
     const file = this.app.vault.getAbstractFileByPath(path);
     if (file instanceof TFile) {
       await this.app.fileManager.trashFile(file);
-      this.pagesCache = null;
+      this.invalidatePageCaches();
       console.debug('deleteFile:', path);
     }
   }
