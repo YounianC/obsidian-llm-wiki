@@ -166,6 +166,7 @@ export const EN_TEXTS = {
     errorLLMClientNotInit: 'LLM Client not initialized. Please save settings.',
     errorIngestFailed: 'Ingest failed: ',
     errorQueryFailed: 'Query failed: ',
+    fileWriteFailed: 'Could not create or update file: {path}',
 
     // Success Messages
     ingestSuccess: 'Ingest successful: {} pages created, {} pages updated',

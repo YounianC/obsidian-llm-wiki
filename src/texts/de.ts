@@ -154,6 +154,7 @@ export const DE_TEXTS = {
     errorLLMClientNotInit: 'LLM-Client nicht initialisiert. Bitte Einstellungen speichern.',
     errorIngestFailed: 'Aufnahme fehlgeschlagen: ',
     errorQueryFailed: 'Anfrage fehlgeschlagen: ',
+    fileWriteFailed: 'Datei konnte nicht erstellt oder aktualisiert werden: {path}',
 
     // Success Messages
     ingestSuccess: 'Aufnahme erfolgreich: {} Seiten erstellt, {} Seiten aktualisiert',

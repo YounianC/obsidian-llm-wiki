@@ -155,6 +155,7 @@ export const ZH_TEXTS = {
     errorLLMClientNotInit: 'LLM Client 未初始化。请保存设置。',
     errorIngestFailed: '摄入失败：',
     errorQueryFailed: '查询失败：',
+    fileWriteFailed: '无法创建或更新文件：{path}',
 
     // 成功消息
     ingestSuccess: '摄入成功：创建{}页，更新{}页',

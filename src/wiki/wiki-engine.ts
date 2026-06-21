@@ -41,6 +41,24 @@ import { TOKENS_PAGE_GENERATION, NOTICE_ABORT, NOTICE_RATE_LIMIT, NOTICE_NORMAL,
 import { PageFactory } from './page-factory';
 import { ConversationIngestor, ConversationOrchestration, formatConversation, ConversationHistory } from './conversation-ingest';
 
+/**
+ * Issue #173 Symptom B: drop exact-string duplicates from a page-path list
+ * while preserving first-occurrence order. Used to dedup `analysis.created_pages`
+ * before assembling the IngestReport so a duplicate surface-form (e.g. two
+ * "intelligent-xtraction-and-processing" entries from one batch) does not
+ * inflate the report count or the "Created" listing.
+ */
+export function dedupPages(paths: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const p of paths) {
+    if (seen.has(p)) continue;
+    seen.add(p);
+    out.push(p);
+  }
+  return out;
+}
+
 export class WikiEngine {
   private app: App;
   settings: LLMWikiSettings;
@@ -557,15 +575,18 @@ export class WikiEngine {
       const indexTime = Date.now() - indexStart;
       console.debug(`[Time] Index Index & log update: ${indexTime}ms`);
 
-      const created = analysis.created_pages.length;
       const updated = analysis.updated_pages.length;
-      const entitiesCreated = analysis.created_pages.filter(p => p.includes('/entities/')).length;
-      const conceptsCreated = analysis.created_pages.filter(p => p.includes('/concepts/')).length;
+      // Issue #173 Symptom B: dedup before counting/listing — a duplicated
+      // surface-form (e.g. the LLM emitting the same path twice) must not
+      // inflate the report count or the "Created" listing.
+      const dedupedCreatedPages = dedupPages(analysis.created_pages);
+      const entitiesCreated = dedupedCreatedPages.filter(p => p.includes('/entities/')).length;
+      const conceptsCreated = dedupedCreatedPages.filter(p => p.includes('/concepts/')).length;
       const modeLabel = (this.settings.pageGenerationConcurrency ?? 1) > 1 ? `parallel(concurrency:${this.settings.pageGenerationConcurrency})` : 'serial';
       // totalTime was computed above; do not redeclare here.
 
       console.debug('=== Ingestion complete ===');
-      console.debug(`Ingestion complete [${modeLabel}]: Created ${created} pages (${entitiesCreated} entities + ${conceptsCreated} concepts), Updated ${updated} pages, ${collisions.length} cross-type collisions`);
+      console.debug(`Ingestion complete [${modeLabel}]: Created ${dedupedCreatedPages.length} pages (${entitiesCreated} entities + ${conceptsCreated} concepts), Updated ${updated} pages, ${collisions.length} cross-type collisions`);
       console.debug(`[Total time] ${totalTime}ms (${Math.round(totalTime/1000)}s)`);
       console.debug('[Phase breakdown]:');
       console.debug(`  - Source analysis: ${analysisTime}ms`);
@@ -583,7 +604,7 @@ export class WikiEngine {
 
       this.onDone?.({
         sourceFile: file.path,
-        createdPages: analysis.created_pages,
+        createdPages: dedupedCreatedPages,
         updatedPages: analysis.updated_pages,
         entitiesCreated,
         conceptsCreated,
@@ -595,7 +616,7 @@ export class WikiEngine {
       });
 
     } catch (error) {
-      const createdPages = analysis?.created_pages || [];
+      const createdPages = dedupPages(analysis?.created_pages || []);
 
       if (error instanceof DOMException && error.name === 'AbortError') {
         this.wasCancelled = true;
@@ -847,7 +868,10 @@ export class WikiEngine {
       this.onFileWrite?.(path);
       this.pagesCache = null;
     } else {
-      throw new Error(`无法创建或更新文件: ${path}`);
+      // Issue #172: localize via getText, never hardcode CJK in source.
+      throw new Error(
+        getText(this.settings.language, 'fileWriteFailed').replace('{path}', path)
+      );
     }
   }
 
@@ -1081,7 +1105,7 @@ export class WikiEngine {
       ? this.formatIngestMetricsSuffix(metrics)
       : '';
     let entry = `\n\n## [${date} ${time}] ${operation} | ${analysis.source_title}${h2Suffix}\n\n`;
-    entry += `**${labels.createdPages}**：${analysis.created_pages.map(p => `[[${p.replace(this.settings.wikiFolder + '/', '')}]]`).join(', ')}\n\n`;
+    entry += `**${labels.createdPages}**：${dedupPages(analysis.created_pages).map(p => `[[${p.replace(this.settings.wikiFolder + '/', '')}]]`).join(', ')}\n\n`;
     entry += `**${labels.updatedPages}**：${analysis.updated_pages.map(p => `[[${p}]]`).join(', ')}\n\n`;
 
     if (analysis.contradictions.length > 0) {

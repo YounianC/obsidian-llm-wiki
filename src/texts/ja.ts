@@ -154,6 +154,7 @@ export const JA_TEXTS = {
     errorLLMClientNotInit: 'LLM Clientが初期化されていません。設定を保存してください。',
     errorIngestFailed: '取り込み失敗：',
     errorQueryFailed: '問い合わせ失敗：',
+    fileWriteFailed: 'ファイルを作成または更新できません：{path}',
 
     // Success Messages
     ingestSuccess: '取り込み成功：{}ページ作成、{}ページ更新',

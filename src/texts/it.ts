@@ -166,6 +166,7 @@ export const IT_TEXTS = {
     errorLLMClientNotInit: 'Client LLM non inizializzato. Salva le impostazioni.',
     errorIngestFailed: 'Acquisizione fallita: ',
     errorQueryFailed: 'Query fallita: ',
+    fileWriteFailed: 'Impossibile creare o aggiornare il file: {path}',
 
     // Messaggi di successo
     ingestSuccess: 'Acquisizione riuscita: {} pagine create, {} pagine aggiornate',

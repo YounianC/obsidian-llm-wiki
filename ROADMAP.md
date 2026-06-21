@@ -133,6 +133,10 @@ Release focus: unify schema as the single source of truth for both system prompt
 
 **🔴 #164 — Empty-content hallucinated entity guard** (in PR by @Indexed-Apogrypha). Add early-return in `WikiEngine.ingestSource` (line ~248, right after `vault.read`): if `fileContent.trim().length === 0` → emit `emptySourceNotice` + return. Plus 9-locale i18n + unit + integration tests. Closes a critical bug where local models (Ollama gemma4, qwen-coder) hallucinate entity names from empty input prompts. Folded into v1.21.0 with Schema Phase 1 to avoid two consecutive hotfixes within a week.
 
+- 🔴 **#173 — Ingest: create-retry loop + duplicate Created entry** (reported by @Indexed-Apogrypha 2026-06-21). Symptom A: `createOrUpdateFile()` retries `vault.create()` 3 times when path already exists, instead of short-circuiting to `vault.process()`. Symptom B: `analysis.created_pages` lacks Set dedup, causing duplicate report rows. Both small fixes bundled with #164.
+- 🔴 **#172 — i18n: hardcoded Chinese error string** (reported by @Indexed-Apogrypha 2026-06-21). `wiki-engine.ts:850` throws `无法创建或更新文件: ${path}` unconditionally. Add `fileWriteFailed` i18n key × 9 locales + replace with `getText(...)`. Audit other source files for similar leaks.
+- 🟢 **#170 — Incomplete-page cleaner** (tracked for v1.21.0, design approved 2026-06-21). Simplification: instead of full-batch atomic write, use `generation_complete: false` frontmatter signal flipped to `true` only after full body write. Startup self-scan cleans any pages where signal is missing/false. Preserves write-through simplicity, works with existing AbortController.
+
 ### Phase 2: Custom section names + #97 one-click apply (v1.21.0 or v1.22.0)
 
 - Schema supports custom section names (not just multi-language translation)
@@ -145,6 +149,9 @@ Release focus: unify schema as the single source of truth for both system prompt
 - **#117 — Graph-based domain tag inference.** Hub detection + cheap LLM labeling + tag propagation with explainability.
 - **#122 — Ingestion history panel.** Start with log.md UI layer.
 - **#130 — In-place batch ingest queue.** Composes with #122 and `pageGenerationConcurrency`.
+- **#168 — Single-file vs batch granularity split** (design approved 2026-06-21). Replace single `extractionGranularity` with two independent settings: `singleFileGranularity` + `batchGranularity`. Rationale: single-file ingest is pre-vetted (expects depth), folder ingest is bulk (expects noise reduction).
+- **#169 — Better status reporting** (deferred split scope). Phase 1 (v1.22.0): richer progress text (batch count, ETA, current model). Phase 2 (backlog): live file preview (needs new UI component).
+- **#157 — Embedding-distinctiveness hub-link policy** (DocTpoint proposal). Replace tag-based stripping with cosine-based distinctiveness. Opt-in via `hubLinkPolicy: 'embedding'` mode. 252-link empirical evidence on bge-m3.
 
 ### Out of scope (v1.21.0+)
 
