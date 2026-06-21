@@ -717,13 +717,30 @@ export class LLMWikiSettingTab extends PluginSettingTab {
       }
     };
 
-    // Default-mode desc shows the concrete default list inline.
-    // Custom-mode desc is terse (no defaults — user is configuring).
-    const defaultListDesc = `${VALID_ENTITY_TAGS.join(', ')} (entities) / ${VALID_CONCEPT_TAGS.join(', ')} (concepts)`;
+    // v1.21.0 Phase 1.4: Settings UI description should reflect the active
+    // vocabulary, not just the hardcoded defaults. When the user has typed
+    // custom tags but hasn't yet toggled to Custom mode, show them in the
+    // Default-mode description as a preview (avoids the "settings UI drift"
+    // found in the v1.21.0 Schema audit).
+    const customEntities = (this.tempSettings.customEntityTags ?? '').trim();
+    const customConcepts = (this.tempSettings.customConceptTags ?? '').trim();
+    const hasCustomInput = customEntities.length > 0 || customConcepts.length > 0;
+    // Effective list shows user values whenever they've been typed,
+    // regardless of mode. The activation hint clarifies if the mode
+    // hasn't been switched yet (avoids Settings UI / runtime drift).
+    const effectiveEntityTags = customEntities.length > 0
+      ? customEntities.split(',').map(t => t.trim()).filter(Boolean)
+      : VALID_ENTITY_TAGS;
+    const effectiveConceptTags = customConcepts.length > 0
+      ? customConcepts.split(',').map(t => t.trim()).filter(Boolean)
+      : VALID_CONCEPT_TAGS;
+    const effectiveListDesc = hasCustomInput
+      ? `${effectiveEntityTags.join(', ')} (entities) / ${effectiveConceptTags.join(', ')} (concepts)${this.tempSettings.tagVocabularyMode === 'default' ? ' — custom values shown above (toggle to Custom to activate)' : ''}`
+      : `${VALID_ENTITY_TAGS.join(', ')} (entities) / ${VALID_CONCEPT_TAGS.join(', ')} (concepts)`;
     const leadDesc = this.getText('tagVocabularyInlineDesc');
     const modeDesc = this.tempSettings.tagVocabularyMode === 'custom'
       ? `${leadDesc}\n${this.getText('tagVocabularyModeDescCustom')}`
-      : `${leadDesc}\n${this.getText('tagVocabularyModeDescDefault').replace('{}', defaultListDesc)}`;
+      : `${leadDesc}\n${this.getText('tagVocabularyModeDescDefault').replace('{}', effectiveListDesc)}`;
 
     new Setting(containerEl)
       .setName(this.getText('tagVocabularyModeName'))

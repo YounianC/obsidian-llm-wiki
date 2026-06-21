@@ -309,6 +309,41 @@ Every code change via `Read` + `Edit`. No sed/awk/python AST for code. (2026-06-
 
 - **NEVER commit or push without explicit user permission.** Non-negotiable.
 
+## 🔀 Git Branch Workflow (enforced since v1.20.2)
+
+**Core principle: Never develop directly on main. Main only accepts PR merges.**
+
+```
+main (protected) ───────────────────────→ tag → release
+  │
+  ├── feat/xxx ── PR → review → merge
+  │     ├── commit 1
+  │     ├── commit 2
+  │     └── commit 3
+  │
+  └── fix/xxx ── PR → review → merge
+        └── commit 1
+```
+
+**Development flow (mandatory for every feature/fix):**
+
+1. **Branch from main:** `git checkout -b feat/xxx` or `git checkout -b fix/xxx`
+2. **Develop on the branch** — multiple commits OK, each with meaningful content
+3. **Gate 1 verification:** `pnpm lint && npx tsc --noEmit && pnpm test && pnpm build`
+4. **Only after user confirmation** — push branch, create PR
+5. **After PR merge** — switch back to main, pull, tag (if needed)
+
+**Prohibited:**
+- ❌ Committing directly on main (except lockfile-only changes)
+- ❌ Pushing PR without user confirmation
+- ❌ Mixing unrelated changes in one PR
+- ❌ Fragmented commits (amend the previous commit or squash)
+
+**When to amend vs new commit:**
+- Fixing a problem in the previous commit → `git commit --amend`
+- New feature / new fix → new commit
+- Pre-release doc updates → can amend into the version bump commit
+
 ## 📦 Development Workflow
 
 1. `pnpm lint && pnpm test && npx tsc --noEmit && pnpm build` — all four must pass (Six-Gate Gate 1)

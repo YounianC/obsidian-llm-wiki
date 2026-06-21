@@ -207,6 +207,17 @@ export async function buildSystemPrompt(
   if (langDirective) parts.push(langDirective);
   const schemaContext = await getSchemaContext(task);
   if (schemaContext) parts.push(schemaContext);
+
+  // v1.21.0 Phase 1.3: Inject active tag vocabulary so user-defined Custom
+  // tags are respected by ALL ingestion paths (not just lint). Skip if the
+  // schema context already contains the section (defensive — caller might
+  // have prepended it).
+  const schemaHasTagVocab = schemaContext?.includes('Active Tag Vocabulary') ?? false;
+  if (!schemaHasTagVocab) {
+    const tagVocab = buildActiveTagVocabularySection(settings);
+    if (tagVocab) parts.push(tagVocab);
+  }
+
   return parts.length > 0 ? parts.join('\n\n') : undefined;
 }
 
