@@ -154,6 +154,7 @@ export const ES_TEXTS = {
     errorLLMClientNotInit: 'Cliente LLM no inicializado. Guarda la configuración.',
     errorIngestFailed: 'La ingestión falló: ',
     errorQueryFailed: 'La consulta falló: ',
+    fileWriteFailed: 'No se pudo crear ni actualizar el archivo: {path}',
 
     // Success Messages
     ingestSuccess: 'Ingestión completada: {} páginas creadas, {} páginas actualizadas',

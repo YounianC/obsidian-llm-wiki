@@ -154,6 +154,7 @@ export const FR_TEXTS = {
     errorLLMClientNotInit: 'Client LLM non initialisé. Veuillez enregistrer les paramètres.',
     errorIngestFailed: "Échec de l'import : ",
     errorQueryFailed: 'Échec de la requête : ',
+    fileWriteFailed: "Impossible de créer ou de mettre à jour le fichier : {path}",
 
     // Success Messages
     ingestSuccess: 'Import réussi : {} pages créées, {} pages mises à jour',

@@ -154,6 +154,7 @@ export const PT_TEXTS = {
     errorLLMClientNotInit: 'LLM Client não inicializado. Salve as configurações.',
     errorIngestFailed: 'Falha na ingestão: ',
     errorQueryFailed: 'Falha na consulta: ',
+    fileWriteFailed: 'Não foi possível criar ou atualizar o ficheiro: {path}',
 
     // Success Messages
     ingestSuccess: 'Ingestão bem-sucedida: {} páginas criadas, {} páginas atualizadas',

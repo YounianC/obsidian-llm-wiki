@@ -155,6 +155,7 @@ export const KO_TEXTS = {
     errorLLMClientNotInit: 'LLM 클라이언트가 초기화되지 않았습니다. 설정을 저장하세요.',
     errorIngestFailed: '수집 실패: ',
     errorQueryFailed: '질의 실패: ',
+    fileWriteFailed: '파일을 만들거나 업데이트할 수 없습니다: {path}',
 
     // Success Messages
     ingestSuccess: '수집 완료: {} 페이지 생성, {} 페이지 업데이트',
