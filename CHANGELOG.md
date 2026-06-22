@@ -7,19 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.21.0] - 2026-06-21
+
 ### Added
 - **Pre-ingest requirements gate (#164).** Every source file is now validated *before* any LLM call — **non-empty**, **compatible file type**, and **unique** — and files that fail are logged and skipped instead of reaching the model. New `core/source-requirements.ts` holds an extensible, ordered `CONTENT_CHECKS` registry so future checks (e.g. prompt-injection) can be added as a single entry. Contributed by @Indexed-Apogrypha.
   - **Non-empty** (`isBlankSource`): empty, whitespace-only, and frontmatter-only notes are skipped — closing the #164 root cause where small/local models (e.g. Ollama) hallucinated entities/concepts from blank content interpolated into the extraction prompt.
   - **Compatible file type**: case-insensitive allowlist `['md', 'markdown', 'txt', 'text']`. Folder and active-file ingest now accept `.txt`/`.text` (was `.md`-only).
   - **Uniqueness** (`hashBody`): content-hash de-duplication (length-prefixed FNV-1a over the normalized body) catches duplicate content even across different file paths, plus within-batch dedup for folder **and watcher** ingests (both share one `createBatchContext()`); the hash is stamped into the source page frontmatter as `contentHash`.
-- **Re-ingest confirmation prompt.** Interactive ingests (file picker / active file) prompt before re-ingesting a duplicate (new `ConfirmModal`); folder/watcher ingests auto-skip duplicates. The ingest report now lists skipped files with a localized reason (empty / unsupported type / duplicate content). New i18n keys across all 8 locales. Contributed by @Indexed-Apogrypha.
+- **Re-ingest confirmation prompt.** Interactive ingests (file picker / active file) prompt before re-ingesting a duplicate (new `ConfirmModal`); folder/watcher ingests auto-skip duplicates. The ingest report now lists skipped files with a localized reason (empty / unsupported type / duplicate content). New i18n keys across all 9 locales. Contributed by @Indexed-Apogrypha.
+- **Operation History Panel (#122).** Pure-function `parseLogEntries` + `HistoryModal` with date grouping, search, filter, clickable page links, and insight-driven visualization. Command palette entry + settings entry.
+- **Schema Coherence Phase 1 (#124).** `SchemaContext` shared parsed representation of `schema/config.md`, used by both system prompts and generation prompts. `buildSchemaSectionTemplate` extracts user-defined sections. Tag vocabulary injection into system prompt.
+- **Incomplete-page cleaner (#170).** Wiki pages left in a partial state (interrupted ingest, plugin reload mid-write, LLM error) are automatically cleaned on startup via `generation_complete` frontmatter flag + QuickFixes Phase 3 self-scan. Pages without the field are treated as legacy (preserved).
+- **Italian locale (#159).** 9th language added to UI and wiki output. Contributed by @FrancoTampieri.
 
 ### Fixed
-- **Empty notes made small/local LLMs hallucinate wiki pages (#164, CRITICAL).** Ingesting an empty / whitespace-only / frontmatter-only note no longer produces hallucinated entity/concept pages (large models refused the blank input, so it never surfaced in dev). A defense-in-depth `isBlankSource` guard was also added in `source-analyzer.ts` before the extraction prompt is built. Contributed by @Indexed-Apogrypha.
+- **Empty notes made small/local LLMs fabricate wiki pages (#164, CRITICAL).** Ingesting an empty / whitespace-only / frontmatter-only note no longer produces fabricated entity/concept pages (large models refused the blank input, so it never surfaced in dev). A defense-in-depth `isBlankSource` guard was also added in `source-analyzer.ts` before the extraction prompt is built. Contributed by @Indexed-Apogrypha.
+- **Hardcoded Chinese error string leaked into non-Chinese UI (#172).** `wiki-engine.ts` `createOrUpdateFile` final-fallback throw now uses `getText('fileWriteFailed')` with 9-locale i18n coverage.
+- **Duplicate entry in `createdPages` inflated report count (#173).** `dedupPages()` pure-function helper prevents duplicated surface-forms from inflating the ingest report "Created" listing.
 
 ### Tests
 - New coverage for the gate: `core/source-requirements`, `isBlankSource`/`upsertFrontmatterField` in `core/frontmatter`, the #164 reproduction in `wiki/source-analyzer`, and a new in-memory `WikiEngine` ingest-gate harness (`wiki/wiki-engine-ingest`).
 - Watcher batch-context wiring (`schema/auto-maintain`) and the `buildIngestedHashes` TTL-cache + write-invalidation paths (`wiki/wiki-engine-ingest`).
+- Incomplete-page cleaner tests (`core/incomplete-page-cleaner`): `isIncomplete`, `findIncompletePages`, `cleanIncompletePages`.
+- i18n error message assertion (`wiki/wiki-engine-i18n-error`).
+- `dedupPages` ordering/edge-case tests (`wiki/wiki-engine-dedup`).
+- **939 tests passing (was 791 in v1.20.3).** +148 tests, 67 test files.
 
 ## [1.20.3] - 2026-06-20
 

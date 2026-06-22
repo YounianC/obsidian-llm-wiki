@@ -25,7 +25,7 @@
   - [🔑 Configurare un provider LLM](#-configurare-un-provider-llm)
   - [🎮 Utilizzo](#-utilizzo)
   - [⚠️ Aggiornamento da una versione precedente?](#️-aggiornamento-da-una-versione-precedente)
-- [⚡ Novità nella v1.20.3](#-novità-nella-v1203)
+- [⚡ Novità nella v1.21.0](#-novità-nella-v1210)
 - [✨ Funzionalità](#-funzionalità)
 
   - [📊 Qualità della conoscenza](#-qualità-della-conoscenza)
@@ -189,16 +189,18 @@ Impostazioni → **LLM Configuration**:
 
 ---
 
-## ⚡ Novità nella v1.20.3
+## ⚡ Novità nella v1.21.0
 
-La v1.20.3 è un **hotfix PATCH** che corregge tre bug latenti nel percorso di scrittura del wiki. Nessuna nuova funzionalità — le tre correzioni sono fix di parità/bug latenti che ripristinano un comportamento che avrebbe dovuto esserci fin dall'inizio.
+La v1.21.0 è una **release MINOR** che porta tre miglioramenti principali: un portale di pre-ingestione che blocca le entità allucinate, un pannello di cronologia operazioni e la coerenza dello Schema Fase 1. Aggiunto l'italiano come 9ª lingua, un pulitore di pagine incomplete e diverse correzioni di bug.
 
-- **🔧 Correzione collisione slug delle pagine sorgente (Issue #155, PR #156).** Quando due file sorgente condividevano lo stesso basename tra cartelle (es. 11× `About this course.md` nei corsi Academy), `slugify(basename)` produceva lo stesso slug per entrambi — il secondo ingest **sovrascriveva silenziosamente** il primo, e ogni backlink `[[sources/<slug>]]` puntava alla sorgente sbagliata. Fix: ogni slug sorgente è ora `<basename>_<FNV-1a 6 hex del percorso completo>`. Re-ingerendo un vault esistente, le pagine `sources/` vengono rinominate; i backlink si aggiornano sul posto. Contributo di @Indexed-Apogrypha.
-- **🔧 Dedup degli alias in `mergeFrontmatter` (PR #154).** Re-ingest ripetuti potevano far crescere senza limiti l'array `aliases` — una pagina reale aveva accumulato lo stesso blocco di alias ~15× (86 righe duplicate). `mergeFrontmatter` ora deduplica `fm.aliases` in parità con `enforceFrontmatterConstraints`. Contributo di @DocTpoint.
-- **🔧 Guardia Stage-4 `reviewed: true` (PR #158).** Re-ingerendo una nota non correlata, l'LLM poteva riscrivere il corpo di una pagina `reviewed: true` curata — il blocco reviewed si applicava solo su `createOrUpdatePage`, non su Stage 4. Fix: `updateRelatedPage` ora instrada le pagine `reviewed: true` verso `appendToReviewedPage`. Contributo di @DocTpoint.
-- **🛠 Manutenzione tsconfig.** `lib` aggiornato a ES2021; rimosso `baseUrl` non più utilizzato.
+- **🛡️ Portale di pre-ingestione (Issue #164, PR #174).** Ogni file sorgente viene validato *prima* di qualsiasi chiamata LLM — le note vuote/bianche/solo frontmatter vengono rifiutate, impedendo ai modelli locali (es. Ollama) di allucinare nomi di entità. Il dedup per hash del contenuto rileva file identici attraverso i percorsi. Le ingestioni interattive chiedono conferma prima di ri-ingerire i duplicati. Contributo di @Indexed-Apogrypha.
+- **📊 Pannello di cronologia operazioni (Issue #122, PR #171).** Visualizza le ingestioni recenti, i report di lint e le esecuzioni di manutenzione in un'UI ricercabile e filtrabile. Visualizzazione guidata da insight con card KPI, dettagli delle voci e link cliccabili alle pagine. Palette comandi: "View Ingestion History".
+- **🔗 Coerenza dello Schema Fase 1 (Issue #124, PR #167).** La configurazione dello schema (`schema/config.md`) è ora l'unica fonte di verità per i prompt di sistema e generazione. Le sezioni personalizzate e il vocabolario dei tag definiti dall'utente vengono iniettati in ogni chiamata LLM.
+- **🇮🇹 Italiano (Issue #159, PR #159).** L'interfaccia del plugin e l'output Wiki supportano l'italiano come 9ª lingua. Contributo di @FrancoTampieri.
+- **🧹 Pulitore di pagine incomplete (Issue #170, PR #177).** Le pagine Wiki lasciate in stato parziale dopo ingestioni interrotte vengono automaticamente pulite all'avvio. Le pagine vengono archiviate nel `.trash` di Obsidian (recuperabili).
+- **🔧 Correzioni di bug.** Stringa di errore cinese hardcoded in interfacce non cinesi (#172); voci duplicate che gonfiano i conteggi dei report di ingestione (#173).
 
-Consigliamo vivamente a tutti gli utenti di aggiornare a questa versione, in particolare se si importano più note che condividono nomi di file tra cartelle, o se si usa il blocco pagina `reviewed: true`.
+Consigliamo vivamente a tutti gli utenti di aggiornare a questa versione, in particolare se si utilizzano LLM locali (Ollama, LM Studio) — il portale di pre-ingestione previene la classe di bug "file vuoto → allucinazione" (i modelli piccoli inventano nomi di entità per riempire lo schema JSON con un prompt vuoto).
 
 Vedi [CHANGELOG.md](../CHANGELOG.md) per i dettagli completi.
 

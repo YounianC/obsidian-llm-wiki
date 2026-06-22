@@ -26,7 +26,7 @@
   - [🔑 Configurar um provedor LLM](#-configurar-um-provedor-llm)
   - [🎮 Uso](#-uso)
   - [⚠️ Atualizando de uma versão anterior?](#️-atualizando-de-uma-versão-anterior)
-- [⚡ Novidades da v1.20.3](#-novidades-da-v1203)
+- [⚡ Novidades da v1.21.0](#-novidades-da-v1210)
 - [✨ Funcionalidades](#-funcionalidades)
   - [📊 Qualidade do Conhecimento](#-qualidade-do-conhecimento)
   - [🛠️ Manutenção](#️-manutenção)
@@ -147,18 +147,18 @@ Este projeto evolui rapidamente. Recomendamos manter-se atualizado:
 
 ---
 
-## ⚡ Novidades da v1.20.3
+## ⚡ Novidades da v1.21.0
 
-v1.20.3 é uma **correção** que resolve três bugs latentes no caminho de escrita do wiki. Sem novas funcionalidades — as três correções são correções de paridade/bugs latentes que restauram um comportamento que deveria ter existido desde o início.
+A v1.21.0 é uma **release MINOR** que traz três melhorias principais: um portal de pré-ingestão que para entidades alucinadas, um painel de histórico de operações e a coerência do Esquema Fase 1. Italiano é adicionado como 9º idioma, um limpador de páginas incompletas e várias correções de bugs.
 
-- **🔧 Correção de colisão de slug de origem (Issue #155, PR #156).** Quando dois arquivos de origem compartilhavam um nome base entre pastas (p. ex. 11× `About this course.md` em cursos Academy), `slugify(basename)` produzia o mesmo slug para ambos — a segunda ingestão **sobrescrevia silenciosamente** a primeira, e cada backlink `[[sources/<slug>]]` apontava para a origem errada. Correção: cada slug de origem é agora `<basename>_<impressão FNV-1a 6 hex do caminho completo>`. Re-ingerir um cofre existente renomeia as páginas `sources/`; os backlinks são atualizados no local. Contribuição de @Indexed-Apogrypha.
-- **🔧 Desduplicação de alias em `mergeFrontmatter` (PR #154).** Ingestões repetidas podiam fazer o array `aliases` crescer sem limite — uma página real acumulou o mesmo bloco de alias ~15× (86 linhas duplicadas). `mergeFrontmatter` agora desduplica `fm.aliases` em paridade com `enforceFrontmatterConstraints`. Contribuição de @DocTpoint.
-- **🔧 Guarda Stage-4 `reviewed: true` (PR #158).** Re-ingerir uma nota não relacionada podia fazer o LLM reescrever o corpo de uma página `reviewed: true` — o bloqueio `reviewed` só se aplicava em `createOrUpdatePage`, não em Stage 4. Correção: `updateRelatedPage` agora roteia páginas `reviewed: true` para `appendToReviewedPage`. Contribuição de @DocTpoint.
-- **🛠 Manutenção de tsconfig.** `lib` elevado para ES2021; `baseUrl` supérfluo removido.
+- **🛡️ Portal de pré-ingestão (Issue #164, PR #174).** Cada arquivo fonte é validado *antes* de qualquer chamada LLM — notas vazias/em branco/apenas frontmatter são rejeitadas, impedindo que modelos locais (ex. Ollama) alucinem nomes de entidades. O dedup por hash de conteúdo detecta arquivos idênticos através de caminhos. As ingestões interativas pedem confirmação antes de re-ingerir duplicatas. Contribuição de @Indexed-Apogrypha.
+- **📊 Painel de histórico de operações (Issue #122, PR #171).** Veja ingestões recentes, relatórios de lint e execuções de manutenção em uma UI pesquisável e filtrável. Visualização orientada por insights com cartões KPI, detalhes de entrada e links clicáveis para páginas. Paleta de comandos: "View Ingestion History".
+- **🔗 Coerência do Esquema Fase 1 (Issue #124, PR #167).** A configuração do esquema (`schema/config.md`) é agora a fonte única de verdade para prompts de sistema e geração. Seções personalizadas e vocabulário de tags definidos pelo usuário são injetados em cada chamada LLM.
+- **🇮🇹 Italiano (Issue #159, PR #159).** A interface do plugin e a saída Wiki agora suportam italiano como 9º idioma. Contribuição de @FrancoTampieri.
+- **🧹 Limpador de páginas incompletas (Issue #170, PR #177).** Páginas Wiki deixadas em estado parcial após ingestões interrompidas são automaticamente limpas ao iniciar. As páginas são arquivadas no `.trash` do Obsidian (recuperável).
+- **🔧 Correções de bugs.** String de erro chinês hardcoded em interfaces não chinesas (#172); entradas duplicadas inflando contagens de relatórios de ingestão (#173).
 
-Recomendamos fortemente atualizar, especialmente se ingere várias notas compartilhando nomes de arquivo entre pastas, ou usa o bloqueio de página `reviewed: true`.
-
-Recomendamos fortemente atualizar para esta versão para compatibilidade completa com a Anthropic e todos os recursos mais recentes.
+Recomendamos fortemente atualizar para esta versão, especialmente se usa LLMs locais (Ollama, LM Studio) — o portal de pré-ingestão previne a classe de bugs "arquivo vazio → alucinação" (modelos pequenos inventam nomes de entidades para preencher o esquema JSON com um prompt vazio).
 
 Detalhes em [CHANGELOG.md](../CHANGELOG.md).
 
