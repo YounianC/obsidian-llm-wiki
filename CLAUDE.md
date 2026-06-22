@@ -4,12 +4,17 @@
 
 ---
 
-## Current Phase: v1.20.3 Released — v1.21.0 Schema Coherence Phase 1 (in development)
+## Current Phase: v1.21.0 Released — v1.22.0 Schema Phase 2 (planned)
 
-### In Progress — v1.21.0
-- 🔴 **#164 — Empty-content hallucinated entity bug.** Reported by @Indexed-Apogrypha 2026-06-21; root cause confirmed (missing empty-content guard in `WikiEngine.ingestSource` and `SourceAnalyzer.analyzeSource`). PR incoming; fold into v1.21.0 (not v1.20.4 hotfix) per user decision.
-- 🟢 **#124 — Schema Coherence Phase 1.** Local branch `feat/v1.21.0-schema-coherence-phase1` (commit `4251aa9`).
-- 🟢 **Italian locale + i18n-parity test (PR #159).** 9th locale shipped.
+### Completed (v1.21.0) — Pre-Ingest Gate + Schema Phase 1 + History Panel (2026-06-21)
+- ✅ **#164 — Pre-ingest requirements gate (PR #174).** Empty/whitespace/frontmatter-only notes rejected before LLM call. Extensible `CONTENT_CHECKS` registry + `hashBody` dedup + `ConfirmModal`. Contributed by @Indexed-Apogrypha.
+- ✅ **#170 — Incomplete-page cleaner (PR #177).** `generation_complete` flag + startup QuickFixes Phase 3 self-scan.
+- ✅ **#172 — i18n: hardcoded Chinese error string (PR #176).** `fileWriteFailed` key across 9 locales.
+- ✅ **#173 — dedup createdPages (PR #176).** `dedupPages()` pure-function helper.
+- ✅ **#124 — Schema Coherence Phase 1 (PR #167).** `SchemaContext` + `buildSchemaSectionTemplate` + tag vocab injection.
+- ✅ **#122 — Operation History Panel (PR #171).** Pure-function log parser + `HistoryModal`.
+- ✅ **#159 — Italian locale (PR #159).** 9th language. Contributed by @FrancoTampieri.
+- ✅ **Tests: 939 passing.** +148 tests, 67 test files.
 
 ### Completed (v1.20.3) — Hotfix 2026-06-20
 - ✅ **Source-slug fingerprint (PR #156, Closes #155).** Every source slug now `<basename>_<6hex FNV-1a of full path>` — fixes silent overwrite when two source files share a basename across folders. Contributed by @Indexed-Apogrypha.
@@ -52,7 +57,7 @@
 - ✅ **Tests: 744 passing (was 728).** 36 test files, 0 regressions. +16 tests since v1.19.0 (new `llm-client-gemini-fallback` + `settings-thinkcache` suites).
 
 ### P0 — Bug fixes / quality regressions
-- 🔴 **#164 — Empty-content hallucinated entity (v1.21.0, in PR).** Critical bug. Reported by @Indexed-Apogrypha 2026-06-21. Fix path: guard at `WikiEngine.ingestSource` entry + unit + integration tests + 9-locale i18n.
+- 🔴 **#164 — Empty-content fabricated-entity (v1.21.0, in PR).** Critical bug. Reported by @Indexed-Apogrypha 2026-06-21. Fix path: guard at `WikiEngine.ingestSource` entry + unit + integration tests + 9-locale i18n.
 - All v1.20.x P0 items closed (Anthropic prefill v1.20.1, system-role v1.20.2, source-slug/alias-dedup/reviewed-guard v1.20.3).
 
 ### P1 — Cleanup (v1.19.0 target, deferred items from v1.18.x)

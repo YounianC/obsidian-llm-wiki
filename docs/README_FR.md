@@ -26,7 +26,7 @@
   - [🔑 Configurer un fournisseur LLM](#-configurer-un-fournisseur-llm)
   - [🎮 Utilisation](#-utilisation)
   - [⚠️ Mise à niveau depuis une ancienne version ?](#️-mise-à-niveau-depuis-une-ancienne-version-)
-- [⚡ Nouveautés de la v1.20.3](#-nouveautés-de-la-v1203)
+- [⚡ Nouveautés de la v1.21.0](#-nouveautés-de-la-v1210)
 - [✨ Fonctionnalités](#-fonctionnalités)
   - [📊 Qualité des connaissances](#-qualité-des-connaissances)
   - [🛠️ Maintenance](#️-maintenance)
@@ -147,18 +147,18 @@ Ce projet évolue rapidement. Nous vous recommandons de rester à jour :
 
 ---
 
-## ⚡ Nouveautés de la v1.20.3
+## ⚡ Nouveautés de la v1.21.0
 
-v1.20.3 est un **correctif** qui résout trois bogues latents dans le chemin d'écriture du wiki. Aucune nouvelle fonctionnalité — les trois corrections sont des correctifs de parité/bogues latents qui restaurent un comportement qui aurait dû être présent dès le départ.
+La v1.21.0 est une **release MINOR** qui apporte trois améliorations majeures : un portail de pré-ingestion qui stoppe les entités hallucinées, un panneau d'historique des opérations et la cohérence du Schéma Phase 1. L'italien est ajouté comme 9e langue, un nettoyeur de pages incomplètes, et plusieurs corrections de bugs.
 
-- **🔧 Correction de collision de slug source (Issue #155, PR #156).** Quand deux fichiers source partageaient un nom de base à travers des dossiers (p. ex. 11× `About this course.md` dans les cours Academy), `slugify(basename)` produisait le même slug pour les deux — le second écrasait **silencieusement** le premier, et chaque backlink `[[sources/<slug>]]` pointait vers la mauvaise source. Correction : chaque slug source est désormais `<basename>_<empreinte FNV-1a 6 hex du chemin complet>`. La ré-ingestion d'un coffre existant renomme les pages `sources/` ; les backlinks sont mis à jour sur place. Contribution de @Indexed-Apogrypha.
-- **🔧 Déduplication des alias `mergeFrontmatter` (PR #154).** Des ré-ingestions répétées pouvaient faire croître le tableau `aliases` sans limite — une page réelle avait accumulé le même bloc d'alias ~15× (86 lignes en double). `mergeFrontmatter` déduplique désormais `fm.aliases` en parité avec `enforceFrontmatterConstraints`. Contribution de @DocTpoint.
-- **🔧 Garde Stage-4 `reviewed: true` (PR #158).** La ré-ingestion d'une note non liée pouvait faire réécrire par le LLM le corps d'une page `reviewed: true` — le verrou `reviewed` ne s'appliquait pas sur le chemin Stage 4, seulement sur `createOrUpdatePage`. Correction : `updateRelatedPage` route désormais les pages `reviewed: true` vers `appendToReviewedPage`. Contribution de @DocTpoint.
-- **🛠 Nettoyage tsconfig.** `lib` relevé à ES2021 ; `baseUrl` superflu supprimé.
+- **🛡️ Portail de pré-ingestion (Issue #164, PR #174).** Chaque fichier source est validé *avant* tout appel LLM — les notes vides/blanches/uniquement frontmatter sont rejetées, empêchant les modèles locaux (ex. Ollama) d'halluciner des noms d'entités. Le dédup par hash de contenu détecte les fichiers identiques à travers les chemins. Les ingestions interactives demandent confirmation avant de ré-ingérer les doublons. Contribution de @Indexed-Apogrypha.
+- **📊 Panneau d'historique des opérations (Issue #122, PR #171).** Consultez les ingestions récentes, rapports de lint et exécutions de maintenance dans une UI consultable et filtrable. Visualisation pilotée par l'insight avec cartes KPI, détails d'entrée et liens cliquables vers les pages. Palette de commandes : "View Ingestion History".
+- **🔗 Cohérence du Schéma Phase 1 (Issue #124, PR #167).** La configuration du schéma (`schema/config.md`) est désormais la source de vérité unique pour les prompts système et de génération. Les sections personnalisées et le vocabulaire de tags définis par l'utilisateur sont injectés dans chaque appel LLM.
+- **🇮🇹 Italien (Issue #159, PR #159).** L'interface du plugin et la sortie Wiki prennent en charge l'italien comme 9e langue. Contribution de @FrancoTampieri.
+- **🧹 Nettoyeur de pages incomplètes (Issue #170, PR #177).** Les pages Wiki laissées dans un état partiel après des ingestions interrompues sont automatiquement nettoyées au démarrage. Les pages sont archivées dans le `.trash` d'Obsidian (récupérable).
+- **🔧 Corrections de bugs.** Chaîne d'erreur chinoise codée en dur dans les interfaces non chinoises (#172) ; entrées en double gonflant les comptes de rapports d'ingestion (#173).
 
-Nous recommandons vivement la mise à jour, en particulier si vous ingérez plusieurs notes partageant des noms de fichiers à travers des dossiers, ou utilisez le verrou `reviewed: true`.
-
-Nous recommandons vivement la mise à jour vers cette version pour une compatibilité Anthropic complète et toutes les dernières fonctionnalités.
+Nous recommandons vivement à tous les utilisateurs de mettre à niveau vers cette version, en particulier si vous utilisez des LLM locaux (Ollama, LM Studio) — le portail de pré-ingestion empêche la classe de bugs « fichier vide → hallucination » (les petits modèles inventent des noms d'entités pour remplir le schéma JSON sur un prompt vide).
 
 Détails dans [CHANGELOG.md](../CHANGELOG.md).
 

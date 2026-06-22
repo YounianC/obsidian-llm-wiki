@@ -2,11 +2,21 @@
 
 > Feature planning and improvement proposals
 
-**Version:** 1.20.3 | **Updated:** 2026-06-21
+**Version:** 1.21.0 | **Updated:** 2026-06-21
 
 ---
 
 ## Current Status
+
+### Implemented (v1.21.0) — Pre-Ingest Gate + Schema Phase 1 + History Panel (2026-06-21)
+
+- ✅ **#164 — Pre-ingest requirements gate (PR #174).** Empty/whitespace/frontmatter-only notes are now rejected before any LLM call, preventing small/local models from hallucinating fabricated entity names. Extensible `CONTENT_CHECKS` registry + `hashBody` content-hash dedup + `ConfirmModal` re-ingest prompt. Contributed by @Indexed-Apogrypha.
+- ✅ **#170 — Incomplete-page cleaner (PR #177).** `generation_complete` frontmatter flag + startup QuickFixes Phase 3 self-scan archives pages left in a partial state after interrupted ingests. Recoverable from `.trash`.
+- ✅ **#172 — i18n: hardcoded Chinese error string (PR #176).** `createOrUpdateFile` final-fallback now uses `getText('fileWriteFailed')` across 9 locales.
+- ✅ **#173 — dedup createdPages (PR #176).** `dedupPages()` pure-function helper prevents duplicated surface-forms from inflating the ingest report.
+- ✅ **#124 — Schema Coherence Phase 1 (PR #167).** `SchemaContext` + `buildSchemaSectionTemplate` + tag vocabulary injection into system prompt.
+- ✅ **#122 — Operation History Panel (PR #171).** Pure-function log parser + `HistoryModal` with insight-driven visualization.
+- ✅ **#159 — Italian locale (PR #159).** 9th language. Contributed by @FrancoTampieri.
 
 ### Implemented (v1.20.3) — Parity/Latent-Bug Hotfix (2026-06-20)
 
@@ -107,7 +117,7 @@ Release focus: unify schema as the single source of truth for both system prompt
 - **`buildActiveTagVocabularySection` injection into system prompt** with dedup guard. Custom tags now active in every LLM call that needs them.
 - **Settings UI default mode** previews user-defined custom tags with activation hint.
 - **v1.20.0 migration** resets `disableThinking` to `false` and `advancedSettingsMode` to `'default'` (already shipped).
-- 🔴 **#164 — Empty-content hallucinated entity guard** (in PR by @Indexed-Apogrypha). Add early-return in `WikiEngine.ingestSource` (line ~248, right after `vault.read`): if `fileContent.trim().length === 0` → emit `emptySourceNotice` + return. Plus 9-locale i18n + unit + integration tests. Closes a critical bug where local models (Ollama gemma4, qwen-coder) hallucinate entity names from empty input prompts.
+- 🔴 **#164 — Empty-content fabricated-entity guard** (in PR by @Indexed-Apogrypha). Add early-return in `WikiEngine.ingestSource` (line ~248, right after `vault.read`): if `fileContent.trim().length === 0` → emit `emptySourceNotice` + return. Plus 9-locale i18n + unit + integration tests. Closes a critical bug where local models (Ollama gemma4, qwen-coder) fabricate entity names to satisfy the JSON schema when given a blank prompt.
 - ✅ **#122 — Ingestion History Panel** (implemented, merged). Pure-function `parseLogEntries` + `HistoryModal` with date grouping, search, filter, clickable page links. 21 new tests (842 total). Pending merge into main.
 
 **Problem:** Three concrete inconsistencies between user-configured schema (`schema/config.md`) and runtime prompt construction:
@@ -131,7 +141,7 @@ Release focus: unify schema as the single source of truth for both system prompt
 - Existing wikis (with default schema) produce identical output before and after
 - Tests pass for both default-schema and custom-schema paths
 
-**🔴 #164 — Empty-content hallucinated entity guard** (in PR by @Indexed-Apogrypha). Add early-return in `WikiEngine.ingestSource` (line ~248, right after `vault.read`): if `fileContent.trim().length === 0` → emit `emptySourceNotice` + return. Plus 9-locale i18n + unit + integration tests. Closes a critical bug where local models (Ollama gemma4, qwen-coder) hallucinate entity names from empty input prompts. Folded into v1.21.0 with Schema Phase 1 to avoid two consecutive hotfixes within a week.
+**🔴 #164 — Empty-content hallucinated entity guard** (in PR by @Indexed-Apogrypha). Add early-return in `WikiEngine.ingestSource` (line ~248, right after `vault.read`): if `fileContent.trim().length === 0` → emit `emptySourceNotice` + return. Plus 9-locale i18n + unit + integration tests. Closes a critical bug where local models (Ollama gemma4, qwen-coder) fabricate entity names to satisfy the JSON schema when given a blank prompt. Folded into v1.21.0 with Schema Phase 1 to avoid two consecutive hotfixes within a week.
 
 - 🔴 **#173 — Ingest: create-retry loop + duplicate Created entry** (reported by @Indexed-Apogrypha 2026-06-21). Symptom A: `createOrUpdateFile()` retries `vault.create()` 3 times when path already exists, instead of short-circuiting to `vault.process()`. Symptom B: `analysis.created_pages` lacks Set dedup, causing duplicate report rows. Both small fixes bundled with #164.
 - 🔴 **#172 — i18n: hardcoded Chinese error string** (reported by @Indexed-Apogrypha 2026-06-21). `wiki-engine.ts:850` throws `无法创建或更新文件: ${path}` unconditionally. Add `fileWriteFailed` i18n key × 9 locales + replace with `getText(...)`. Audit other source files for similar leaks.

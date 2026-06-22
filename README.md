@@ -25,7 +25,7 @@
   - [🔑 Configure an LLM Provider](#-configure-an-llm-provider)
   - [🎮 Usage](#-usage)
   - [⚠️ Upgrading from an Older Version?](#️-upgrading-from-an-older-version)
-- [⚡ What's New in v1.20.3](#-whats-new-in-v1203)
+- [⚡ What's New in v1.21.0](#-whats-new-in-v1210)
 - [✨ Features](#-features)
 
   - [📊 Knowledge Quality](#-knowledge-quality)
@@ -189,16 +189,18 @@ Settings → **LLM Configuration**:
 
 ---
 
-## ⚡ What's New in v1.20.3
+## ⚡ What's New in v1.21.0
 
-v1.20.3 is a **PATCH hotfix** that fixes three latent bugs in the wiki write path. No new features — all three fixes are parity/latent-bug fixes that restore behavior that *should* have been there from the start.
+v1.21.0 is a **MINOR feature release** that delivers three major improvements: a pre-ingest requirements gate that stops hallucinated entities, an operation history panel, and Schema Coherence Phase 1. Also includes Italian as the 9th language, an incomplete-page cleaner, and several bug fixes.
 
-- **🔧 Source-slug collision fix (Issue #155, PR #156).** When two source files shared a basename across folders (e.g. 11× `About this course.md` across Academy courses), `slugify(basename)` produced the same slug for both — second ingest silently overwrote the first, and every `[[sources/<slug>]]` backlink resolved to the wrong source. Fix: every source slug is now `<basename>_<6hex FNV-1a of full path>`. Re-ingesting an existing vault renames its `sources/` pages; backlinks update in place. Contributed by @Indexed-Apogrypha.
-- **🔧 `mergeFrontmatter` alias dedup (PR #154).** Repeated re-ingests could grow the `aliases` array without bound — one real-world page accumulated the same alias block ~15× (86 duplicate lines). `mergeFrontmatter` now dedups `fm.aliases` parity with `enforceFrontmatterConstraints`. Contributed by @DocTpoint.
-- **🔧 Stage-4 `reviewed: true` guard (PR #158).** Re-ingesting an unrelated note could LLM-rewrite a curated `reviewed: true` page's body — the reviewed lock did not hold on the Stage-4 path, only on `createOrUpdatePage`. Fix: `updateRelatedPage` now routes `reviewed: true` pages to `appendToReviewedPage`. Contributed by @DocTpoint.
-- **🛠 tsconfig housekeeping.** `lib` bumped to ES2021; vestigial `baseUrl` dropped.
+- **🛡️ Pre-ingest requirements gate (Issue #164, PR #174).** Every source file is now validated *before* any LLM call — empty/whitespace/frontmatter-only notes are rejected, stopping small/local models (e.g. Ollama) from hallucinating entity names. Content-hash dedup catches identical files across paths. Interactive ingests prompt before re-ingesting duplicates. Contributed by @Indexed-Apogrypha.
+- **📊 Operation History Panel (Issue #122, PR #171).** View recent ingestions, lint reports, and maintenance runs in a searchable, filterable UI. Insight-driven visualization with KPI cards, entry-level details, and clickable page links. Command palette: "View Ingestion History".
+- **🔗 Schema Coherence Phase 1 (Issue #124, PR #167).** Schema configuration (`schema/config.md`) is now the single source of truth for both system prompts and generation prompts. User-defined custom sections and tag vocabulary are injected into every LLM call.
+- **🇮🇹 Italian locale (Issue #159, PR #159).** Plugin UI and wiki output now support Italian as the 9th language. Contributed by @FrancoTampieri.
+- **🧹 Incomplete-page cleaner (Issue #170, PR #177).** Wiki pages left in a partial state after interrupted ingests are automatically cleaned on startup. Pages are archived to Obsidian's `.trash` (recoverable).
+- **🔧 Bug fixes.** Hardcoded Chinese error string in non-Chinese UIs (#172); duplicate entries inflating ingest report counts (#173).
 
-We strongly recommend all users upgrade to this version, especially if you ingest multiple notes sharing filenames across folders, or use the `reviewed: true` page lock.
+We strongly recommend all users upgrade to this version, especially if you use local LLMs (Ollama, LM Studio) — the pre-ingest gate prevents the empty-file hallucination class of bugs (small models filling in made-up entity names when given a blank prompt).
 
 See [CHANGELOG.md](CHANGELOG.md) for full details.
 

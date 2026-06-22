@@ -26,7 +26,7 @@
   - [🔑 LLM-Provider konfigurieren](#-llm-provider-konfigurieren)
   - [🎮 Verwendung](#-verwendung)
   - [⚠️ Upgrade von einer älteren Version?](#️-upgrade-von-einer-älteren-version)
-- [⚡ Was ist neu in v1.20.3](#-was-ist-neu-in-v1203)
+- [⚡ Was ist neu in v1.21.0](#-was-ist-neu-in-v1210)
 - [✨ Funktionen](#-funktionen)
   - [📊 Knowledge Quality](#-knowledge-quality)
   - [🛠️ Maintenance](#️-maintenance)
@@ -164,18 +164,18 @@ Dieses Projekt entwickelt sich rasch — neue Funktionen, Fehlerbehebungen und V
 
 ---
 
-## ⚡ Was ist neu in v1.20.3
+## ⚡ Was ist neu in v1.21.0
 
-v1.20.3 ist ein **Patch-Hotfix**, der drei latente Bugs im Wiki-Schreibpfad behebt. Keine neuen Funktionen — alle drei Fixes sind Parity-/Latent-Bug-Korrekturen, die ein Verhalten wiederherstellen, das von Anfang an vorhanden sein sollte.
+v1.21.0 ist ein **MINOR-Feature-Release** mit drei großen Verbesserungen: ein Pre-Ingest-Anforderungsgate, das halluzinierte Entitäten stoppt, ein Operationsverlaufspanel und Schema-Konsistenz Phase 1. Dazu Italienisch als 9. Sprache, ein Unvollständige-Seiten-Cleaner und mehrere Fehlerbehebungen.
 
-- **🔧 Quell-Slug-Kollisionsfix (Issue #155, PR #156).** Wenn zwei Quelldateien denselben Basisnamen über Ordner hinweg teilten (z. B. 11× `About this course.md` in Academy-Kursen), erzeugte `slugify(basename)` für beide denselben Slug — der zweite Ingest überschrieb den ersten **lautlos**, und jeder `[[sources/<slug>]]`-Backlink löste auf die falsche Quelle auf. Fix: Jeder Quell-Slug ist jetzt `<basename>_<6-Hex-FNV-1a des vollen Pfads>`. Ein erneuter Ingest eines bestehenden Vaults benennt `sources/`-Seiten um; Backlinks werden an Ort und Stelle aktualisiert. Beitrag von @Indexed-Apogrypha.
-- **🔧 `mergeFrontmatter`-Alias-Dedup (PR #154).** Wiederholte Re-Ingest-Vorgänge konnten das `aliases`-Array unbegrenzt wachsen lassen — eine echte Seite akkumulierte denselben Alias-Block ~15× (86 doppelte Zeilen). `mergeFrontmatter` dedupliziert `fm.aliases` jetzt paritätisch zu `enforceFrontmatterConstraints`. Beitrag von @DocTpoint.
-- **🔧 Stage-4 `reviewed: true`-Schutz (PR #158).** Das erneute Ingestieren einer unrelated Notiz konnte den LLM-verwalteten Body einer kuratierten `reviewed: true`-Seite überschreiben — die `reviewed`-Sperre griff nur auf dem `createOrUpdatePage`-Pfad, nicht auf Stage 4. Fix: `updateRelatedPage` routet `reviewed: true`-Seiten jetzt zu `appendToReviewedPage`. Beitrag von @DocTpoint.
-- **🛠 tsconfig-Housekeeping.** `lib` auf ES2021 angehoben; überflüssiges `baseUrl` entfernt.
+- **🛡️ Pre-Ingest-Anforderungsgate (Issue #164, PR #174).** Jede Quelldatei wird *vor* jedem LLM-Aufruf validiert — leere/nur-Leerzeichen/nur-Frontmatter-Notizen werden abgelehnt, was lokale Modelle (z. B. Ollama) daran hindert, Entitätsnamen zu halluzinieren. Content-Hash-Dedup erkennt identische Dateien über Pfade hinweg. Interaktive Ingests fragen vor dem erneuten Ingestieren von Duplikaten nach. Beitrag von @Indexed-Apogrypha.
+- **📊 Operationsverlaufspanel (Issue #122, PR #171).** Zeigen Sie kürzliche Ingests, Lint-Berichte und Wartungsläufe in einer durchsuchbaren, filterbaren UI an. Insight-getriebene Visualisierung mit KPI-Karten, Eintragsdetails und klickbaren Seitenlinks. Befehlspalette: "View Ingestion History".
+- **🔗 Schema-Konsistenz Phase 1 (Issue #124, PR #167).** Die Schema-Konfiguration (`schema/config.md`) ist jetzt die Single Source of Truth für System- und Generierungsprompts. Benutzerdefinierte Sektionen und Tag-Vokabular werden in jeden LLM-Aufruf injiziert.
+- **🇮🇹 Italienisch (Issue #159, PR #159).** Plugin-UI und Wiki-Ausgabe unterstützen Italienisch als 9. Sprache. Beitrag von @FrancoTampieri.
+- **🧹 Unvollständige-Seiten-Cleaner (Issue #170, PR #177).** Wiki-Seiten, die durch unterbrochene Ingests in einem Teilzustand hinterlassen wurden, werden beim Start automatisch bereinigt. Seiten werden in Obsidians `.trash` archiviert (wiederherstellbar).
+- **🔧 Fehlerbehebungen.** Hardcodierte chinesische Fehlermeldung in nicht-chinesischen UIs (#172); doppelte Einträge, die Ingest-Berichtszahlen aufblähten (#173).
 
-Wir empfehlen allen Nutzern dringend ein Upgrade, insbesondere wenn Sie Notizen mit gleichen Dateinamen über Ordner hinweg ingestieren oder die `reviewed: true`-Seitensperre verwenden.
-
-Wir empfehlen allen Nutzern dringend ein Upgrade auf diese Version für vollständige Anthropic-Kompatibilität und alle neuesten Funktionen.
+Wir empfehlen allen Nutzern dringend ein Upgrade auf diese Version, insbesondere wenn Sie lokale LLMs verwenden (Ollama, LM Studio) — das Pre-Ingest-Gate verhindert die Klasse von „leere Datei → Halluzination"-Bugs (kleine Modelle erfinden Entitätsnamen, um das JSON-Schema bei leerem Prompt zu füllen).
 
 Details unter [CHANGELOG.md](../CHANGELOG.md).
 
